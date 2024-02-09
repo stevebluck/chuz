@@ -1,3 +1,4 @@
+import { LinksFunction } from "@remix-run/node";
 import "./tailwind.css";
 
 import {
@@ -7,6 +8,25 @@ import {
   Scripts,
   ScrollRestoration,
 } from "@remix-run/react";
+
+export const links: LinksFunction = () => {
+  return [
+    {
+      rel: "preload",
+      href: "/fonts/inter/Inter-Medium.woff2",
+      as: "font",
+      type: "font/woff2",
+      crossOrigin: "anonymous",
+    },
+    {
+      rel: "preload",
+      href: "/fonts/inter/Inter-Regular.woff2",
+      as: "font",
+      type: "font/woff2",
+      crossOrigin: "anonymous",
+    },
+  ];
+};
 
 export default function App() {
   return (
