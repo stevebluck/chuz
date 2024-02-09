@@ -4,8 +4,8 @@ import { Button } from "~/components/ui/button";
 
 export const meta: MetaFunction = () => {
   return [
-    { title: "New Remix App" },
-    { name: "description", content: "Welcome to Remix!" },
+    { title: "Chuzwozza" },
+    { name: "description", content: "Development" },
   ];
 };
 
