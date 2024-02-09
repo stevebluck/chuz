@@ -1,3 +1,5 @@
+import "./tailwind.css";
+
 import {
   Links,
   Meta,
