@@ -2,19 +2,12 @@ import { LoaderFunctionArgs } from "@remix-run/node";
 import { Link } from "@remix-run/react";
 import { Effect } from "effect";
 import { buttonVariants } from "~/components/ui/button";
-import { UsersTag } from "~/core";
 import { cn } from "~/lib/utils";
 import { Remix } from "~/remix/Remix.server";
 import { LoginForm } from "./login-form";
 
-const getSession = Effect.gen(function* (_) {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _users = yield* _(UsersTag);
-  return { dave: "steve" };
-});
-
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  return Remix.runPromise(getSession)(request);
+  return Remix.runPromise(Effect.succeed({ name: "Steve" }))(request);
 };
 
 export default function AuthenticationPage() {

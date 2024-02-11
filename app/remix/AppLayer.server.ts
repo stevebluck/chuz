@@ -1,5 +1,6 @@
 import { Layer, ConfigProvider, Clock as EffectClock, Effect } from "effect";
-import { HasherTag, Passwords, UsersTag, tokenEq } from "~/core";
+import { DecksTag, HasherTag, Passwords, UsersTag, tokenEq } from "~/core";
+import { ReferenceDecks } from "~/core/decks/ReferenceDecks";
 import { ReferenceTokens } from "~/core/tokens/ReferenceTokens";
 import { ReferencePasswordReset } from "~/core/users/ReferencePasswordReset";
 import { ReferenceUsers } from "~/core/users/ReferenceUsers";
@@ -19,6 +20,8 @@ const UsersLive = Layer.effect(
   }),
 );
 
-const MainLive = Layer.mergeAll(UsersLive, Hasher);
+const DecksLive = Layer.effect(DecksTag, UsersTag.pipe(Effect.flatMap(ReferenceDecks.create)));
+
+const MainLive = Layer.mergeAll(Hasher, DecksLive).pipe(Layer.provideMerge(UsersLive));
 
 export const AppLayer = MainLive.pipe(Layer.provideMerge(Layer.setConfigProvider(ConfigProvider.fromEnv())));

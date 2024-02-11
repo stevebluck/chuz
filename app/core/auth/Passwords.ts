@@ -1,5 +1,5 @@
 import * as S from "@effect/schema/Schema";
-import * as bcrypt from "bcrypt";
+import * as bcrypt from "bcryptjs";
 import { Equivalence, Brand, Effect, Context } from "effect";
 import { Refinement } from "~/lib/Refinement";
 

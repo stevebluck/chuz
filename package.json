@@ -25,7 +25,7 @@
     "@remix-run/react": "^2.6.0",
     "@supabase/ssr": "^0.1.0",
     "@supabase/supabase-js": "^2.39.3",
-    "bcrypt": "^5.1.1",
+    "bcryptjs": "^2.4.3",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
     "compression": "^1.7.4",
@@ -46,7 +46,7 @@
   "devDependencies": {
     "@remix-run/dev": "^2.6.0",
     "@trivago/prettier-plugin-sort-imports": "^4.3.0",
-    "@types/bcrypt": "^5.0.2",
+    "@types/bcryptjs": "^2.4.6",
     "@types/compression": "^1.7.5",
     "@types/express": "^4.17.20",
     "@types/morgan": "^1.9.9",
