@@ -19,7 +19,6 @@ module.exports = {
     commonjs: true,
     es6: true,
   },
-
   // Base config
   extends: ["eslint:recommended"],
 
@@ -47,6 +46,9 @@ module.exports = {
           typescript: {},
         },
       },
+      rules: {
+        "react/prop-types": "off",
+      },
     },
 
     // Typescript
@@ -65,11 +67,11 @@ module.exports = {
           },
         },
       },
-      extends: [
-        "plugin:@typescript-eslint/recommended",
-        "plugin:import/recommended",
-        "plugin:import/typescript",
-      ],
+      extends: ["plugin:@typescript-eslint/recommended", "plugin:import/recommended", "plugin:import/typescript"],
+      rules: {
+        "@typescript-eslint/no-namespace": "off",
+        "@typescript-eslint/no-explicit-any": "off",
+      },
     },
 
     // Node

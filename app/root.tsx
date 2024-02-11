@@ -1,20 +1,9 @@
 import { LinksFunction, LoaderFunctionArgs } from "@remix-run/node";
-import {
-  Links,
-  Meta,
-  Outlet,
-  Scripts,
-  ScrollRestoration,
-  useLoaderData,
-} from "@remix-run/react";
-import clsx from "clsx";
-import {
-  PreventFlashOnWrongTheme,
-  ThemeProvider,
-  useTheme,
-} from "remix-themes";
+import { Links, Meta, Outlet, Scripts, ScrollRestoration, useLoaderData } from "@remix-run/react";
+import { PreventFlashOnWrongTheme, ThemeProvider, useTheme } from "remix-themes";
 import { Routes } from "./Routes";
-import { themeSessionResolver } from "./sessions.server";
+import { cn } from "./lib/utils";
+import { themeSessionResolver } from "./remix/sessions.server";
 import "./style.css";
 
 export const links: LinksFunction = () => {
@@ -54,12 +43,12 @@ export default function AppWithProviders() {
   );
 }
 
-export function App() {
+export const App = () => {
   const data = useLoaderData<typeof loader>();
   const [theme] = useTheme();
 
   return (
-    <html lang="en" className={clsx(theme)}>
+    <html lang="en" className={cn(theme, "h-full")}>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -67,11 +56,11 @@ export function App() {
         <PreventFlashOnWrongTheme ssrTheme={Boolean(data.theme)} />
         <Links />
       </head>
-      <body className="bg-background min-h-screen font-sans antialiased">
+      <body className="bg-background h-full font-sans antialiased">
         <Outlet />
         <ScrollRestoration />
         <Scripts />
       </body>
     </html>
   );
-}
+};
