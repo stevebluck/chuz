@@ -1,27 +1,27 @@
+import * as S from "@effect/schema/Schema";
 import { Data, Equal, Equivalence } from "effect";
 import { Email } from "../emails/Email";
-import { Password, Passwords } from "./Passwords";
+import { Password } from "./Passwords";
 
 export namespace Credentials {
-  export interface Plain {
-    email: Email;
-    password: Password.Plaintext;
+  export class Plain extends S.Class<Plain>()({
+    email: Email.schema,
+    password: Password.Plaintext.schema,
+  }) {
+    static parse = S.decodeUnknown(Plain, { errors: "all" });
   }
-  export const Plain = (email: Email, password: Password.Plaintext): Plain => Data.case<Plain>()({ email, password });
 
-  export interface Strong {
-    email: Email;
-    password: Password.Strong;
+  export class Strong extends S.Class<Strong>()({
+    email: Email.schema,
+    password: Password.Strong.schema,
+  }) {}
+
+  export class Secure extends S.Class<Secure>()({
+    email: Email.schema,
+    password: Password.Hashed.schema,
+  }) {
+    equals: Equivalence.Equivalence<Secure> = Equal.equals;
   }
-  export const Strong = (email: Email, password: Password.Strong): Strong => Data.case<Strong>()({ email, password });
-
-  export interface Secure {
-    email: Email;
-    password: Passwords.Hashed;
-  }
-  export const Secure = (email: Email, password: Passwords.Hashed) => Data.case<Secure>()({ email, password });
-
-  export const equals: Equivalence.Equivalence<Secure> = Equal.equals;
 
   export class NotRecognised extends Data.TaggedError("CredentialsNotRecognised") {}
 }

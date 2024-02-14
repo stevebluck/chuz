@@ -16,6 +16,10 @@
     "**/*": "prettier --write --ignore-unknown"
   },
   "dependencies": {
+    "@effect/platform": "^0.44.5",
+    "@effect/platform-node": "^0.43.5",
+    "@effect/rpc": "^0.27.5",
+    "@effect/rpc-http": "^0.26.5",
     "@effect/schema": "^0.62.1",
     "@radix-ui/react-dropdown-menu": "^2.0.6",
     "@radix-ui/react-label": "^2.0.2",
@@ -69,6 +73,7 @@
     "tailwindcss": "^3.4.1",
     "typescript": "^5.1.6",
     "vite": "^5.0.0",
+    "vite-plugin-cjs-interop": "^2.0.5",
     "vite-tsconfig-paths": "^4.2.1",
     "vitest": "^1.2.2"
   },

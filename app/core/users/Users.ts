@@ -3,7 +3,7 @@ import { Brand, Context, Data, Effect } from "effect";
 import { Refinement } from "~/lib/Refinement";
 import { Id, Identified } from "../Identified";
 import { Credentials } from "../auth/Credentials";
-import { Password, Passwords } from "../auth/Passwords";
+import { Password } from "../auth/Passwords";
 import { Session } from "../auth/Session";
 import { Email } from "../emails/Email";
 import { NoSuchToken, Token } from "../tokens/Tokens";
@@ -35,14 +35,14 @@ export interface Users {
   updatePassword(
     token: Token<Id<User>>,
     currentPassword: Password.Plaintext,
-    updatedPasword: Passwords.Hashed,
+    updatedPasword: Password.Hashed,
   ): Effect.Effect<void, Credentials.NotRecognised | User.NotFound>;
 
   requestPasswordReset(email: Email): Effect.Effect<Token<[Email, Id<User>]>, Credentials.NotRecognised>;
 
   resetPassword(
     token: Token<[Email, Id<User>]>,
-    password: Passwords.Hashed,
+    password: Password.Hashed,
   ): Effect.Effect<Identified<User>, NoSuchToken>;
 }
 
@@ -58,7 +58,10 @@ export namespace User {
     Data.case<User>()({ firstName, lastName, email, optInMarketing });
 
   export type OptInMarketing = boolean & Brand.Brand<"OptInMarketing">;
-  export const OptInMarketing = Brand.nominal<OptInMarketing>();
+  export namespace OptInMarketing {
+    export const schema = S.boolean.pipe(S.fromBrand(Brand.nominal<OptInMarketing>()));
+    export const { from, is, unsafeFrom } = Refinement(schema);
+  }
 
   export type FirstName = string & Brand.Brand<"FirstName">;
   export namespace FirstName {

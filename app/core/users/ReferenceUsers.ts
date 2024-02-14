@@ -93,7 +93,7 @@ export class ReferenceUsers implements Users {
   updatePassword = (
     token: Token<Id<User>>,
     currentPassword: Password.Plaintext,
-    updatedPassword: Passwords.Hashed,
+    updatedPassword: Password.Hashed,
   ): Effect.Effect<void, Credentials.NotRecognised | User.NotFound> => {
     return this.sessionTokens.lookup(token).pipe(
       Effect.mapError(() => new User.NotFound()),
@@ -130,7 +130,7 @@ export class ReferenceUsers implements Users {
 
   resetPassword = (
     token: Token<[Email, Id<User>]>,
-    password: Passwords.Hashed,
+    password: Password.Hashed,
   ): Effect.Effect<Identified<User>, NoSuchToken> =>
     this.passwordResetTokens.lookup(token).pipe(
       Effect.tap(() => this.passwordResetTokens.revoke(token)),
@@ -216,7 +216,7 @@ class State {
           } else if (this.byEmail.contains(email)) {
             return error(new Email.AlreadyInUse({ email }));
           } else {
-            const updatedCredentials = Credentials.Secure(email, credentials.password);
+            const updatedCredentials = new Credentials.Secure({ email, password: credentials.password });
             const byEmail = this.byEmail.deleteAt(user.value.email).upsertAt(email, updatedCredentials);
             const byCredentials = this.byCredentials.deleteAt(credentials).upsertAt(updatedCredentials, id);
             const byId = this.byId.upsertAt(id, Identified(id, { ...user.value, email }));
@@ -234,11 +234,11 @@ class State {
   updatePassword = (
     id: Id<User>,
     email: Email,
-    currentPassword: Passwords.Hashed,
-    updatedPassword: Passwords.Hashed,
+    currentPassword: Password.Hashed,
+    updatedPassword: Password.Hashed,
   ): State => {
-    const currentCredentials = Credentials.Secure(email, currentPassword);
-    const updatedCredentials = Credentials.Secure(email, updatedPassword);
+    const currentCredentials = new Credentials.Secure({ email, password: currentPassword });
+    const updatedCredentials = new Credentials.Secure({ email, password: updatedPassword });
 
     const byCredentials = this.byCredentials.deleteAt(currentCredentials).upsertAt(updatedCredentials, id);
     const byEmail = this.byEmail.upsertAt(email, updatedCredentials);
@@ -248,9 +248,9 @@ class State {
 
   resetPassword = (
     email: Email,
-    password: Passwords.Hashed,
+    password: Password.Hashed,
   ): [Either.Either<Credentials.NotRecognised, Identified<User>>, State] => {
-    const resetCredentials = Credentials.Secure(email, password);
+    const resetCredentials = new Credentials.Secure({ email, password });
 
     return this.byEmail.find(email).pipe(
       Option.flatMap((credentials) =>

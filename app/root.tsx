@@ -3,7 +3,7 @@ import { Links, Meta, Outlet, Scripts, ScrollRestoration, useLoaderData } from "
 import { PreventFlashOnWrongTheme, ThemeProvider, useTheme } from "remix-themes";
 import { Routes } from "./Routes";
 import { cn } from "./lib/utils";
-import { themeSessionResolver } from "./remix/sessions.server";
+import { themeSessionResolver } from "./remix/Sessions.server";
 import "./style.css";
 
 export const links: LinksFunction = () => {

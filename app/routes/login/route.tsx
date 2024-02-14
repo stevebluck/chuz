@@ -1,14 +1,34 @@
-import { LoaderFunctionArgs } from "@remix-run/node";
 import { Link } from "@remix-run/react";
 import { Effect } from "effect";
+import { Routes } from "~/Routes";
 import { buttonVariants } from "~/components/ui/button";
+import { Credentials } from "~/core";
 import { cn } from "~/lib/utils";
 import { Remix } from "~/remix/Remix.server";
+import { Response } from "~/remix/Response.sever";
 import { LoginForm } from "./login-form";
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  return Remix.runPromise(Effect.succeed({ name: "Steve" }))(request);
-};
+export const action = Remix.action(Credentials.Plain.parse, (input, { users, sessions }) =>
+  Effect.gen(function* (_) {
+    const session = yield* _(
+      users.authenticate(input),
+      Effect.mapError(() => Response.ValidationError({ errors: { form: ["Credentials not recgonised"] } })),
+    );
+
+    yield* _(sessions.mint(session));
+
+    // TODO: go to dashboard
+    return Response.Redirect({ route: Routes.home });
+  }),
+);
+
+export const loader = Remix.loader(({ sessions }) =>
+  Effect.match(sessions.get, {
+    // TODO: go to dashboard
+    onSuccess: () => Response.Redirect({ route: Routes.home }),
+    onFailure: () => Response.Ok(),
+  }),
+);
 
 export default function AuthenticationPage() {
   return (

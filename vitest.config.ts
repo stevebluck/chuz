@@ -7,6 +7,7 @@ export default defineConfig({
       "~": path.resolve(__dirname, "./app"),
     },
   },
+
   test: {
     exclude: ["**/node_modules/**/*"],
   },

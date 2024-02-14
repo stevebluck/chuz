@@ -9,8 +9,8 @@ export type Refinement<I, O> = {
 };
 export const Refinement = <I, O>(schema: S.Schema<O, I>): Refinement<I, O> => {
   return {
-    from: S.decodeEither(schema),
-    unsafeFrom: S.decodeSync(schema),
+    from: S.decodeEither(schema, { errors: "all" }),
+    unsafeFrom: S.decodeSync(schema, { errors: "all" }), // TODO: don't throw
     is: S.is(schema),
   };
 };

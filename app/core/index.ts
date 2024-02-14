@@ -20,7 +20,7 @@ export * from "./users/Users";
 export * from "./decks/Decks";
 
 export const Reference = {
-  Clock: Clock.make(),
+  Clock,
   PasswordReset: ReferencePasswordReset,
   Tokens: ReferenceTokens,
   Users: ReferenceUsers,

@@ -75,10 +75,10 @@ export namespace UsersSpec {
           const authed = yield* _(users.authenticate(plain.credentials));
           const authed1 = yield* _(users.authenticate(plain.lowercase));
           const authed2 = yield* _(users.authenticate(plain.uppercase));
-          const badCredentials = Credentials.Plain(
-            plain.credentials.email,
-            Password.Plaintext.unsafeFrom(`bad-${plain.credentials.password}`),
-          );
+          const badCredentials = new Credentials.Plain({
+            email: plain.credentials.email,
+            password: Password.Plaintext.unsafeFrom(`bad-${plain.credentials.password}`),
+          });
           const credentialsNotRecognisedError = yield* _(users.authenticate(badCredentials).pipe(Effect.flip));
 
           expect(authed.user).toEqual(session.user);
@@ -143,7 +143,9 @@ export namespace UsersSpec {
               const credentialsNotRecognisedError = yield* _(users.authenticate(plain.credentials).pipe(Effect.flip));
               expect(credentialsNotRecognisedError).toEqual(new Credentials.NotRecognised());
 
-              const authed2 = yield* _(users.authenticate(Credentials.Plain(newEmail, plain.credentials.password)));
+              const authed2 = yield* _(
+                users.authenticate(new Credentials.Plain({ email: newEmail, password: plain.credentials.password })),
+              );
               expect(authed2.user.id).toEqual(session.user.id);
             }).pipe(Effect.runPromise),
           config,
@@ -193,7 +195,10 @@ export namespace UsersSpec {
 
               const authed2 = yield* _(
                 users.authenticate(
-                  Credentials.Plain(register.credentials.email, Password.Strong.toPlaintext(newPassword)),
+                  new Credentials.Plain({
+                    email: register.credentials.email,
+                    password: Password.Strong.toPlaintext(newPassword),
+                  }),
                 ),
               );
               expect(authed2.user).toEqual(session.user);
@@ -268,7 +273,12 @@ export namespace UsersSpec {
 
             const error = yield* _(users.authenticate(plain.credentials).pipe(Effect.flip));
             const session1 = yield* _(
-              users.authenticate(Credentials.Plain(plain.credentials.email, Password.Strong.toPlaintext(newPassword))),
+              users.authenticate(
+                new Credentials.Plain({
+                  email: plain.credentials.email,
+                  password: Password.Strong.toPlaintext(newPassword),
+                }),
+              ),
             );
 
             expect(error).toEqual(new Credentials.NotRecognised());
@@ -340,7 +350,7 @@ export namespace UsersSpec {
       Effect.gen(function* (_) {
         const { hasher } = yield* _(testBench);
         const hashed = yield* _(hasher(register.credentials.password));
-        const secureCredentials = Credentials.Secure(register.credentials.email, hashed);
+        const secureCredentials = new Credentials.Secure({ email: register.credentials.email, password: hashed });
         return yield* _(
           users.register(secureCredentials, register.firstName, register.lastName, register.optInMarketing),
         );
@@ -348,15 +358,18 @@ export namespace UsersSpec {
 
     const makePlainCredentials = (credentials: Credentials.Strong) => {
       return {
-        credentials: Credentials.Plain(credentials.email, Password.Strong.toPlaintext(credentials.password)),
-        lowercase: Credentials.Plain(
-          Email.toLowerCase(credentials.email),
-          Password.Strong.toPlaintext(credentials.password),
-        ),
-        uppercase: Credentials.Plain(
-          Email.toUpperCase(credentials.email),
-          Password.Strong.toPlaintext(credentials.password),
-        ),
+        credentials: new Credentials.Plain({
+          email: credentials.email,
+          password: Password.Strong.toPlaintext(credentials.password),
+        }),
+        lowercase: new Credentials.Plain({
+          email: Email.toLowerCase(credentials.email),
+          password: Password.Strong.toPlaintext(credentials.password),
+        }),
+        uppercase: new Credentials.Plain({
+          email: Email.toUpperCase(credentials.email),
+          password: Password.Strong.toPlaintext(credentials.password),
+        }),
       };
     };
   };

@@ -18,15 +18,21 @@ export namespace TestSeed {
   const userRegistration = UserRegistation(
     User.FirstName.unsafeFrom("John"),
     User.LastName.unsafeFrom("Lonestar"),
-    User.OptInMarketing(true),
-    Credentials.Strong(Email.unsafeFrom("lonestar@an.com"), Password.Strong.unsafeFrom("password")),
+    User.OptInMarketing.unsafeFrom(true),
+    new Credentials.Strong({
+      email: Email.unsafeFrom("lonestar@an.com"),
+      password: Password.Strong.unsafeFrom("password"),
+    }),
   );
 
   export class Seeded {
     static make = (capabiliities: Capabilities): Effect.Effect<Seeded> =>
       Effect.gen(function* (_) {
         const hashed = yield* _(capabiliities.hasher(userRegistration.credentials.password));
-        const secureCredentials = Credentials.Secure(userRegistration.credentials.email, hashed);
+        const secureCredentials = new Credentials.Secure({
+          email: userRegistration.credentials.email,
+          password: hashed,
+        });
 
         const session = yield* _(
           capabiliities.users.register(

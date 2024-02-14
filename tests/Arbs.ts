@@ -16,7 +16,9 @@ export namespace Arbs {
   export namespace Users {
     export const FirstName: fc.Arbitrary<Core.User.FirstName> = Arbitrary.make(Core.User.FirstName.schema)(fc);
     export const LastName: fc.Arbitrary<Core.User.LastName> = Arbitrary.make(Core.User.LastName.schema)(fc);
-    export const OptInMarketing: fc.Arbitrary<Core.User.OptInMarketing> = fc.boolean().map(Core.User.OptInMarketing);
+    export const OptInMarketing: fc.Arbitrary<Core.User.OptInMarketing> = fc
+      .boolean()
+      .map(Core.User.OptInMarketing.unsafeFrom);
 
     export const Register = fc.record({
       credentials: fc.record({

@@ -8,7 +8,10 @@ export namespace Password {
   const PlaintextBrand = Brand.nominal<Plaintext>();
 
   export namespace Plaintext {
-    export const schema = S.string.pipe(S.minLength(1), S.fromBrand(PlaintextBrand));
+    export const schema = S.NonEmpty.pipe(
+      S.message(() => "A password is required"),
+      S.fromBrand(PlaintextBrand),
+    );
 
     export const { from, unsafeFrom, is } = Refinement(schema);
 
@@ -25,26 +28,27 @@ export namespace Password {
 
     export const { from, unsafeFrom, is } = Refinement(schema);
   }
+
+  export type Hashed = string & Brand.Brand<"Hashed">;
+  const HashedBrand = Brand.nominal<Hashed>();
+
+  export namespace Hashed {
+    export const schema = S.string.pipe(S.fromBrand(HashedBrand));
+    export const { from, unsafeFrom, is } = Refinement(schema);
+    export const equals: Equivalence.Equivalence<Hashed> = Equivalence.strict();
+  }
 }
 
 export namespace Passwords {
-  export type Hashed = string & Brand.Brand<"Hashed">;
-
-  export namespace Hashed {
-    export const unsafeFrom = (a: string): Hashed => Brand.nominal<Hashed>()(a);
-  }
-
-  export type Hasher = (password: Password.Strong) => Effect.Effect<Hashed>;
+  export type Hasher = (password: Password.Strong) => Effect.Effect<Password.Hashed>;
 
   export const hasher =
     (bycrptLogRounds: number): Hasher =>
     (password) =>
-      Effect.promise(() => bcrypt.hash(password, bycrptLogRounds)).pipe(Effect.map(Hashed.unsafeFrom));
+      Effect.promise(() => bcrypt.hash(password, bycrptLogRounds)).pipe(Effect.map(Password.Hashed.unsafeFrom));
 
-  export const matches = (password: Password.Plaintext, hashed: Hashed): Effect.Effect<boolean> =>
+  export const matches = (password: Password.Plaintext, hashed: Password.Hashed): Effect.Effect<boolean> =>
     Effect.promise(() => bcrypt.compare(password, hashed));
-
-  export const equals: Equivalence.Equivalence<Hashed> = Equivalence.strict();
 }
 
 export class HasherTag extends Context.Tag("Hasher")<HasherTag, Passwords.Hasher>() {}
