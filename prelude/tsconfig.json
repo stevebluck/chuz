@@ -1,0 +1,4 @@
+{
+  "extends": "@chuz/typescript-config/prelude.json",
+  "include": ["src/**/*", "test/**/*"]
+}

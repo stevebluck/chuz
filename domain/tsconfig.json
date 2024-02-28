@@ -1,0 +1,5 @@
+{
+  "extends": "@chuz/typescript-config/domain.json",
+  "include": ["src/**/*", "test/**/*"],
+  "compilerOptions": {}
+}

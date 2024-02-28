@@ -1,0 +1,6 @@
+packages:
+  - "core"
+  - "web"
+  - "domain"
+  - "prelude"
+  - "config/*"
