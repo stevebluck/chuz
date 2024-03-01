@@ -1,12 +1,10 @@
-import { Clock, Data } from "effect";
-import { Passwords } from "./passwords/Passwords";
+import { Effect } from "effect";
 import { Users } from "./users/Users";
 
-// TODO: make all layers here
-// Capabilities.Live
-// Capabilities.Test
-
-export class Capabilities extends Data.Class<{
+export interface Capabilities {
   users: Users;
-  clock: Clock.Clock;
-}> {}
+}
+
+export namespace Capabilities {
+  export const make: Effect.Effect<Capabilities, never, Users> = Effect.all({ users: Users });
+}

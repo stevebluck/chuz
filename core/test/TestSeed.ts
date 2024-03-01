@@ -1,6 +1,6 @@
 import { Credentials, Email, Password, Session, User } from "@chuz/domain";
 import { Effect } from "effect";
-import { Capabilities } from "../src/Capabilities";
+import { Users } from "../src";
 import { Passwords } from "../src/passwords/Passwords";
 
 export namespace TestSeed {
@@ -10,22 +10,22 @@ export namespace TestSeed {
   });
 
   export class Seeded {
-    static make = (capabiliities: Capabilities): Effect.Effect<Seeded> =>
-      Effect.gen(function* (_) {
-        const session = yield* _(
-          capabiliities.users.register({
-            firstName: User.FirstName.unsafeFrom("John"),
-            lastName: User.LastName.unsafeFrom("Lonestar"),
-            optInMarketing: User.OptInMarketing.unsafeFrom(true),
-            credentials: new Credentials.Secure({
-              email: credentials.email,
-              password: yield* _(Passwords.hash(credentials.password)),
-            }),
+    static make = Effect.gen(function* (_) {
+      const users = yield* _(Users);
+      const session = yield* _(
+        users.register({
+          firstName: User.FirstName.unsafeFrom("John"),
+          lastName: User.LastName.unsafeFrom("Lonestar"),
+          optInMarketing: User.OptInMarketing.unsafeFrom(true),
+          credentials: new Credentials.Secure({
+            email: credentials.email,
+            password: yield* _(Passwords.hash(credentials.password)),
           }),
-        );
+        }),
+      );
 
-        return new Seeded({ session });
-      }).pipe(Effect.orDie);
+      return new Seeded({ session });
+    }).pipe(Effect.orDie);
 
     private constructor(
       readonly seed: {

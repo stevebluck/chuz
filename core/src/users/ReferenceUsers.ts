@@ -1,6 +1,6 @@
 import { Credentials, Email, Id, Identified, Password, Session, Token, User } from "@chuz/domain";
 import { Duration, Effect, Either, Option, Ref, identity } from "effect";
-import { Clock, Context, Layer } from "effect";
+import { Clock } from "effect";
 import { Tokens, Users } from "..";
 import { Passwords } from "../passwords/Passwords";
 import { AutoIncrement } from "../persistence/AutoIncrement";
@@ -10,29 +10,13 @@ import { ReferenceTokens } from "../tokens/ReferenceTokens";
 const ONE_DAY = Duration.toMillis("1 days");
 const TWO_DAYS = Duration.toMillis("2 days");
 
-export class UserTokens extends Context.Tag("UserTokens")<UserTokens, Tokens<Id<User>>>() {
-  static Test = Layer.suspend(() =>
-    Layer.effect(UserTokens, ReferenceTokens.create<Id<User>>(Clock.make(), Identified.equals)),
-  );
-}
-
-export class PasswordResetTokens extends Context.Tag("PasswordResetTokens")<
-  PasswordResetTokens,
-  Tokens<Password.Reset<User>>
->() {
-  static Test = Layer.suspend(() =>
-    Layer.effect(
-      PasswordResetTokens,
-      ReferenceTokens.create<Password.Reset<User>>(Clock.make(), Password.Reset.equals),
-    ),
-  );
-}
-
 export class ReferenceUsers implements Users {
   static make = Effect.gen(function* (_) {
     const state = yield* _(Ref.make(new State(Table.empty(), Table.empty(), Table.empty(), AutoIncrement.empty())));
-    const userTokens = yield* _(UserTokens);
-    const passwordResetTokens = yield* _(PasswordResetTokens);
+    const userTokens = yield* _(ReferenceTokens.create<Id<User>>(Clock.make(), Identified.equals));
+    const passwordResetTokens = yield* _(
+      ReferenceTokens.create<Password.Reset<User>>(Clock.make(), Password.Reset.equals),
+    );
 
     return new ReferenceUsers(userTokens, passwordResetTokens, state);
   });

@@ -1,4 +1,4 @@
-import { makeTestBench } from "../TestBench";
+import { TestBench } from "../TestBench";
 import { UsersSpec } from "./UsersSpec";
 
-UsersSpec.run(makeTestBench);
+UsersSpec.run(TestBench);

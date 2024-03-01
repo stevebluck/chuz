@@ -1,5 +1,5 @@
 import { Credentials, Email, Id, Identified, Password, Session, Token, User } from "@chuz/domain";
-import { Effect } from "effect";
+import { Context, Effect } from "effect";
 
 export interface Users {
   register(user: User.Registration): Effect.Effect<Session<User>, Email.AlreadyInUse>;
@@ -31,3 +31,5 @@ export interface Users {
     password: Password.Hashed,
   ): Effect.Effect<Identified<User>, Token.NoSuchToken>;
 }
+
+export const Users = Context.GenericTag<Users>("Users");
