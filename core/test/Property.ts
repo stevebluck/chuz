@@ -1,4 +1,4 @@
-import { Option } from "effect";
+import { Effect, Layer, Option } from "effect";
 import { NonEmptyIterable } from "effect/NonEmptyIterable";
 import fc from "fast-check";
 import { test } from "vitest";
@@ -17,10 +17,10 @@ const defaultConfig: Required<Config> = {
   runs: 100,
 };
 
-export const asyncProperty = <A>(
+export const asyncPropertyEffect = <A>(
   title: string,
   arbs: fc.Arbitrary<fc.RecordValue<A>>,
-  predicate: (a: A) => Promise<boolean | void>,
+  predicate: (a: A) => Effect.Effect<boolean | void>,
   config: Config = defaultConfig,
 ) => {
   const beforeEach = config.beforeEach === undefined ? defaultConfig.beforeEach : config.beforeEach;
@@ -30,9 +30,41 @@ export const asyncProperty = <A>(
   test.concurrent(
     title,
     async () =>
-      fc.assert(fc.asyncProperty(arbs, predicate).beforeEach(beforeEach).afterEach(afterEach), {
-        numRuns: config.runs,
-      }),
+      fc.assert(
+        fc
+          .asyncProperty(arbs, (a) => Effect.runPromise(predicate(a)))
+          .beforeEach(beforeEach)
+          .afterEach(afterEach),
+        {
+          numRuns: config.runs,
+        },
+      ),
+    timeout,
+  );
+};
+
+export const asyncProperty = <A, E>(
+  title: string,
+  arbs: fc.Arbitrary<fc.RecordValue<A>>,
+  predicate: (a: A) => Effect.Effect<boolean | void, E>,
+  config: Config = defaultConfig,
+) => {
+  const beforeEach = config.beforeEach === undefined ? defaultConfig.beforeEach : config.beforeEach;
+  const afterEach = config.afterEach === undefined ? defaultConfig.afterEach : config.afterEach;
+  const timeout = config.timeout === undefined ? defaultConfig.timeout : config.timeout;
+
+  test.concurrent(
+    title,
+    async () =>
+      fc.assert(
+        fc
+          .asyncProperty(arbs, (a) => predicate(a).pipe(Effect.runPromise))
+          .beforeEach(beforeEach)
+          .afterEach(afterEach),
+        {
+          numRuns: config.runs,
+        },
+      ),
     timeout,
   );
 };
@@ -45,10 +77,11 @@ asyncProperty.skip = <A>(
 ) => {
   test.skip(title, () => {});
 };
-asyncProperty.only = <A>(
+
+asyncProperty.only = <A, E>(
   title: string,
   arbs: fc.Arbitrary<fc.RecordValue<A>>,
-  predicate: (a: A) => Promise<boolean | void>,
+  predicate: (a: A) => Effect.Effect<boolean | void, E>,
   config: Config = defaultConfig,
 ) => {
   const beforeEach = config.beforeEach === undefined ? defaultConfig.beforeEach : config.beforeEach;
@@ -58,9 +91,15 @@ asyncProperty.only = <A>(
   test.only(
     title,
     async () =>
-      fc.assert(fc.asyncProperty(arbs, predicate).beforeEach(beforeEach).afterEach(afterEach), {
-        numRuns: config.runs,
-      }),
+      fc.assert(
+        fc
+          .asyncProperty(arbs, (a) => predicate(a).pipe(Effect.runPromise))
+          .beforeEach(beforeEach)
+          .afterEach(afterEach),
+        {
+          numRuns: config.runs,
+        },
+      ),
     timeout,
   );
 };

@@ -9,5 +9,6 @@ export const Action = S.string.pipe(S.brand("Action"));
 export const Routes = {
   home: Route("/"),
   login: Route("/login"),
+  myAccount: Route("/my-account"),
   setTheme: Action("/action/set-theme"),
 };

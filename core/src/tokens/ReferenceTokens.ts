@@ -15,14 +15,13 @@ export class ReferenceTokens<A> implements Tokens<A> {
   ) {}
 
   issue = (value: A, timeToLive: Token.TimeToLive): Effect.Effect<Token<A>> => {
-    const { clock, state } = this;
     return Effect.gen(this, function* (_) {
       const uuid = yield* _(Uuid.make);
       const token = Token.make<A>(uuid.toString());
-      const time = yield* _(clock.currentTimeMillis);
+      const time = yield* _(this.clock.currentTimeMillis);
       const expiresAt = new Timestamp({ value: addMilliseconds(time, timeToLive.duration) });
 
-      yield* _(Ref.update(state, (s) => s.issue(token, value, expiresAt)));
+      yield* _(Ref.update(this.state, (s) => s.issue(token, value, expiresAt)));
 
       return token;
     });

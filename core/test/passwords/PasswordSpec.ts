@@ -1,7 +1,7 @@
 import { Password } from "@chuz/domain";
 import { Effect, Either } from "effect";
 import { describe, expect, test } from "vitest";
-import { Passwords } from "../../src/passwords/Passwords";
+import { Passwords } from "../../src/Passwords";
 import { Arbs } from "../Arbs";
 import { asyncProperty } from "../Property";
 
@@ -12,7 +12,7 @@ export namespace PasswordSpec {
         Effect.gen(function* (_) {
           const hashes = yield* _(Effect.all(Array.from({ length: 5 }, () => password).map(Passwords.hash)));
           expect(new Set(hashes).size).toBe(hashes.length);
-        }).pipe(Effect.runPromise),
+        }),
       );
 
       asyncProperty("Passwords only match against their hashes", Arbs.Passwords.Strong, (password: Password.Strong) =>
@@ -22,7 +22,7 @@ export namespace PasswordSpec {
           const doesNotMatch = yield* _(Passwords.matches(Password.Plaintext.unsafeFrom(`mutate-${password}`), hashed));
           expect(matches).toBe(true);
           expect(doesNotMatch).toBe(false);
-        }).pipe(Effect.runPromise),
+        }),
       );
 
       test("Strong passwords must have a minimum length of 8 characters", () => {

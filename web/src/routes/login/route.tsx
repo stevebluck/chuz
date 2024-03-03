@@ -1,27 +1,24 @@
+import { Sessions } from "@chuz/core";
+import { Response } from "@chuz/runtime";
 import { Link } from "@remix-run/react";
 import { Effect } from "effect";
+import { Routes } from "src/Routes";
 import { Remix } from "web/Remix";
 import { buttonVariants } from "web/components/ui/button";
 import { cn } from "web/utils";
 import { LoginForm } from "./login-form";
 
-// export const action = Remix.action(Credentials.Plain.parse, (input, { users, sessions }) =>
-//   Effect.gen(function* (_) {
-//     const session = yield* _(
-//       users.authenticate(input),
-//       Effect.mapError(() => Response.ValidationError({ errors: { form: ["Credentials not recgonised"] } })),
-//     );
+export const loader = Remix.Loader(
+  Effect.gen(function* (_) {
+    const sessions = yield* _(Sessions);
+    yield* _(
+      sessions.guest,
+      Effect.mapError(() => Response.Fail.Redirect({ location: Routes.myAccount })),
+    );
+  }),
+);
 
-//     yield* _(sessions.mint(session));
-
-//     // TODO: go to dashboard
-//     return Response.Redirect({ route: Routes.home });
-//   }),
-// );
-
-export const loader = Remix.Loader(Effect.succeed(10));
-
-export default function AuthenticationPage() {
+export default function Login() {
   return (
     <div className="flex min-h-full flex-1">
       <div className="container relative flex-1 flex-col items-center justify-center grid lg:max-w-none lg:grid-cols-2 lg:px-0">

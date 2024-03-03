@@ -1,9 +1,23 @@
-import { Context, Layer } from "effect";
-import { remixRuntime } from "./Runtime";
+import { Capabilities } from "@chuz/core";
+import { Response, Remix as _Remix } from "@chuz/runtime";
+import { DevTools } from "@effect/experimental";
+import { json, redirect } from "@remix-run/node";
+import { Either } from "effect";
+import { Layer } from "effect";
 
-// const MainTest = Layers.Users.Test.pipe(Layer.provide(PasswordResetTokens.Test), Layer.provide(UserTokens.Test));
-
-const Chuz = Context.Tag<string>("Chuz")();
-
-const Main = Layer.succeed(Chuz, "Chuz");
-export const Remix = remixRuntime(Main);
+export const Remix = _Remix.makeRuntime({
+  runtimeLayer: Capabilities.Test.pipe(Layer.merge(DevTools.layer())),
+  toRemixResponse: (res, headers) => {
+    return Either.mapBoth(res, {
+      onLeft: Response.Fail.match({
+        NotFound: (e) => {
+          throw json(e, { status: 404, headers });
+        },
+        Redirect: ({ location }) => {
+          throw redirect(location, { headers });
+        },
+      }),
+      onRight: (e) => json(e, { status: 500, headers }),
+    });
+  },
+});
