@@ -1,24 +1,15 @@
-import { Sessions } from "@chuz/core";
-import { Response } from "@chuz/runtime";
+import { Authenticate, Login } from "@chuz/runtime";
 import { Link } from "@remix-run/react";
-import { Effect } from "effect";
-import { Routes } from "src/Routes";
 import { Remix } from "web/Remix";
 import { buttonVariants } from "web/components/ui/button";
 import { cn } from "web/utils";
 import { LoginForm } from "./login-form";
 
-export const loader = Remix.Loader(
-  Effect.gen(function* (_) {
-    const sessions = yield* _(Sessions);
-    yield* _(
-      sessions.guest,
-      Effect.mapError(() => Response.Fail.Redirect({ location: Routes.myAccount })),
-    );
-  }),
-);
+export const action = Remix.Action(Authenticate);
 
-export default function Login() {
+export const loader = Remix.Loader(Login);
+
+export default function LoginPage() {
   return (
     <div className="flex min-h-full flex-1">
       <div className="container relative flex-1 flex-col items-center justify-center grid lg:max-w-none lg:grid-cols-2 lg:px-0">
