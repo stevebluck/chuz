@@ -1,23 +1,46 @@
-import { Authenticate, Login } from "@chuz/runtime";
-import { Link } from "@remix-run/react";
-import { Remix } from "web/Remix";
+import { Response } from "@chuz/app";
+import { Sessions, Users } from "@chuz/core";
+import { Credentials } from "@chuz/domain";
+import { Link, useActionData, useLoaderData } from "@remix-run/react";
+import { Effect } from "effect";
+import { RemixServer } from "src/Remix.server";
+import { Routes } from "src/Routes";
 import { buttonVariants } from "web/components/ui/button";
 import { cn } from "web/utils";
 import { LoginForm } from "./login-form";
 
-export const action = Remix.Action(Authenticate);
+export const action = RemixServer.action(Credentials.Plain, (credentials) =>
+  Users.pipe(
+    Effect.flatMap((users) => users.authenticate(credentials)),
+    Effect.flatMap(() => Response.Redirect.make(Routes.myAccount)),
+    Effect.catchTags({
+      CredentialsNotRecognised: () => Effect.fail("Credentials not recognised"),
+    }),
+  ),
+);
 
-export const loader = Remix.Loader(Login);
+export const loader = RemixServer.loader(
+  Sessions.pipe(
+    Effect.tap((sessions) => sessions.guest),
+    Effect.asUnit,
+    Effect.catchTags({
+      Unauthorised: () => Response.Redirect.make(Routes.myAccount),
+    }),
+  ),
+);
 
 export default function LoginPage() {
+  const data = useLoaderData<typeof loader>();
+  const result = useActionData<typeof action>();
+
   return (
     <div className="flex min-h-full flex-1">
       <div className="container relative flex-1 flex-col items-center justify-center grid lg:max-w-none lg:grid-cols-2 lg:px-0">
         <Link
-          to="/examples/authentication"
+          to="/register"
           className={cn(buttonVariants({ variant: "ghost" }), "absolute right-4 top-4 md:right-8 md:top-8")}
         >
-          Login
+          Create an account
         </Link>
         <div className="relative hidden h-full flex-col bg-muted p-10 text-white dark:border-r lg:flex">
           <div className="absolute inset-0 bg-zinc-900" />
@@ -49,7 +72,17 @@ export default function LoginPage() {
               <h1 className="text-2xl font-semibold tracking-tight">Sign in to your account</h1>
               <p className="text-sm text-muted-foreground">Lets get back to learning!</p>
             </div>
-            <LoginForm />
+            <div>
+              <div>
+                <h6>Loader data:</h6>
+                <pre>{JSON.stringify(data, null, 2)}</pre>
+              </div>
+              <div>
+                <h6>Action data:</h6>
+                <pre>{JSON.stringify(result, null, 2)}</pre>
+              </div>
+              <LoginForm />
+            </div>
           </div>
         </div>
       </div>

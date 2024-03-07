@@ -1,15 +1,15 @@
 import { Credentials, Email, Password, Token, User } from "@chuz/domain";
 import { Passwords } from "core/Passwords";
-import { ReferenceUsers } from "core/users/ReferenceUsers";
 import { Users } from "core/users/Users";
-import { Effect } from "effect";
+import { Effect, Layer } from "effect";
 import * as fc from "fast-check";
 import { afterAll, describe, expect } from "vitest";
+import { Capabilities } from "../../src";
 import { Arbs } from "../Arbs";
 import { asyncProperty } from "../Property";
 import { SpecConfig, defaultSpecConfig } from "../SpecConfig";
 
-const TestBench = ReferenceUsers;
+const TestBench = Layer.effect(Users, Capabilities.Test.users);
 
 export namespace UsersSpec {
   export const run = (config: SpecConfig = defaultSpecConfig) => {

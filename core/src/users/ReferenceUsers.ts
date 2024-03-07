@@ -1,68 +1,69 @@
 import { Credentials, Email, Id, Identified, Password, Session, Token, User } from "@chuz/domain";
-import { Duration, Effect, Either, Layer, Option, Ref, identity } from "effect";
-import { Users } from "..";
-import { Passwords } from "../Passwords";
-import { AutoIncrement } from "../persistence/AutoIncrement";
-import { Table } from "../persistence/Table";
-import { PasswordResetTokens } from "../tokens/PasswordResetTokens";
-import { UserIdTokens } from "../tokens/UserIdTokens";
+import { Passwords } from "core/Passwords";
+import { AutoIncrement } from "core/persistence/AutoIncrement";
+import { Table } from "core/persistence/Table";
+import { Tokens } from "core/tokens/Tokens";
+import { Users } from "core/users/Users";
+import { Duration, Effect, Either, Option, Ref, identity } from "effect";
 
 // TODO: config?
 const ONE_DAY = Duration.toMillis("1 days");
 const TWO_DAYS = Duration.toMillis("2 days");
 
-const make = Effect.gen(function* (_) {
-  /*
-   TODO: Maybe make layers?
-   UsersRepository
-   UserTokens
-   PasswordResetTokens
-  */
-  const state = yield* _(Ref.make(new State(Table.empty(), Table.empty(), Table.empty(), AutoIncrement.empty())));
-  const userTokens = yield* _(UserIdTokens);
-  const passwordResetTokens = yield* _(PasswordResetTokens);
+export class ReferenceUsers implements Users {
+  static make = (userTokens: Tokens<Id<User>>, passwordResetTokens: Tokens<Password.Reset<User>>) =>
+    Effect.gen(function* (_) {
+      const state = yield* _(Ref.make(new State(Table.empty(), Table.empty(), Table.empty(), AutoIncrement.empty())));
+      return new ReferenceUsers(state, userTokens, passwordResetTokens);
+    });
 
-  const register = (user: User.Registration): Effect.Effect<Session<User>, Email.AlreadyInUse> => {
-    return state
+  constructor(
+    private readonly state: Ref.Ref<State>,
+    private readonly userTokens: Tokens<Id<User>>,
+    private readonly passwordResetTokens: Tokens<Password.Reset<User>>,
+  ) {}
+
+  register = (user: User.Registration): Effect.Effect<Session<User>, Email.AlreadyInUse> => {
+    return this.state
       .modify((s) => s.register(user))
       .pipe(
         Effect.flatMap(identity),
         Effect.flatMap((user) =>
-          userTokens
+          this.userTokens
             .issue(user.id, new Token.TimeToLive({ duration: TWO_DAYS }))
             .pipe(Effect.map((token) => new Session({ user, token }))),
         ),
       );
   };
 
-  const identify = (token: Token<Id<User>>): Effect.Effect<Session<User>, Token.NoSuchToken> => {
-    return userTokens.lookup(token).pipe(
-      Effect.flatMap(findById),
+  identify = (token: Token<Id<User>>): Effect.Effect<Session<User>, Token.NoSuchToken> => {
+    return this.userTokens.lookup(token).pipe(
+      Effect.flatMap(this.findById),
       Effect.mapError(() => new Token.NoSuchToken()),
       Effect.map((user) => new Session({ user, token })),
     );
   };
 
-  const logout = (token: Token<Id<User>>): Effect.Effect<void> => userTokens.revoke(token);
+  logout = (token: Token<Id<User>>): Effect.Effect<void> => this.userTokens.revoke(token);
 
-  const findById = (id: Id<User>): Effect.Effect<Identified<User>, User.NotFound> => {
-    return Ref.get(state).pipe(
+  findById = (id: Id<User>): Effect.Effect<Identified<User>, User.NotFound> => {
+    return Ref.get(this.state).pipe(
       Effect.flatMap((s) => s.findById(id)),
       Effect.mapError(() => new User.NotFound()),
     );
   };
 
-  const authenticate = (credentials: Credentials.Plain): Effect.Effect<Session<User>, Credentials.NotRecognised> => {
-    return Ref.get(state).pipe(
+  authenticate = (credentials: Credentials.Plain): Effect.Effect<Session<User>, Credentials.NotRecognised> => {
+    return Ref.get(this.state).pipe(
       Effect.flatMap((s) => s.findCredentialsByEmail(credentials.email)),
       Effect.flatMap((secure) =>
         Effect.if(Passwords.matches(credentials.password, secure.password), {
-          onTrue: findByEmail(credentials.email),
+          onTrue: this.findByEmail(credentials.email),
           onFalse: Effect.fail(new Credentials.NotRecognised()),
         }),
       ),
       Effect.flatMap((user) =>
-        userTokens
+        this.userTokens
           .issue(user.id, new Token.TimeToLive({ duration: TWO_DAYS }))
           .pipe(Effect.map((token) => new Session({ user, token }))),
       ),
@@ -70,37 +71,37 @@ const make = Effect.gen(function* (_) {
     );
   };
 
-  const findByEmail = (email: Email): Effect.Effect<Identified<User>, User.NotFound> => {
-    return Ref.get(state).pipe(
+  findByEmail = (email: Email): Effect.Effect<Identified<User>, User.NotFound> => {
+    return Ref.get(this.state).pipe(
       Effect.flatMap((s) => s.findByEmail(email)),
       Effect.mapError(() => new User.NotFound()),
     );
   };
 
-  const update = (id: Id<User>, draft: User.Partial): Effect.Effect<Identified<User>, User.NotFound> => {
-    return Ref.modify(state, (s) => s.update(id, draft)).pipe(Effect.flatMap(identity));
+  update = (id: Id<User>, draft: User.Partial): Effect.Effect<Identified<User>, User.NotFound> => {
+    return Ref.modify(this.state, (s) => s.update(id, draft)).pipe(Effect.flatMap(identity));
   };
 
-  const updateEmail = (id: Id<User>, email: Email): Effect.Effect<Identified<User>, User.UpdateEmailError> => {
-    return Ref.modify(state, (s) => s.updateEmail(id, email)).pipe(Effect.flatMap(identity));
+  updateEmail = (id: Id<User>, email: Email): Effect.Effect<Identified<User>, User.UpdateEmailError> => {
+    return Ref.modify(this.state, (s) => s.updateEmail(id, email)).pipe(Effect.flatMap(identity));
   };
 
-  const updatePassword = (
+  updatePassword = (
     token: Token<Id<User>>,
     currentPassword: Password.Plaintext,
     updatedPassword: Password.Hashed,
   ): Effect.Effect<void, Credentials.NotRecognised | User.NotFound> => {
-    return userTokens.lookup(token).pipe(
+    return this.userTokens.lookup(token).pipe(
       Effect.mapError(() => new User.NotFound()),
-      Effect.flatMap(findById),
+      Effect.flatMap(this.findById),
       Effect.flatMap((user) =>
-        Ref.get(state).pipe(
+        Ref.get(this.state).pipe(
           Effect.flatMap((s) => s.findCredentialsByEmail(user.value.email)),
           Effect.mapError(() => new Credentials.NotRecognised()),
           Effect.flatMap((secureCredentials) =>
             // Check the current password is valid and update it
             Effect.if(Passwords.matches(currentPassword, secureCredentials.password), {
-              onTrue: Ref.update(state, (s) =>
+              onTrue: Ref.update(this.state, (s) =>
                 s.updatePassword(user.id, user.value.email, secureCredentials.password, updatedPassword),
               ),
               onFalse: Effect.fail(new Credentials.NotRecognised()),
@@ -108,9 +109,9 @@ const make = Effect.gen(function* (_) {
           ),
           // Revoke all session tokens except the current one
           Effect.zipRight(
-            userTokens.findByValue(user.id).pipe(
+            this.userTokens.findByValue(user.id).pipe(
               Effect.map((tokens) => tokens.filter((t) => !Token.equals(t, token))),
-              Effect.flatMap(userTokens.revokeMany),
+              Effect.flatMap(this.userTokens.revokeMany),
             ),
           ),
         ),
@@ -118,50 +119,31 @@ const make = Effect.gen(function* (_) {
     );
   };
 
-  const requestPasswordReset = (email: Email): Effect.Effect<Token<[Email, Id<User>]>, Credentials.NotRecognised> =>
-    findByEmail(email).pipe(
+  requestPasswordReset = (email: Email): Effect.Effect<Token<[Email, Id<User>]>, Credentials.NotRecognised> =>
+    this.findByEmail(email).pipe(
       Effect.mapError(() => new Credentials.NotRecognised()),
       Effect.flatMap((user) =>
-        passwordResetTokens.issue([email, user.id], new Token.TimeToLive({ duration: ONE_DAY })),
+        this.passwordResetTokens.issue([email, user.id], new Token.TimeToLive({ duration: ONE_DAY })),
       ),
     );
 
-  const resetPassword = (
+  resetPassword = (
     token: Token<[Email, Id<User>]>,
     password: Password.Hashed,
   ): Effect.Effect<Identified<User>, Token.NoSuchToken> =>
-    passwordResetTokens.lookup(token).pipe(
-      Effect.tap(() => passwordResetTokens.revoke(token)),
+    this.passwordResetTokens.lookup(token).pipe(
+      Effect.tap(() => this.passwordResetTokens.revoke(token)),
       Effect.flatMap(([email]) =>
-        state
+        this.state
           .modify((s) => s.resetPassword(email, password))
           .pipe(
             Effect.flatMap(identity),
-            Effect.tap((user) => userTokens.revokeAll(user.id)),
+            Effect.tap((user) => this.userTokens.revokeAll(user.id)),
             Effect.orDie,
           ),
       ),
     );
-
-  return Users.of({
-    authenticate,
-    findByEmail,
-    findById,
-    identify,
-    logout,
-    register,
-    requestPasswordReset,
-    resetPassword,
-    update,
-    updateEmail,
-    updatePassword,
-  });
-});
-
-export const ReferenceUsers = Layer.effect(Users, make).pipe(
-  Layer.provide(UserIdTokens.Test),
-  Layer.provide(PasswordResetTokens.Test),
-);
+}
 
 class State {
   constructor(

@@ -24,6 +24,6 @@ export interface Sessions<A> {
   guest: Effect.Effect<void, Unauthorised>;
 }
 
-export const Sessions = Context.GenericTag<Sessions<User>>("@core/Sessions");
+export const Sessions = Context.GenericTag<Sessions<User>, Sessions<User>>("@core/Sessions");
 
 export class Unauthorised extends Data.TaggedError("Unauthorised") {}

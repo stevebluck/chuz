@@ -55,4 +55,6 @@ export namespace User {
   export type UpdateEmailError = User.NotFound | Email.AlreadyInUse;
 
   export class NotFound extends Data.TaggedError("UserNotFound") {}
+
+  export class Unauthorised extends Data.TaggedError("Unauthorised") {}
 }

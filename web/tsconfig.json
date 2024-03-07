@@ -4,6 +4,7 @@
   "compilerOptions": {
     "baseUrl": "./",
     "paths": {
+      "core/*": ["../core/src/*"],
       "web/*": ["../web/src/*"]
     }
   }
