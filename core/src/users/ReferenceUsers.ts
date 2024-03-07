@@ -1,10 +1,10 @@
 import { Credentials, Email, Id, Identified, Password, Session, Token, User } from "@chuz/domain";
-import { Passwords } from "core/Passwords";
 import { AutoIncrement } from "core/persistence/AutoIncrement";
 import { Table } from "core/persistence/Table";
 import { Tokens } from "core/tokens/Tokens";
 import { Users } from "core/users/Users";
 import { Duration, Effect, Either, Option, Ref, identity } from "effect";
+import { Passwords } from "../auth/Passwords";
 
 // TODO: config?
 const ONE_DAY = Duration.toMillis("1 days");

@@ -1,9 +1,10 @@
 import * as S from "@effect/schema/Schema";
 import { ActionFunctionArgs, LoaderFunctionArgs, TypedResponse, json, redirect } from "@remix-run/node";
-import { Effect, Layer, Runtime, Exit, Cause, Scope } from "effect";
+import { Effect, Layer, Runtime, Exit, Cause } from "effect";
 import { pretty } from "effect/Cause";
+import { isUndefined } from "effect/Predicate";
 import { makeFiberFailure } from "effect/Runtime";
-import { Response } from "../Response";
+import { Response } from "./Response";
 
 type Route<A, E, R> = Effect.Effect<A, E | Response.Redirect, R>;
 
@@ -16,7 +17,7 @@ interface RemixRuntime<L, R> {
 }
 
 type Settings<L, R> = {
-  runtimeLayer: Layer.Layer<L>;
+  runtime: Effect.Effect<Runtime.Runtime<L>>;
   requestLayer: (args: LoaderFunctionArgs) => Layer.Layer<R>;
   route: (
     args: LoaderFunctionArgs,
@@ -29,14 +30,8 @@ export namespace Remix {
     <A>(init: RequestInit) =>
     (result: A): Result<A> => ({ result, init });
 
-  export const make = <L, R>({ route, runtimeLayer, requestLayer }: Settings<L, R>): RemixRuntime<L, R> => {
-    // TODO close scope when node process ends
-    const scope = Effect.runSync(Scope.make());
-    const runtime = Layer.toRuntime(runtimeLayer).pipe(
-      Scope.extend(scope),
-      Effect.tap(Effect.logInfo("Creating runtime")),
-      Effect.runSync,
-    );
+  export const make = <L, R>({ runtime: makeRuntime, route, requestLayer }: Settings<L, R>): RemixRuntime<L, R> => {
+    const runtime = Effect.runSync(makeRuntime);
 
     const run = Runtime.runPromiseExit(runtime);
 
@@ -59,6 +54,10 @@ export namespace Remix {
               throw error;
             },
             onSuccess: (a) => {
+              if (isUndefined(a.result)) {
+                return json(null, a.init);
+              }
+
               if (Response.isRedirect(a)) {
                 throw redirect(a.location, a.init);
               }
@@ -68,7 +67,7 @@ export namespace Remix {
           }),
         );
 
-        return val;
+        return val as Promise<TypedResponse<A>>;
       };
 
     const Action =

@@ -24,6 +24,8 @@ export namespace User {
 
   export interface Registration extends S.Schema.To<typeof Registration.schema> {}
   export namespace Registration {
+    export const make = Data.case<Registration>();
+
     export const schema = S.suspend(() =>
       S.struct({
         credentials: Credentials.Secure,

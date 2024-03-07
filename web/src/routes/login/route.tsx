@@ -1,5 +1,5 @@
 import { Response } from "@chuz/app";
-import { Sessions, Users } from "@chuz/core";
+import { Capabilities, Sessions } from "@chuz/core";
 import { Credentials } from "@chuz/domain";
 import { Link, useActionData, useLoaderData } from "@remix-run/react";
 import { Effect } from "effect";
@@ -10,8 +10,8 @@ import { cn } from "web/utils";
 import { LoginForm } from "./login-form";
 
 export const action = RemixServer.action(Credentials.Plain, (credentials) =>
-  Users.pipe(
-    Effect.flatMap((users) => users.authenticate(credentials)),
+  Capabilities.pipe(
+    Effect.flatMap(({ users }) => users.authenticate(credentials)),
     Effect.flatMap(() => Response.Redirect.make(Routes.myAccount)),
     Effect.catchTags({
       CredentialsNotRecognised: () => Effect.fail("Credentials not recognised"),

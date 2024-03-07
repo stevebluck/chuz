@@ -1,2 +1,2 @@
-export * from "./remix/Runtime";
+export * from "./Remix";
 export * from "./Response";

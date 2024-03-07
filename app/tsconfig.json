@@ -1,4 +1,4 @@
 {
   "extends": "@chuz/typescript-config/api.json",
-  "include": ["src/**/*", "test/**/*", "tsconfig.json", "../core/src/Sessions.ts"]
+  "include": ["src/**/*", "test/**/*"]
 }

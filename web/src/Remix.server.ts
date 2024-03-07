@@ -1,12 +1,13 @@
 import { Remix } from "@chuz/app";
-import { Capabilities, RequestSession, Sessions, Unauthorised } from "@chuz/core";
+import { RequestSession, Sessions, Unauthorised } from "@chuz/core";
 import { User, UserSession } from "@chuz/domain";
-import { DevTools } from "@effect/experimental";
+import { Uuid } from "@chuz/prelude";
 import * as cookie from "cookie";
 import { Duration, Effect, Layer, Metric, Option, Ref } from "effect";
+import { Runtime } from "./Runtime";
 
 export const RemixServer = Remix.make({
-  runtimeLayer: Capabilities.Test.layer.pipe(Layer.merge(DevTools.layer())),
+  runtime: Runtime.Dev,
   requestLayer: ({ request }) => makeRemixSessions(request.headers.get("cookie") ?? ""),
   route:
     ({ request }) =>
@@ -24,14 +25,15 @@ export const RemixServer = Remix.make({
           onSuccess: Remix.Result({ headers }),
           onFailure: Remix.Result({ headers }),
         }),
+        Effect.tapDefect((cause) => Effect.logError("Unknown defect", cause)),
+        Metric.counter(url.pathname).pipe(Metric.withConstantInput(1)),
+        Effect.annotateLogs("requestId", Effect.runSync(Uuid.make)), // Don't run
         Effect.withSpan(`${request.method} ${url.pathname}`, {
           attributes: {
             url: request.url,
             method: request.method,
           },
         }),
-        Effect.tapDefect((cause) => Effect.logError("Unknown defect", cause)),
-        Metric.counter(url.pathname).pipe(Metric.withConstantInput(1)),
       );
 
       return route;

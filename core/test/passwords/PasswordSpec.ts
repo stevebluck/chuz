@@ -1,7 +1,7 @@
 import { Password } from "@chuz/domain";
 import { Effect, Either } from "effect";
 import { describe, expect, test } from "vitest";
-import { Passwords } from "../../src/Passwords";
+import { Passwords } from "../../src/auth/Passwords";
 import { Arbs } from "../Arbs";
 import { asyncProperty } from "../Property";
 
