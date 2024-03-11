@@ -227,7 +227,7 @@ class State {
           } else if (this.byEmail.contains(email)) {
             return error(new Email.AlreadyInUse({ email }));
           } else {
-            const updatedCredentials = new Credentials.Secure({ email, password: credentials.password });
+            const updatedCredentials = Credentials.Secure.make({ email, password: credentials.password });
             const byEmail = this.byEmail.deleteAt(user.value.email).upsertAt(email, updatedCredentials);
             const byCredentials = this.byCredentials.deleteAt(credentials).upsertAt(updatedCredentials, id);
             const byId = this.byId.upsertAt(id, new Identified({ id, value: { ...user.value, email } }));
@@ -248,8 +248,8 @@ class State {
     currentPassword: Password.Hashed,
     updatedPassword: Password.Hashed,
   ): State => {
-    const currentCredentials = new Credentials.Secure({ email, password: currentPassword });
-    const updatedCredentials = new Credentials.Secure({ email, password: updatedPassword });
+    const currentCredentials = Credentials.Secure.make({ email, password: currentPassword });
+    const updatedCredentials = Credentials.Secure.make({ email, password: updatedPassword });
 
     const byCredentials = this.byCredentials.deleteAt(currentCredentials).upsertAt(updatedCredentials, id);
     const byEmail = this.byEmail.upsertAt(email, updatedCredentials);
@@ -261,7 +261,7 @@ class State {
     email: Email,
     password: Password.Hashed,
   ): [Either.Either<Identified<User>, Credentials.NotRecognised>, State] => {
-    const resetCredentials = new Credentials.Secure({ email, password });
+    const resetCredentials = Credentials.Secure.make({ email, password });
 
     return this.byEmail.find(email).pipe(
       Option.flatMap((credentials) =>

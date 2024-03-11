@@ -1,7 +1,7 @@
 import * as Domain from "@chuz/domain";
+import { Passwords } from "core/auth/Passwords";
 import * as Core from "core/index";
 import { Clock, Effect } from "effect";
-import { Passwords } from "../src/auth/Passwords";
 
 export type TestBench = Core.Capabilities;
 
@@ -24,7 +24,7 @@ export namespace TestBench {
       const hashed = yield* _(Passwords.hash(userRegistration.credentials.password));
 
       const registration = Domain.User.Registration.make({
-        credentials: new Domain.Credentials.Secure({
+        credentials: Domain.Credentials.Secure.make({
           email: userRegistration.credentials.email,
           password: hashed,
         }),
@@ -40,25 +40,12 @@ export namespace TestBench {
   }
 }
 
-interface UserRegistation {
-  firstName: Domain.User.FirstName;
-  lastName: Domain.User.LastName;
-  optInMarketing: Domain.User.OptInMarketing;
-  credentials: Domain.Credentials.Strong;
-}
-const UserRegistation = (
-  firstName: Domain.User.FirstName,
-  lastName: Domain.User.LastName,
-  optInMarketing: Domain.User.OptInMarketing,
-  credentials: Domain.Credentials.Strong,
-): UserRegistation => ({ firstName, lastName, credentials, optInMarketing });
-
-const userRegistration = UserRegistation(
-  Domain.User.FirstName.unsafeFrom("John"),
-  Domain.User.LastName.unsafeFrom("Lonestar"),
-  Domain.User.OptInMarketing.unsafeFrom(true),
-  new Domain.Credentials.Strong({
+const userRegistration = {
+  firstName: Domain.User.FirstName.unsafeFrom("Toby"),
+  lastName: Domain.User.LastName.unsafeFrom("Lerone"),
+  optInMarketing: Domain.User.OptInMarketing.unsafeFrom(true),
+  credentials: new Domain.Credentials.Strong({
     email: Domain.Email.unsafeFrom("lonestar@an.com"),
     password: Domain.Password.Strong.unsafeFrom("password"),
   }),
-);
+};

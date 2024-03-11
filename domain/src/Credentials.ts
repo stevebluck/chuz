@@ -16,11 +16,13 @@ export namespace Credentials {
     password: Password.Strong.schema,
   }) {}
 
-  export class Secure extends S.Class<Secure>()({
-    email: Email.schema,
-    password: Password.Hashed.schema,
-  }) {
-    equals: Equivalence.Equivalence<Secure> = Equal.equals;
+  export interface Secure {
+    email: Email;
+    password: Password.Hashed;
+  }
+  export namespace Secure {
+    export const make = Data.case<Secure>();
+    export const equals: Equivalence.Equivalence<Secure> = Equal.equals;
   }
 
   export class NotRecognised extends Data.TaggedError("CredentialsNotRecognised") {}

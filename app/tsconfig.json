@@ -1,4 +1,0 @@
-{
-  "extends": "@chuz/typescript-config/api.json",
-  "include": ["src/**/*", "test/**/*"]
-}

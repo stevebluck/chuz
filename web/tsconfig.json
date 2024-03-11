@@ -1,6 +1,6 @@
 {
   "extends": "@chuz/typescript-config/web.json",
-  "include": ["src/**/*", "env.d.ts", "../core/src/auth/Sessions.ts", "postcss.config.mjs", "tailwind.config.ts"],
+  "include": ["src/**/*", "env.d.ts"],
   "compilerOptions": {
     "baseUrl": "./",
     "paths": {

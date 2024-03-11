@@ -1,124 +1,60 @@
-import { Remix } from "@chuz/app";
-import { RequestSession, Sessions, Unauthorised } from "@chuz/core";
 import { User, UserSession } from "@chuz/domain";
-import { Uuid } from "@chuz/prelude";
-import * as cookie from "cookie";
-import { Duration, Effect, Layer, Metric, Option, Ref } from "effect";
+import * as Http from "@effect/platform/HttpServer";
+import * as ParseResult from "@effect/schema/ParseResult";
+import * as S from "@effect/schema/Schema";
+import { RequestSession, Sessions, UserSessions } from "core/index";
+import { Console, Effect, Layer, Option, ReadonlyRecord } from "effect";
+import { Cookie } from "./Cookies";
+import { Remix } from "./Remix";
 import { Runtime } from "./Runtime";
 
+const SESSION_COOKIE = "_session";
+
 export const RemixServer = Remix.make({
-  runtime: Runtime.Dev,
-  requestLayer: ({ request }) => makeRemixSessions(request.headers.get("cookie") ?? ""),
-  route:
-    ({ request }) =>
-    (self) => {
-      const url = new URL(request.url);
-      const headers = new Headers();
-
-      const route = makeRequestSession(request.headers.get("cookie") ?? "").pipe(
-        Effect.andThen(self),
-        Effect.tapBoth({
-          onFailure: () => setSession(headers),
-          onSuccess: () => setSession(headers),
-        }),
-        Effect.mapBoth({
-          onSuccess: Remix.Result({ headers }),
-          onFailure: Remix.Result({ headers }),
-        }),
-        Effect.tapDefect((cause) => Effect.logError("Unknown defect", cause)),
-        Metric.counter(url.pathname).pipe(Metric.withConstantInput(1)),
-        Effect.annotateLogs("requestId", Effect.runSync(Uuid.make)), // Don't run
-        Effect.withSpan(`${request.method} ${url.pathname}`, {
-          attributes: {
-            url: request.url,
-            method: request.method,
-          },
-        }),
-      );
-
-      return route;
-    },
+  layer: Runtime.Dev,
+  requestLayer: Layer.suspend(() => SessionsLive),
+  middleware: (self) => Effect.flatMap(self, setSessionCookie),
 });
 
-const makeRequestSession = (str: string) =>
-  UserSession.fromString(str).pipe(
-    Effect.match({
-      onFailure: () => RequestSession.NotProvided(),
-      onSuccess: (session) => RequestSession.Provided({ session }),
-    }),
-    Effect.flatMap((requestSession) => Ref.make<RequestSession>(requestSession)),
-  );
-
-const setSession = (headers: Headers) =>
+const setSessionCookie = (
+  res: Http.response.ServerResponse,
+): Effect.Effect<Http.response.ServerResponse, never, Sessions<User>> =>
   Sessions.pipe(
     Effect.flatMap((sessions) => sessions.get),
+    Effect.flatMap(Cookie.fromRequestSession),
     Effect.map(
-      RequestSession.makeMatcher({
-        InvalidToken: () => headers.set("Set-Cookie", cookie.serialize("session", "", { maxAge: -1, path: "/" })),
-        NotProvided: () => {},
-        Provided: () => {},
-        Set: ({ session }) =>
-          headers.set(
-            "Set-Cookie",
-            cookie.serialize("session", UserSession.toString(session), {
-              maxAge: Duration.toSeconds(Duration.weeks(2)),
-              path: "/",
-            }),
-          ),
-        Unset: () => headers.set("Set-Cookie", cookie.serialize("session", "", { maxAge: -1, path: "/" })),
+      Option.match({
+        onNone: () => res,
+        onSome: (cookie) => Http.response.setHeader(res, "Set-Cookie", cookie),
       }),
     ),
   );
 
-const makeRemixSessions = (str: string): Layer.Layer<Sessions<User>> =>
-  Layer.effect(
-    Sessions,
-    UserSession.fromString(str).pipe(
-      Effect.match({
-        onFailure: () => RequestSession.NotProvided(),
-        onSuccess: (session) => RequestSession.Provided({ session }),
+const AuthenticatedHeaders = S.struct({ cookie: S.string });
+
+const SessionFromCookie = S.transformOrFail(
+  S.string,
+  UserSession,
+  (cookie) =>
+    Cookie.parse(cookie).pipe(
+      Effect.flatMap(ReadonlyRecord.get(SESSION_COOKIE)),
+      Effect.flatMap(UserSession.fromString),
+      Effect.catchTags({
+        ParseError: (error) => Effect.fail(error.error),
+        NoSuchElementException: (error) => Effect.fail(ParseResult.type(S.string.ast, cookie, error.message)),
       }),
-      Effect.flatMap((requestSession) => Ref.make<RequestSession>(requestSession)),
-      Effect.map((ref) =>
-        Sessions.of({
-          get: Ref.get(ref).pipe(Effect.withSpan("Sessions.get")),
-          invalidate: Ref.set(ref, RequestSession.Unset()).pipe(Effect.withSpan("Sessions.invalidate")),
-          set: (session) =>
-            Ref.set(
-              ref,
-              Option.match(session, {
-                onNone: () => RequestSession.Unset(),
-                onSome: (session) => RequestSession.Set({ session }),
-              }),
-            ).pipe(Effect.withSpan("essions.set")),
-          mint: (session) => Ref.set(ref, RequestSession.Set({ session })).pipe(Effect.withSpan("Sessions.mint")),
-          authenticated: Ref.get(ref).pipe(
-            Effect.flatMap(
-              RequestSession.makeMatcher({
-                NotProvided: () => Option.none(),
-                Provided: ({ session }) => Option.some(session),
-                Set: ({ session }) => Option.some(session),
-                InvalidToken: () => Option.none(),
-                Unset: () => Option.none(),
-              }),
-            ),
-            Effect.mapError(() => new Unauthorised()),
-            Effect.withSpan("Sessions.authenticated"),
-          ),
-          guest: Ref.get(ref).pipe(
-            Effect.flatMap(
-              RequestSession.makeMatcher({
-                NotProvided: () => Option.some({}),
-                Provided: () => Option.none(),
-                Set: () => Option.none(),
-                InvalidToken: () => Option.some({}),
-                Unset: () => Option.some({}),
-              }),
-            ),
-            Effect.mapError(() => new Unauthorised()),
-            Effect.withSpan("Sessions.guest"),
-          ),
-        }),
-      ),
     ),
-  );
+  (session) =>
+    ParseResult.fail(ParseResult.forbidden(UserSession.ast, session, "Cannot encode headers from a session")),
+);
+
+const SessionsLive: Layer.Layer<Sessions<User>, never, Http.request.ServerRequest> = Layer.effect(
+  Sessions,
+  Http.request.schemaHeaders(AuthenticatedHeaders).pipe(
+    Effect.tap(Console.log),
+    Effect.map((headers) => headers.cookie),
+    Effect.flatMap(S.decode(SessionFromCookie)),
+    Effect.flatMap((session) => UserSessions.make(RequestSession.Provided({ session }))),
+    Effect.catchAll(() => UserSessions.make(RequestSession.NotProvided())),
+  ),
+);

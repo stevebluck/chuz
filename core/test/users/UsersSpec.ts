@@ -364,7 +364,7 @@ export namespace UsersSpec {
     const registerUser = (users: Users, register: Arbs.Users.Register) =>
       Effect.gen(function* (_) {
         const hashed = yield* _(Passwords.hash(register.credentials.password));
-        const credentials = new Credentials.Secure({ email: register.credentials.email, password: hashed });
+        const credentials = Credentials.Secure.make({ email: register.credentials.email, password: hashed });
 
         return yield* _(
           users.register({

@@ -3,5 +3,4 @@ packages:
   - "web"
   - "domain"
   - "prelude"
-  - "app"
   - "config/*"

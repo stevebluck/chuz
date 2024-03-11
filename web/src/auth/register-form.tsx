@@ -1,22 +1,18 @@
 import { Form } from "@remix-run/react";
 import { LoaderIcon } from "lucide-react";
+import { Checkbox } from "src/components/ui/checkbox";
 import { Routes } from "web/Routes";
 import { Button } from "web/components/ui/button";
 import { AppleIcon } from "web/components/ui/icons/AppleIcon";
 import { GoogleIcon } from "web/components/ui/icons/GoogleIcon";
 import { Input } from "web/components/ui/input";
 import { Label } from "web/components/ui/label";
-import { useForm } from "web/remix/useForm";
 
-export function LoginForm() {
-  const { error, action, isSubmitting } = useForm(Routes.login);
-
+export function RegisterForm() {
+  const isSubmitting = false;
   return (
     <div className={"grid gap-6"}>
-      <Form method="POST" action={action}>
-        <input type="hidden" name="_tag" value="GetUser" />
-        <input type="hidden" name="id" value="1" />
-
+      <Form method="POST" action={Routes.register}>
         <div className="grid gap-6">
           <div className="grid gap-2">
             <Label htmlFor="email">Email</Label>
@@ -32,12 +28,34 @@ export function LoginForm() {
             />
           </div>
           <div className="grid gap-2">
+            <Label htmlFor="firstname">First name</Label>
+            <Input id="firstname" type="text" name="firstName" disabled={isSubmitting} />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="lastname">Last name</Label>
+            <Input id="lastname" type="text" name="lastName" disabled={isSubmitting} />
+          </div>
+          <div className="grid gap-2">
             <Label htmlFor="password">Password</Label>
-            <Input id="password" type="password" name="password" autoCorrect="off" disabled={isSubmitting} />
+            <Input id="password" type="password" name="password" disabled={isSubmitting} />
+          </div>
+          <div className="grid gap-2">
+            <div className="items-top flex space-x-2">
+              <Checkbox id="optInMarketing" name="optInMarketing" />
+              <div className="grid gap-1.5 leading-none">
+                <label
+                  htmlFor="optInMarketing"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  Opt in to marketing emails
+                </label>
+                <p className="text-sm text-muted-foreground">We won't send you any crap.</p>
+              </div>
+            </div>
           </div>
           <Button disabled={isSubmitting} type="submit">
             {isSubmitting && <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />}
-            Sign in with Email
+            Sign up with Email
           </Button>
         </div>
       </Form>
@@ -46,7 +64,7 @@ export function LoginForm() {
           <span className="w-full border-t" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background text-muted-foreground px-2">Or sign in with</span>
+          <span className="bg-background text-muted-foreground px-2">Or sign up with</span>
         </div>
       </div>
       <Button variant="outline" type="button" disabled={isSubmitting}>
