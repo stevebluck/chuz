@@ -24,16 +24,14 @@ export class ReferenceUsers implements Users {
   ) {}
 
   register = (user: User.Registration): Effect.Effect<Session<User>, Email.AlreadyInUse> => {
-    return this.state
-      .modify((s) => s.register(user))
-      .pipe(
-        Effect.flatMap(identity),
-        Effect.flatMap((user) =>
-          this.userTokens
-            .issue(user.id, new Token.TimeToLive({ duration: TWO_DAYS }))
-            .pipe(Effect.map((token) => new Session({ user, token }))),
-        ),
-      );
+    return Ref.modify(this.state, (s) => s.register(user)).pipe(
+      Effect.flatMap(identity),
+      Effect.flatMap((user) =>
+        this.userTokens
+          .issue(user.id, new Token.TimeToLive({ duration: TWO_DAYS }))
+          .pipe(Effect.map((token) => new Session({ user, token }))),
+      ),
+    );
   };
 
   identify = (token: Token<Id<User>>): Effect.Effect<Session<User>, Token.NoSuchToken> => {
@@ -59,7 +57,7 @@ export class ReferenceUsers implements Users {
       Effect.flatMap((secure) =>
         Effect.if(Passwords.matches(credentials.password, secure.password), {
           onTrue: this.findByEmail(credentials.email),
-          onFalse: Effect.fail(new Credentials.NotRecognised()),
+          onFalse: new Credentials.NotRecognised(),
         }),
       ),
       Effect.flatMap((user) =>

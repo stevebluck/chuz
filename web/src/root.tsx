@@ -1,5 +1,8 @@
 import { LinksFunction, LoaderFunctionArgs } from "@remix-run/node";
 import { Links, Meta, Outlet, Scripts, ScrollRestoration, useLoaderData } from "@remix-run/react";
+import { Sessions } from "core/index";
+import { Effect, Option } from "effect";
+import { RemixServer } from "./server/Remix.server";
 import "./style.css";
 import { cn } from "./utils";
 
@@ -22,14 +25,20 @@ export const links: LinksFunction = () => {
   ];
 };
 
-export async function loader({ request }: LoaderFunctionArgs) {
-  return {
-    theme: "dark",
-  };
-}
+export const loader = RemixServer.loader(
+  "Root",
+  Sessions.pipe(
+    Effect.flatMap((sessions) => sessions.getSession),
+    Effect.map(
+      Option.match({
+        onSome: (session) => ({ name: session.user.value.firstName }),
+        onNone: () => ({ name: "Guest" }),
+      }),
+    ),
+  ),
+);
 
 export default function AppWithProviders() {
-  const data = useLoaderData<typeof loader>();
   return <App />;
 }
 
@@ -45,6 +54,7 @@ export const App = () => {
         <Links />
       </head>
       <body className="bg-background h-full font-sans antialiased">
+        <div>Hello {data.name}!</div>
         <Outlet />
         <ScrollRestoration />
         <Scripts />

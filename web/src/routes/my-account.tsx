@@ -1,10 +1,12 @@
 import { Sessions } from "core/index";
 import { Effect } from "effect";
-import { Redirect } from "src/Redirect";
-import { RemixServer } from "src/Remix.server";
 import { Routes } from "src/Routes";
+import { Button } from "src/components/ui/button";
+import { Redirect } from "src/server/Redirect";
+import { RemixServer } from "src/server/Remix.server";
 
 export const loader = RemixServer.loader(
+  "MyAccount",
   Sessions.pipe(
     Effect.flatMap((sessions) => sessions.authenticated),
     Effect.asUnit,
@@ -14,5 +16,12 @@ export const loader = RemixServer.loader(
 );
 
 export default function MyAccount() {
-  return <div>my account</div>;
+  return (
+    <div>
+      my account
+      <form method="POST" action={Routes.logout}>
+        <Button>Logout</Button>
+      </form>
+    </div>
+  );
 }

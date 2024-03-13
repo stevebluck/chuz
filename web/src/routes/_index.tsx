@@ -18,3 +18,7 @@ export default function Index() {
     </div>
   );
 }
+
+// get token from cookie
+// users.identify(token)
+// provide

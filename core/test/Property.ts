@@ -53,7 +53,7 @@ export const asyncProperty = <A, E>(
   const afterEach = config.afterEach === undefined ? defaultConfig.afterEach : config.afterEach;
   const timeout = config.timeout === undefined ? defaultConfig.timeout : config.timeout;
 
-  test.concurrent(
+  test(
     title,
     async () =>
       fc.assert(

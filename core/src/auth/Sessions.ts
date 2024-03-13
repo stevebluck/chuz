@@ -1,13 +1,13 @@
-import { Session, User, UserSession } from "@chuz/domain";
-import { Context, Data, Effect, Layer, Option, Ref } from "effect";
+import { Session, User } from "@chuz/domain";
+import { Context, Data, Effect, Option, Ref } from "effect";
 import * as Match from "effect/Match";
 
 export type RequestSession = Data.TaggedEnum<{
   NotProvided: {};
   Provided: { session: Session<User> };
   Set: { session: Session<User> };
-  Unset: {};
-  InvalidToken: {};
+  Unset: { session: Session<User> };
+  InvalidToken: { session: Session<User> };
 }>;
 
 export namespace RequestSession {
@@ -18,10 +18,11 @@ export namespace RequestSession {
 export interface Sessions<A> {
   get: Effect.Effect<RequestSession>;
   mint: (session: Session<A>) => Effect.Effect<void>;
-  set: (session: Option.Option<Session<A>>) => Effect.Effect<void>;
-  invalidate: Effect.Effect<void>;
+  set: (session: Session<A>) => Effect.Effect<void>;
+  invalidate: (session: Session<A>) => Effect.Effect<void>;
   authenticated: Effect.Effect<Session<A>, Unauthorised>;
   guest: Effect.Effect<void, Unauthorised>;
+  getSession: Effect.Effect<Option.Option<Session<A>>>;
 }
 
 export const Sessions = Context.GenericTag<Sessions<User>, Sessions<User>>("@core/Sessions");
@@ -40,18 +41,16 @@ export class UserSessions implements Sessions<User> {
   mint = (session: Session<User>) =>
     Ref.set(this.ref, RequestSession.Set({ session })).pipe(Effect.withSpan("Sessions.mint"));
 
-  set = (session: Option.Option<Session<User>>) =>
-    Ref.set(
-      this.ref,
-      Option.match(session, {
-        onNone: () => RequestSession.Unset(),
-        onSome: (session) => RequestSession.Set({ session }),
-      }),
-    ).pipe(Effect.withSpan("Sessions.set"));
+  set = (session: Session<User>) =>
+    Ref.set(this.ref, RequestSession.Set({ session })).pipe(Effect.withSpan("Sessions.set"));
 
-  invalidate = Effect.suspend(() => Ref.set(this.ref, RequestSession.Unset())).pipe(
-    Effect.withSpan("Sessions.invalidate"),
-  );
+  unset = (session: Session<User>) =>
+    Ref.set(this.ref, RequestSession.Unset({ session })).pipe(Effect.withSpan("Sessions.unset"));
+
+  invalidate = (session: Session<User>) =>
+    Effect.suspend(() => Ref.set(this.ref, RequestSession.Unset({ session }))).pipe(
+      Effect.withSpan("Sessions.invalidate"),
+    );
 
   authenticated = Effect.suspend(() => Ref.get(this.ref)).pipe(
     Effect.flatMap(
@@ -80,4 +79,6 @@ export class UserSessions implements Sessions<User> {
     Effect.mapError(() => new Unauthorised()),
     Effect.withSpan("Sessions.guest"),
   );
+
+  getSession = Effect.suspend(() => this.authenticated).pipe(Effect.option, Effect.withSpan("Sessions.getSession"));
 }

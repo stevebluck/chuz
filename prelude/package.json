@@ -8,8 +8,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@effect/schema": "^0.63.2",
-    "effect": "^2.4.1",
+    "@effect/schema": "^0.63.4",
+    "effect": "^2.4.3",
     "uuid": "^9.0.1"
   },
   "devDependencies": {

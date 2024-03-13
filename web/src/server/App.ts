@@ -3,7 +3,7 @@ import { DevTools } from "@effect/experimental";
 import { Capabilities, ReferenceTokens, ReferenceUsers } from "core/index";
 import { Clock, Effect, Layer } from "effect";
 
-export namespace Runtime {
+export namespace App {
   export const Dev = Layer.effect(
     Capabilities,
     Effect.gen(function* (_) {
@@ -12,6 +12,8 @@ export namespace Runtime {
       const passwordResetTokens = yield* _(ReferenceTokens.create(clock, Password.Reset.equals));
 
       const users = yield* _(ReferenceUsers.make(userTokens, passwordResetTokens));
+
+      yield* _(Effect.logInfo("Constructing capabilities"));
 
       return { users };
     }),

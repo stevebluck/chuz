@@ -1,0 +1,114 @@
+import { Uuid } from "@chuz/prelude";
+import * as NodeFileSystem from "@effect/platform-node/NodeFileSystem";
+import * as FileSystem from "@effect/platform/FileSystem";
+import * as Multipart from "@effect/platform/Http/Multipart";
+import * as Http from "@effect/platform/HttpServer";
+import * as Path from "@effect/platform/Path";
+import * as S from "@effect/schema/Schema";
+import { ActionFunctionArgs, LoaderFunctionArgs, TypedResponse } from "@remix-run/node";
+import { Effect, Scope, Layer, Console, ManagedRuntime } from "effect";
+import { isUndefined } from "effect/Predicate";
+import { Redirect } from "./Redirect";
+
+type RemixEffect<A, R> = Effect.Effect<
+  A,
+  never,
+  R | Http.request.ServerRequest | FileSystem.FileSystem | Path.Path | Scope.Scope
+>;
+
+interface RemixRuntime<L, R> {
+  loader: <A>(
+    name: string,
+    self: RemixEffect<A | Redirect, R | L>,
+  ) => (args: LoaderFunctionArgs) => Promise<TypedResponse<A>>;
+  action: <A>(
+    name: string,
+    self: RemixEffect<A | Redirect, R | L>,
+  ) => (args: ActionFunctionArgs) => Promise<TypedResponse<A>>;
+  formDataAction: <A, In, Out extends Multipart.Persisted>(
+    name: string,
+    schema: S.Schema<In, Out>,
+    self: (input: In) => RemixEffect<A | Redirect | ValidationError, R | L>,
+  ) => (args: LoaderFunctionArgs) => Promise<TypedResponse<A | ValidationError>>;
+}
+
+type ValidationError = { error: string };
+
+interface RemixSettings<L, R> {
+  layer: Layer.Layer<L>;
+  requestLayer: Layer.Layer<R, never, Http.request.ServerRequest | L>;
+  middleware: (
+    self: RemixEffect<Http.response.ServerResponse, R | L>,
+  ) => RemixEffect<Http.response.ServerResponse, R | L>;
+}
+
+export namespace Remix {
+  export const make = async <L, R>({
+    layer,
+    requestLayer,
+    middleware,
+  }: RemixSettings<L, R>): Promise<RemixRuntime<L, R>> => {
+    const { runtimeEffect } = ManagedRuntime.make(Layer.mergeAll(layer, NodeFileSystem.layer, Path.layer));
+
+    const handlerEffect = runtimeEffect.pipe(Effect.map(Http.app.toWebHandlerRuntime));
+    const run = await Effect.runPromise(handlerEffect);
+
+    const makeHandler =
+      (type: string) =>
+      <A>(name: String, self: RemixEffect<A, L | R>) => {
+        const app = Effect.gen(function* (_) {
+          const requestId = yield* _(Uuid.make);
+
+          return yield* _(
+            self,
+            Effect.flatMap((result) => {
+              if (Redirect.isRedirect(result)) {
+                return Http.response.json(null, {
+                  status: 302,
+                  headers: Http.headers.fromInput({ Location: result.location }),
+                });
+              }
+
+              if (isUndefined(result)) {
+                return Http.response.json(null, { status: 200 });
+              }
+
+              return Http.response.json(result, { status: 200 });
+            }),
+            Effect.catchTags({ BodyError: (e) => Effect.die("body error") }),
+            Effect.withSpan(`${name}.${type}`),
+            middleware,
+            Effect.tapErrorCause(() => Effect.annotateCurrentSpan({ requestId })),
+            Effect.tap(Effect.annotateCurrentSpan({ requestId })),
+          );
+        }).pipe(Effect.tapDefect(Effect.logError), Effect.provide(requestLayer));
+
+        const handler = run(app);
+
+        return (args: LoaderFunctionArgs | ActionFunctionArgs) => handler(args.request);
+      };
+
+    const formDataAction = <A, In, Out extends Multipart.Persisted>(
+      name: string,
+      schema: S.Schema<In, Out>,
+      self: (input: In) => RemixEffect<A | ValidationError, R | L>,
+    ) => {
+      const eff = Http.request.schemaBodyForm(schema).pipe(
+        Effect.flatMap(self),
+        Effect.catchTags({
+          MultipartError: (e) => Effect.succeed({ error: "Multipart error" } as ValidationError),
+          ParseError: (e) => Effect.succeed({ error: "Parse error" } as ValidationError),
+          RequestError: (e) => Effect.die("RequestError"),
+        }),
+      );
+
+      return makeHandler("action")(name, eff);
+    };
+
+    return {
+      loader: makeHandler("loader"),
+      action: makeHandler("action"),
+      formDataAction,
+    };
+  };
+}

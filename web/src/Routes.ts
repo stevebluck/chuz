@@ -1,15 +1,13 @@
-import * as S from "@effect/schema/Schema";
+import { Brand } from "effect";
 
-export type Route = S.Schema.To<typeof Route>;
-export const Route = S.string.pipe(S.brand("Route"));
-
-export type Action = S.Schema.To<typeof Route>;
-export const Action = S.string.pipe(S.brand("Action"));
+export type Route = string & Brand.Brand<"Route">;
+const Route = Brand.nominal<Route>();
 
 export const Routes = {
   home: Route("/"),
   login: Route("/login"),
   register: Route("/register"),
   myAccount: Route("/my-account"),
-  setTheme: Action("/action/set-theme"),
+  logout: Route("/logout"),
+  setTheme: Route("/action/set-theme"),
 };
