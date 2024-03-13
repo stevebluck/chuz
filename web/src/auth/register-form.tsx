@@ -8,11 +8,12 @@ import { GoogleIcon } from "web/components/ui/icons/GoogleIcon";
 import { Input } from "web/components/ui/input";
 import { Label } from "web/components/ui/label";
 
-export function RegisterForm() {
+export function RegisterForm({ error }: { error: Record<string, string[]> }) {
   const isSubmitting = false;
   return (
     <div className={"grid gap-6"}>
       <Form method="POST" action={Routes.register}>
+        {error?.credentials}
         <div className="grid gap-6">
           <div className="grid gap-2">
             <Label htmlFor="email">Email</Label>
@@ -26,18 +27,22 @@ export function RegisterForm() {
               autoCorrect="off"
               disabled={isSubmitting}
             />
+            {error?.email}
           </div>
           <div className="grid gap-2">
             <Label htmlFor="firstname">First name</Label>
             <Input id="firstname" type="text" name="firstName" disabled={isSubmitting} />
+            {error?.firstName}
           </div>
           <div className="grid gap-2">
             <Label htmlFor="lastname">Last name</Label>
             <Input id="lastname" type="text" name="lastName" disabled={isSubmitting} />
+            {error?.lastName}
           </div>
           <div className="grid gap-2">
             <Label htmlFor="password">Password</Label>
             <Input id="password" type="password" name="password" disabled={isSubmitting} />
+            {error?.password}
           </div>
           <div className="grid gap-2">
             <div className="items-top flex space-x-2">
@@ -50,6 +55,7 @@ export function RegisterForm() {
                   Opt in to marketing emails
                 </label>
                 <p className="text-sm text-muted-foreground">We won't send you any crap.</p>
+                {error?.optInMarketing}
               </div>
             </div>
           </div>

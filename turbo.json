@@ -11,6 +11,9 @@
     "typecheck": {
       "dependsOn": ["^build"]
     },
+    "update:latest": {
+      "dependsOn": []
+    },
     "dev": {
       "cache": false,
       "persistent": true

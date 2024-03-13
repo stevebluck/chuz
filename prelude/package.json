@@ -5,11 +5,12 @@
   "types": "./src/index.ts",
   "type": "module",
   "scripts": {
+    "update:latest": "pnpm update --latest",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@effect/schema": "^0.63.4",
-    "effect": "^2.4.3",
+    "@effect/schema": "^0.64.0",
+    "effect": "^2.4.4",
     "uuid": "^9.0.1"
   },
   "devDependencies": {

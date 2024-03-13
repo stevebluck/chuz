@@ -4,14 +4,14 @@ import { Email } from "./Email";
 import { Password } from "./Password";
 
 export namespace Credentials {
-  export class Plain extends S.Class<Plain>()({
+  export class Plain extends S.Class<Plain>("Plain")({
     email: Email.schema,
     password: Password.Plaintext.schema,
   }) {
     static parse = S.decodeUnknown(Plain, { errors: "all" });
   }
 
-  export class Strong extends S.Class<Strong>()({
+  export class Strong extends S.Class<Strong>("Strong")({
     email: Email.schema,
     password: Password.Strong.schema,
   }) {}

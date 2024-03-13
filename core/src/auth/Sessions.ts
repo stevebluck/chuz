@@ -35,21 +35,15 @@ export class UserSessions implements Sessions<User> {
 
   constructor(private readonly ref: Ref.Ref<RequestSession>) {}
 
-  get = Effect.suspend(() => Ref.get(this.ref)).pipe(Effect.withSpan("Sessions.get"));
+  get = Effect.suspend(() => Ref.get(this.ref));
 
-  mint = (session: Session<User>) =>
-    Ref.set(this.ref, RequestSession.Set({ session })).pipe(Effect.withSpan("Sessions.mint"));
+  mint = (session: Session<User>) => Ref.set(this.ref, RequestSession.Set({ session }));
 
-  set = (session: Session<User>) =>
-    Ref.set(this.ref, RequestSession.Set({ session })).pipe(Effect.withSpan("Sessions.set"));
+  set = (session: Session<User>) => Ref.set(this.ref, RequestSession.Set({ session }));
 
-  unset = (session: Session<User>) =>
-    Ref.set(this.ref, RequestSession.Unset({ session })).pipe(Effect.withSpan("Sessions.unset"));
+  unset = (session: Session<User>) => Ref.set(this.ref, RequestSession.Unset({ session }));
 
-  invalidate = (session: Session<User>) =>
-    Effect.suspend(() => Ref.set(this.ref, RequestSession.Unset({ session }))).pipe(
-      Effect.withSpan("Sessions.invalidate"),
-    );
+  invalidate = (session: Session<User>) => Effect.suspend(() => Ref.set(this.ref, RequestSession.Unset({ session })));
 
   authenticated = Effect.suspend(() => Ref.get(this.ref)).pipe(
     Effect.flatMap(
@@ -62,7 +56,6 @@ export class UserSessions implements Sessions<User> {
       }),
     ),
     Effect.mapError(() => new Unauthorised()),
-    Effect.withSpan("Sessions.authenticated"),
   );
 
   guest = Effect.suspend(() => Ref.get(this.ref)).pipe(
@@ -76,11 +69,7 @@ export class UserSessions implements Sessions<User> {
       }),
     ),
     Effect.mapError(() => new Unauthorised()),
-    Effect.withSpan("Sessions.guest"),
   );
 
-  getSession = Effect.suspend(() => this.authenticated).pipe(
-    Effect.mapError(() => new NoSuchSession()),
-    Effect.withSpan("Sessions.getSession"),
-  );
+  getSession = Effect.suspend(() => this.authenticated).pipe(Effect.mapError(() => new NoSuchSession()));
 }

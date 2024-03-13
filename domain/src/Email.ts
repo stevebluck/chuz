@@ -11,6 +11,7 @@ export namespace Email {
     ),
     S.fromBrand(Brand.nominal<Email>()),
     S.message(() => "Invalid email address"),
+    S.identifier("Email"),
   );
 
   export const { from, unsafeFrom, is } = makeRefinement(schema);

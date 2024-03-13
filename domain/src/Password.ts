@@ -10,6 +10,7 @@ export namespace Password {
     export const schema = S.NonEmpty.pipe(
       S.message(() => "A password is required"),
       S.fromBrand(PlaintextBrand),
+      S.identifier("Password.Plaintext"),
     );
     export const { from, unsafeFrom, is } = makeRefinement(schema);
     export const fromStrong = (password: Strong): Plaintext => unsafeFrom(password);
@@ -18,7 +19,12 @@ export namespace Password {
   export type Strong = string & Brand.Brand<"Strong">;
   export namespace Strong {
     const StrongBrand = Brand.nominal<Strong>();
-    export const schema = S.string.pipe(S.minLength(8), S.maxLength(64), S.fromBrand(StrongBrand));
+    export const schema = S.string.pipe(
+      S.minLength(8),
+      S.maxLength(64),
+      S.fromBrand(StrongBrand),
+      S.identifier("Password.Strong"),
+    );
     export const { from, unsafeFrom, is } = makeRefinement(schema);
   }
 

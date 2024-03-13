@@ -1,14 +1,16 @@
-import { Uuid } from "@chuz/prelude";
 import * as NodeFileSystem from "@effect/platform-node/NodeFileSystem";
 import * as FileSystem from "@effect/platform/FileSystem";
 import * as Multipart from "@effect/platform/Http/Multipart";
 import * as Http from "@effect/platform/HttpServer";
 import * as Path from "@effect/platform/Path";
+import { Issue, formatError } from "@effect/schema/ArrayFormatter";
+import { ParseError } from "@effect/schema/ParseResult";
 import * as S from "@effect/schema/Schema";
 import { ActionFunctionArgs, LoaderFunctionArgs, TypedResponse } from "@remix-run/node";
-import { Effect, Scope, Layer, ManagedRuntime } from "effect";
+import { Effect, Scope, Layer, ManagedRuntime, ReadonlyRecord, ReadonlyArray, Data } from "effect";
 import { pretty } from "effect/Cause";
 import { isUndefined } from "effect/Predicate";
+import { NonEmptyReadonlyArray } from "effect/ReadonlyArray";
 import { Redirect } from "./Redirect";
 
 export type RemixEffect<A, R> = Effect.Effect<
@@ -18,22 +20,20 @@ export type RemixEffect<A, R> = Effect.Effect<
 >;
 
 interface RemixRuntime<L, R> {
-  loader: <A>(
-    name: string,
-    self: RemixEffect<A | Redirect, R | L>,
-  ) => (args: LoaderFunctionArgs) => Promise<TypedResponse<A>>;
-  action: <A>(
-    name: string,
-    self: RemixEffect<A | Redirect, R | L>,
-  ) => (args: ActionFunctionArgs) => Promise<TypedResponse<A>>;
-  formDataAction: <A, In, Out extends Multipart.Persisted>(
+  loader: <A>(name: string, self: RemixEffect<A, R | L>) => (args: LoaderFunctionArgs) => Promise<TypedResponse<A>>;
+  action: <A>(name: string, self: RemixEffect<A, R | L>) => (args: ActionFunctionArgs) => Promise<TypedResponse<A>>;
+  formDataAction: <A, In, Out extends Partial<Multipart.Persisted>>(
     name: string,
     schema: S.Schema<In, Out>,
-    self: (input: In) => RemixEffect<A | Redirect | ValidationError, R | L>,
+    self: (input: In) => RemixEffect<A | ValidationError, R | L>,
   ) => (args: LoaderFunctionArgs) => Promise<TypedResponse<A | ValidationError>>;
 }
 
-type ValidationError = { error: string };
+export interface ValidationError {
+  error: Record<string, string[]>;
+}
+
+export const ValidationError = Data.case<ValidationError>();
 
 interface RemixSettings<L, R> {
   layer: Layer.Layer<L>;
@@ -58,8 +58,6 @@ export namespace Remix {
       (type: string) =>
       <A>(name: String, self: RemixEffect<A, L | R>) => {
         const app = Effect.gen(function* (_) {
-          const requestId = yield* _(Uuid.make);
-
           return yield* _(
             self,
             Effect.flatMap((result) => {
@@ -79,20 +77,16 @@ export namespace Remix {
             Effect.catchTags({ BodyError: (e) => Effect.die("body error") }),
             Effect.withSpan(`${name}.${type}`),
             middleware,
-            Effect.tapErrorCause(() => Effect.annotateCurrentSpan({ requestId })),
-            Effect.tap(Effect.annotateCurrentSpan({ requestId })),
+            Effect.tapDefect((cause) => Effect.logError(pretty(cause))),
           );
-        }).pipe(
-          Effect.tapDefect((cause) => Effect.logError(pretty(cause))),
-          Effect.provide(requestLayer),
-        );
+        }).pipe(Effect.provide(requestLayer));
 
         const handler = run(app);
 
         return (args: LoaderFunctionArgs | ActionFunctionArgs) => handler(args.request);
       };
 
-    const formDataAction = <A, In, Out extends Multipart.Persisted>(
+    const formDataAction = <A, In, Out extends Partial<Multipart.Persisted>>(
       name: string,
       schema: S.Schema<In, Out>,
       self: (input: In) => RemixEffect<A | ValidationError, R | L>,
@@ -100,9 +94,9 @@ export namespace Remix {
       const eff = Http.request.schemaBodyForm(schema).pipe(
         Effect.flatMap(self),
         Effect.catchTags({
-          MultipartError: (e) => Effect.succeed({ error: "Multipart error" } as ValidationError),
-          ParseError: (e) => Effect.succeed({ error: "Parse error" } as ValidationError),
-          RequestError: (e) => Effect.die("RequestError"),
+          MultipartError: Effect.die,
+          ParseError: (e) => Effect.succeed(ValidationError({ error: formatParseError(e) })),
+          RequestError: Effect.die,
         }),
       );
 
@@ -116,3 +110,10 @@ export namespace Remix {
     };
   };
 }
+
+const formatParseError = (error: ParseError): Record<string, string[]> => {
+  return ReadonlyRecord.map(
+    ReadonlyArray.groupBy(formatError(error), (i) => i.path.join(".")),
+    ReadonlyArray.map((a) => a.message),
+  );
+};

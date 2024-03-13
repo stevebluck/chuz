@@ -11,6 +11,7 @@ export class Sessions extends Effect.Tag("@app/Sessions")<Sessions, Core.Session
     Sessions,
     Http.request.schemaHeaders(S.struct({ cookie: S.string })).pipe(
       Effect.flatMap((headers) => CookieSessionStorage.getToken(headers.cookie)),
+      Effect.tap((token) => Effect.annotateLogs({ userId: token.value })),
       Effect.flatMap((token) => Users.identify(token)),
       Effect.map((session) => Core.RequestSession.Provided({ session })),
       Effect.mapError(() => Core.RequestSession.NotProvided()),

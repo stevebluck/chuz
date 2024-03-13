@@ -4,7 +4,7 @@ import { buttonVariants } from "src/components/ui/button";
 import { cn } from "src/styles/classnames";
 import { RegisterForm } from "./register-form";
 
-export const Register = ({ data }: { data: any }) => (
+export const Register = ({ error }: { error: Record<string, string[]> }) => (
   <div>
     <div className="absolute right-4 top-4 md:right-8 md:top-8">
       <Link to={Routes.login} className={cn(buttonVariants({ variant: "ghost" }))}>
@@ -17,11 +17,7 @@ export const Register = ({ data }: { data: any }) => (
         <p className="text-sm text-muted-foreground">Lets get learning!</p>
       </div>
       <div>
-        <div>
-          <h6>Action data:</h6>
-          <pre>{JSON.stringify(data, null, 2)}</pre>
-        </div>
-        <RegisterForm />
+        <RegisterForm error={error} />
       </div>
     </div>
   </div>
