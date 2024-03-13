@@ -6,11 +6,12 @@ import * as Http from "@effect/platform/HttpServer";
 import * as Path from "@effect/platform/Path";
 import * as S from "@effect/schema/Schema";
 import { ActionFunctionArgs, LoaderFunctionArgs, TypedResponse } from "@remix-run/node";
-import { Effect, Scope, Layer, Console, ManagedRuntime } from "effect";
+import { Effect, Scope, Layer, ManagedRuntime } from "effect";
+import { pretty } from "effect/Cause";
 import { isUndefined } from "effect/Predicate";
 import { Redirect } from "./Redirect";
 
-type RemixEffect<A, R> = Effect.Effect<
+export type RemixEffect<A, R> = Effect.Effect<
   A,
   never,
   R | Http.request.ServerRequest | FileSystem.FileSystem | Path.Path | Scope.Scope
@@ -81,7 +82,10 @@ export namespace Remix {
             Effect.tapErrorCause(() => Effect.annotateCurrentSpan({ requestId })),
             Effect.tap(Effect.annotateCurrentSpan({ requestId })),
           );
-        }).pipe(Effect.tapDefect(Effect.logError), Effect.provide(requestLayer));
+        }).pipe(
+          Effect.tapDefect((cause) => Effect.logError(pretty(cause))),
+          Effect.provide(requestLayer),
+        );
 
         const handler = run(app);
 

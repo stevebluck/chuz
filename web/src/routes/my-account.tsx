@@ -1,17 +1,15 @@
-import { Sessions } from "core/index";
 import { Effect } from "effect";
 import { Routes } from "src/Routes";
 import { Button } from "src/components/ui/button";
 import { Redirect } from "src/server/Redirect";
-import { RemixServer } from "src/server/Remix.server";
+import { Runtime } from "src/server/Runtime.server";
+import { Sessions } from "src/server/Sessions";
 
-export const loader = RemixServer.loader(
+export const loader = Runtime.loader(
   "MyAccount",
-  Sessions.pipe(
-    Effect.flatMap((sessions) => sessions.authenticated),
+  Sessions.authenticated.pipe(
     Effect.asUnit,
-    // TODO add returnTo
-    Effect.catchTags({ Unauthorised: () => Redirect.make(Routes.login) }),
+    Effect.catchTag("Unauthorised", () => Redirect.make(Routes.login)),
   ),
 );
 

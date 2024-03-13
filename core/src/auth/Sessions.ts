@@ -22,12 +22,11 @@ export interface Sessions<A> {
   invalidate: (session: Session<A>) => Effect.Effect<void>;
   authenticated: Effect.Effect<Session<A>, Unauthorised>;
   guest: Effect.Effect<void, Unauthorised>;
-  getSession: Effect.Effect<Option.Option<Session<A>>>;
+  getSession: Effect.Effect<Session<A>, NoSuchSession>;
 }
 
-export const Sessions = Context.GenericTag<Sessions<User>, Sessions<User>>("@core/Sessions");
-
 export class Unauthorised extends Data.TaggedError("Unauthorised") {}
+export class NoSuchSession extends Data.TaggedError("NoSuchSession") {}
 
 export class UserSessions implements Sessions<User> {
   static make = (requestSession: RequestSession) => {
@@ -80,5 +79,8 @@ export class UserSessions implements Sessions<User> {
     Effect.withSpan("Sessions.guest"),
   );
 
-  getSession = Effect.suspend(() => this.authenticated).pipe(Effect.option, Effect.withSpan("Sessions.getSession"));
+  getSession = Effect.suspend(() => this.authenticated).pipe(
+    Effect.mapError(() => new NoSuchSession()),
+    Effect.withSpan("Sessions.getSession"),
+  );
 }

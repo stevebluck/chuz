@@ -1,21 +1,25 @@
 import { Identified, Password } from "@chuz/domain";
 import { DevTools } from "@effect/experimental";
-import { Capabilities, ReferenceTokens, ReferenceUsers } from "core/index";
+import * as Core from "core/index";
 import { Clock, Effect, Layer } from "effect";
 
-export namespace App {
-  export const Dev = Layer.effect(
-    Capabilities,
+export class Users extends Effect.Tag("@app/Users")<Users, Core.Users>() {
+  static Dev = Layer.effect(
+    Users,
     Effect.gen(function* (_) {
       const clock = Clock.make();
-      const userTokens = yield* _(ReferenceTokens.create(clock, Identified.equals));
-      const passwordResetTokens = yield* _(ReferenceTokens.create(clock, Password.Reset.equals));
+      const userTokens = yield* _(Core.ReferenceTokens.create(clock, Identified.equals));
+      const passwordResetTokens = yield* _(Core.ReferenceTokens.create(clock, Password.Reset.equals));
 
-      const users = yield* _(ReferenceUsers.make(userTokens, passwordResetTokens));
+      const users = yield* _(Core.ReferenceUsers.make(userTokens, passwordResetTokens));
 
-      yield* _(Effect.logInfo("Constructing capabilities"));
+      yield* _(Effect.logInfo("Constructing users"));
 
-      return { users };
+      return users;
     }),
-  ).pipe(Layer.merge(DevTools.layer()));
+  );
+}
+
+export namespace App {
+  export const Dev = Layer.mergeAll(Users.Dev, DevTools.layer());
 }

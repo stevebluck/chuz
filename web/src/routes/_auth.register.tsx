@@ -1,4 +1,3 @@
-import { Capabilities, Sessions } from "@chuz/core";
 import { Credentials, Email, Password, User } from "@chuz/domain";
 import * as S from "@effect/schema/Schema";
 import { ActionFunctionArgs } from "@remix-run/node";
@@ -7,8 +6,10 @@ import { Passwords } from "core/auth/Passwords";
 import { Effect } from "effect";
 import { Routes } from "src/Routes";
 import { Register } from "src/auth/register";
+import { Users } from "src/server/App";
 import { Redirect } from "src/server/Redirect";
-import { RemixServer } from "src/server/Remix.server";
+import { Runtime } from "src/server/Runtime.server";
+import { Sessions } from "src/server/Sessions";
 
 export const action = (args: ActionFunctionArgs) => {
   const Checkbox = S.transform(
@@ -26,26 +27,24 @@ export const action = (args: ActionFunctionArgs) => {
     // optInMarketing: Checkbox.pipe(S.compose(User.OptInMarketing.schema)),
   });
 
-  return RemixServer.formDataAction("Register", RegistrationForm, (registration) =>
-    Effect.flatMap(Capabilities, ({ users }) =>
-      Passwords.hash(registration.password).pipe(
-        Effect.map((password) => Credentials.Secure.make({ email: registration.email, password })),
-        Effect.flatMap((credentials) =>
-          users.register({
-            credentials,
-            firstName: registration.firstName,
-            lastName: registration.lastName,
-            optInMarketing: false as User.OptInMarketing,
-          }),
-        ),
-        Effect.flatMap((session) => Sessions.pipe(Effect.flatMap((sessions) => sessions.mint(session)))),
-        Effect.flatMap(() => Redirect.make(Routes.myAccount)),
-        Effect.catchTags({
-          EmailAlreadyInUse: () => Effect.succeed({ error: "Email already in use" }),
+  return Runtime.formDataAction("Register", RegistrationForm, (registration) => {
+    return Passwords.hash(registration.password).pipe(
+      Effect.map((password) => Credentials.Secure.make({ email: registration.email, password })),
+      Effect.flatMap((credentials) =>
+        Users.register({
+          credentials,
+          firstName: registration.firstName,
+          lastName: registration.lastName,
+          optInMarketing: false as User.OptInMarketing,
         }),
       ),
-    ),
-  )(args);
+      Effect.flatMap(Sessions.mint),
+      Effect.flatMap(() => Redirect.make(Routes.myAccount)),
+      Effect.catchTags({
+        EmailAlreadyInUse: () => Effect.succeed({ error: "Email already in use" }),
+      }),
+    );
+  })(args);
 };
 
 export default function RegisterPage() {

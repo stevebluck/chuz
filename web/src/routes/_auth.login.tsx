@@ -1,18 +1,15 @@
-import { Capabilities, Sessions } from "@chuz/core";
 import { Credentials } from "@chuz/domain";
 import { useActionData } from "@remix-run/react";
 import { Effect } from "effect";
-import { RemixServer } from "src/server/Remix.server";
+import { Users } from "src/server/App";
+import { Runtime } from "src/server/Runtime.server";
+import { Sessions } from "src/server/Sessions";
 import { Login } from "web/auth/login";
 
-export const action = RemixServer.formDataAction("Login", Credentials.Plain, (credentials) =>
-  Capabilities.pipe(
-    Effect.flatMap(({ users }) => users.authenticate(credentials)),
-    Effect.flatMap((session) => Sessions.pipe(Effect.flatMap((sessions) => sessions.mint(session)))),
-    Effect.asUnit,
-    Effect.catchTags({
-      CredentialsNotRecognised: () => Effect.succeed({ error: "Credentials not recognised" }),
-    }),
+export const action = Runtime.formDataAction("Login", Credentials.Plain, (credentials) =>
+  Users.authenticate(credentials).pipe(
+    Effect.flatMap(Sessions.mint),
+    Effect.catchTag("CredentialsNotRecognised", () => Effect.succeed({ error: "Credentials not recognised" })),
   ),
 );
 

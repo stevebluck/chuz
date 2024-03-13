@@ -15,7 +15,7 @@ type CookieSessionFlashData = {
   error: string;
 };
 
-export class CookieSessionStorage extends Effect.Tag("CookieSessionStorage")<
+export class CookieSessionStorage extends Effect.Tag("@app/CookieSessionStorage")<
   CookieSessionStorage,
   {
     getToken: (cookieHeader: string) => Effect.Effect<Token<Id<User>>, NoSuchElementException>;
