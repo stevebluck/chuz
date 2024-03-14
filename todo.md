@@ -8,3 +8,15 @@
 - [] Add password hasher
 - [] Add returnTo logic for auth
 - [] Add Add ActionError
+
+## Features
+
+- Users
+- Auth
+- Social login providers
+- Subscriptions
+- Update notifications
+- Feedback widget
+- User management
+- Dark mode
+- Home page

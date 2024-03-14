@@ -11,7 +11,7 @@ export const loader = Runtime.loader(
   Effect.catchTags(Sessions.guest, { Unauthorised: () => Redirect.make(Routes.myAccount) }),
 );
 
-export default function IdentityPage() {
+export default function AuthPage() {
   return (
     <AuthLayout>
       <Outlet />

@@ -4,7 +4,8 @@ import { useActionData } from "@remix-run/react";
 import { Passwords } from "core/auth/Passwords";
 import { Effect } from "effect";
 import { Routes } from "src/Routes";
-import { Register } from "src/auth/register";
+import { AuthContent } from "src/auth/auth-layout";
+import { RegisterForm } from "src/auth/register-form";
 import { FormCheckbox } from "src/schemas/form";
 import { Users } from "src/server/App";
 import { Redirect } from "src/server/Redirect";
@@ -34,14 +35,16 @@ export const action = Runtime.formDataAction("Register", RegistrationForm, (regi
     Effect.flatMap(Sessions.mint),
     Effect.zipRight(Redirect.make(Routes.myAccount)),
     Effect.asUnit,
-    Effect.catchTag("EmailAlreadyInUse", () =>
-      Effect.succeed(ValidationError({ error: { email: ["Email already in use"] } })),
-    ),
+    Effect.catchTag("EmailAlreadyInUse", () => Effect.succeed(ValidationError({ email: ["Email already in use"] }))),
   ),
 );
 
 export default function RegisterPage() {
   const result = useActionData<typeof action>();
 
-  return <Register error={result ? result.error : {}} />;
+  return (
+    <AuthContent to={Routes.login} toLabel="Login" title="Create an account" description="Lets get learning!">
+      <RegisterForm error={result || {}} />
+    </AuthContent>
+  );
 }

@@ -3,14 +3,13 @@ import * as FileSystem from "@effect/platform/FileSystem";
 import * as Multipart from "@effect/platform/Http/Multipart";
 import * as Http from "@effect/platform/HttpServer";
 import * as Path from "@effect/platform/Path";
-import { Issue, formatError } from "@effect/schema/ArrayFormatter";
+import { formatError } from "@effect/schema/ArrayFormatter";
 import { ParseError } from "@effect/schema/ParseResult";
 import * as S from "@effect/schema/Schema";
 import { ActionFunctionArgs, LoaderFunctionArgs, TypedResponse } from "@remix-run/node";
 import { Effect, Scope, Layer, ManagedRuntime, ReadonlyRecord, ReadonlyArray, Data } from "effect";
 import { pretty } from "effect/Cause";
 import { isUndefined } from "effect/Predicate";
-import { NonEmptyReadonlyArray } from "effect/ReadonlyArray";
 import { Redirect } from "./Redirect";
 
 export type RemixEffect<A, R> = Effect.Effect<
@@ -29,9 +28,7 @@ interface RemixRuntime<L, R> {
   ) => (args: LoaderFunctionArgs) => Promise<TypedResponse<A | ValidationError>>;
 }
 
-export interface ValidationError {
-  error: Record<string, string[]>;
-}
+export interface ValidationError extends Record<string, string[]> {}
 
 export const ValidationError = Data.case<ValidationError>();
 
@@ -95,7 +92,7 @@ export namespace Remix {
         Effect.flatMap(self),
         Effect.catchTags({
           MultipartError: Effect.die,
-          ParseError: (e) => Effect.succeed(ValidationError({ error: formatParseError(e) })),
+          ParseError: (e) => Effect.succeed(ValidationError(formatParseError(e))),
           RequestError: Effect.die,
         }),
       );

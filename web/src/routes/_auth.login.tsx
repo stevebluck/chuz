@@ -1,10 +1,12 @@
 import { Credentials } from "@chuz/domain";
 import { useActionData } from "@remix-run/react";
 import { Effect } from "effect";
+import { Routes } from "src/Routes";
+import { AuthContent } from "src/auth/auth-layout";
+import { LoginForm } from "src/auth/login-form";
 import { Users } from "src/server/App";
 import { Runtime } from "src/server/Runtime.server";
 import { Sessions } from "src/server/Sessions";
-import { Login } from "web/auth/login";
 
 export const action = Runtime.formDataAction("Login", Credentials.Plain, (credentials) =>
   Users.authenticate(credentials).pipe(
@@ -16,5 +18,14 @@ export const action = Runtime.formDataAction("Login", Credentials.Plain, (creden
 export default function LoginPage() {
   const result = useActionData<typeof action>();
 
-  return <Login data={result} />;
+  return (
+    <AuthContent
+      to={Routes.register}
+      toLabel="Create an account"
+      title="Sign in to your account"
+      description="Lets get back to learning!"
+    >
+      <LoginForm />
+    </AuthContent>
+  );
 }
