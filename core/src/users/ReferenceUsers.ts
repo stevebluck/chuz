@@ -1,30 +1,79 @@
 import { Credentials, Email, Id, Identified, Password, Session, Token, User } from "@chuz/domain";
+import { Uuid } from "@chuz/prelude";
+import { SupabaseClient, createClient } from "@supabase/supabase-js";
 import { AutoIncrement } from "core/persistence/AutoIncrement";
 import { Table } from "core/persistence/Table";
 import { Tokens } from "core/tokens/Tokens";
 import { Users } from "core/users/Users";
-import { Duration, Effect, Either, Option, Ref, identity } from "effect";
+import { Duration, Effect, Either, Option, Ref, identity, Predicate, ReadonlyArray } from "effect";
 import { Passwords } from "../auth/Passwords";
 
 // TODO: config?
 const ONE_DAY = Duration.toMillis("1 days");
 const TWO_DAYS = Duration.toMillis("2 days");
 
+// pass in the client to make it testable
+const makeClient = Effect.sync(() =>
+  createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_ANON_KEY!, {
+    auth: { flowType: "pkce", persistSession: false, debug: true },
+  }),
+);
+
 export class ReferenceUsers implements Users {
   static make = (userTokens: Tokens<Id<User>>, passwordResetTokens: Tokens<Password.Reset<User>>) =>
     Effect.gen(function* (_) {
+      const client = yield* _(makeClient);
       const state = yield* _(Ref.make(new State(Table.empty(), Table.empty(), Table.empty(), AutoIncrement.empty())));
-      return new ReferenceUsers(state, userTokens, passwordResetTokens);
+      return new ReferenceUsers(client, state, userTokens, passwordResetTokens);
     });
 
   constructor(
+    private readonly supabase: SupabaseClient,
     private readonly state: Ref.Ref<State>,
     private readonly userTokens: Tokens<Id<User>>,
     private readonly passwordResetTokens: Tokens<Password.Reset<User>>,
   ) {}
 
-  register = (user: User.Registration): Effect.Effect<Session<User>, Email.AlreadyInUse> => {
-    return Ref.modify(this.state, (s) => s.register(user)).pipe(
+  // TODO: this is a live implementation, create a test implementation
+  registerByAuthCode2 = (code: Credentials.AuthCode): Effect.Effect<Session<User>, Credentials.InvalidAuthCode> => {
+    return Effect.promise(() => this.supabase.auth.exchangeCodeForSession(code)).pipe(
+      Effect.flatMap(({ error, data }) => (error ? new Credentials.InvalidAuthCode({ error }) : Effect.succeed(data))),
+      Effect.flatMap(({ user: { id }, session }) =>
+        makeClient.pipe(
+          // TODO: use a postgres client
+          Effect.andThen((supabase) => supabase.from("users").select("*").eq("id", id)),
+          Effect.flatMap(({ data }) => ReadonlyArray.head<Identified<User>>(data || ([] as Array<User>))),
+          Effect.orDie,
+          Effect.map((user) => new Session({ user, token: Token.make<Id<User>>(session.refresh_token) })),
+        ),
+      ),
+    );
+  };
+
+  authenticateByOAuth = (code: Credentials.AuthCode): Effect.Effect<Session<User>, Credentials.InvalidAuthCode> => {
+    return Ref.modify(this.state, (s) =>
+      s.register({
+        credentials: Credentials.Secure.make({
+          email: Email.unsafeFrom(code + "@chuz.com"),
+          password: Password.Hashed.unsafeFrom("password"),
+        }),
+        firstName: User.FirstName.unsafeFrom(""),
+        lastName: User.LastName.unsafeFrom(""),
+        optInMarketing: User.OptInMarketing.unsafeFrom(false),
+      }),
+    ).pipe(
+      Effect.flatMap(identity),
+      Effect.catchTag("EmailAlreadyInUse", ({ email }) => this.findByEmail(email).pipe(Effect.orDie)),
+      Effect.flatMap((user) =>
+        this.userTokens
+          .issue(user.id, new Token.TimeToLive({ duration: TWO_DAYS }))
+          .pipe(Effect.map((token) => new Session({ user, token }))),
+      ),
+    );
+  };
+
+  register = (registration: User.Registration): Effect.Effect<Session<User>, Email.AlreadyInUse> => {
+    return Ref.modify(this.state, (s) => s.register(registration)).pipe(
       Effect.flatMap(identity),
       Effect.flatMap((user) =>
         this.userTokens

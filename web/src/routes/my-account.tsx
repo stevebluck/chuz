@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import { Routes } from "src/Routes";
 import { Button } from "src/components/ui/button";
-import { Redirect } from "src/server/Redirect";
+import { Redirect } from "src/server/Response";
 import { Runtime } from "src/server/Runtime.server";
 import { Sessions } from "src/server/Sessions";
 

@@ -10,7 +10,7 @@ import { ActionFunctionArgs, LoaderFunctionArgs, TypedResponse } from "@remix-ru
 import { Effect, Scope, Layer, ManagedRuntime, ReadonlyRecord, ReadonlyArray, Data } from "effect";
 import { pretty } from "effect/Cause";
 import { isUndefined } from "effect/Predicate";
-import { Redirect } from "./Redirect";
+import { Redirect, ValidationError } from "./Response";
 
 export type RemixEffect<A, R> = Effect.Effect<
   A,
@@ -21,16 +21,17 @@ export type RemixEffect<A, R> = Effect.Effect<
 interface RemixRuntime<L, R> {
   loader: <A>(name: string, self: RemixEffect<A, R | L>) => (args: LoaderFunctionArgs) => Promise<TypedResponse<A>>;
   action: <A>(name: string, self: RemixEffect<A, R | L>) => (args: ActionFunctionArgs) => Promise<TypedResponse<A>>;
+  loaderSearchParams: <A, In, Out extends Readonly<Record<string, string>>>(
+    name: string,
+    schema: S.Schema<In, Out>,
+    self: (input: In) => RemixEffect<A | ValidationError, R | L>,
+  ) => (args: LoaderFunctionArgs) => Promise<TypedResponse<A | ValidationError>>;
   formDataAction: <A, In, Out extends Partial<Multipart.Persisted>>(
     name: string,
     schema: S.Schema<In, Out>,
     self: (input: In) => RemixEffect<A | ValidationError, R | L>,
   ) => (args: LoaderFunctionArgs) => Promise<TypedResponse<A | ValidationError>>;
 }
-
-export interface ValidationError extends Record<string, string[]> {}
-
-export const ValidationError = Data.case<ValidationError>();
 
 interface RemixSettings<L, R> {
   layer: Layer.Layer<L>;
@@ -58,12 +59,17 @@ export namespace Remix {
           return yield* _(
             self,
             Effect.flatMap((result) => {
-              if (Redirect.isRedirect(result)) {
+              if (Redirect.is(result)) {
                 return Http.response.json(null, {
                   status: 302,
                   headers: Http.headers.fromInput({ Location: result.location }),
                 });
               }
+
+              // TODO: fix this
+              // if (ValidationError.is(result)) {
+              //   return Http.response.json(null, { status: 400, });
+              // }
 
               if (isUndefined(result)) {
                 return Http.response.json(null, { status: 200 });
@@ -83,6 +89,22 @@ export namespace Remix {
         return (args: LoaderFunctionArgs | ActionFunctionArgs) => handler(args.request);
       };
 
+    const loaderSearchParams = <A, In, Out extends Readonly<Record<string, string>>>(
+      name: string,
+      schema: S.Schema<In, Out>,
+      self: (input: In) => RemixEffect<A | ValidationError, R | L>,
+    ) => {
+      const eff = Http.request.schemaBodyUrlParams(schema).pipe(
+        Effect.flatMap(self),
+        Effect.catchTags({
+          ParseError: (e) => ValidationError.make(formatParseError(e)),
+          RequestError: Effect.die,
+        }),
+      );
+
+      return makeHandler("action")(name, eff);
+    };
+
     const formDataAction = <A, In, Out extends Partial<Multipart.Persisted>>(
       name: string,
       schema: S.Schema<In, Out>,
@@ -92,7 +114,7 @@ export namespace Remix {
         Effect.flatMap(self),
         Effect.catchTags({
           MultipartError: Effect.die,
-          ParseError: (e) => Effect.succeed(ValidationError(formatParseError(e))),
+          ParseError: (e) => ValidationError.make(formatParseError(e)),
           RequestError: Effect.die,
         }),
       );
@@ -103,6 +125,7 @@ export namespace Remix {
     return {
       loader: makeHandler("loader"),
       action: makeHandler("action"),
+      loaderSearchParams,
       formDataAction,
     };
   };

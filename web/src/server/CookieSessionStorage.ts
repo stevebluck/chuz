@@ -1,7 +1,8 @@
 import { Id, Session, Token, User } from "@chuz/domain";
+import * as Http from "@effect/platform/HttpServer";
+import * as S from "@effect/schema/Schema";
 import { createCookieSessionStorage, createSession } from "@remix-run/node";
-import { Duration, Effect, Layer, Option } from "effect";
-import { NoSuchElementException } from "effect/Cause";
+import { Cause, Duration, Effect, Layer, Option } from "effect";
 
 // config
 const SESSION_COOKIE = "_session";
@@ -18,7 +19,7 @@ type CookieSessionFlashData = {
 export class CookieSessionStorage extends Effect.Tag("@app/CookieSessionStorage")<
   CookieSessionStorage,
   {
-    getToken: (cookieHeader: string) => Effect.Effect<Token<Id<User>>, NoSuchElementException>;
+    getToken: Effect.Effect<Token<Id<User>>, Cause.NoSuchElementException, Http.request.ServerRequest>;
     commit: (session: Session<User>) => Effect.Effect<string>;
     destroy: (session: Session<User>) => Effect.Effect<string>;
     unsetToken: (session: Session<User>) => Effect.Effect<string>;
@@ -42,11 +43,12 @@ export class CookieSessionStorage extends Effect.Tag("@app/CookieSessionStorage"
       Effect.sync(() => createSession<CookieSession, CookieSessionFlashData>({ token: session.token }, SESSION_COOKIE));
 
     return CookieSessionStorage.of({
-      getToken: (cookieHeader) =>
-        Effect.promise(() => storage.getSession(cookieHeader)).pipe(
-          Effect.flatMap((a) => Option.fromNullable(a.get("token"))),
-          Effect.map((a) => Token.make(a.value)),
-        ),
+      getToken: Http.request.schemaHeaders(S.struct({ cookie: S.string })).pipe(
+        Effect.andThen(({ cookie }) => storage.getSession(cookie)),
+        Effect.flatMap((session) => Option.fromNullable(session.get("token"))),
+        Effect.map((token) => Token.make<Id<User>>(token.value)),
+        Effect.catchAll(() => Option.none()),
+      ),
       commit: (session) =>
         createRemixSession(session).pipe(
           Effect.andThen((remixSession) => storage.commitSession(remixSession)),

@@ -1,6 +1,6 @@
 import * as Http from "@effect/platform/HttpServer";
 import { RequestSession } from "core/index";
-import { Effect, Layer, Runtime as R } from "effect";
+import { Effect, Layer } from "effect";
 import { App } from "./App";
 import { CookieSessionStorage } from "./CookieSessionStorage";
 import { Remix } from "./Remix";

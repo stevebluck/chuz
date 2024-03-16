@@ -8,7 +8,7 @@ import { Users } from "src/server/App";
 import { Runtime } from "src/server/Runtime.server";
 import { Sessions } from "src/server/Sessions";
 
-export const action = Runtime.formDataAction("Login", Credentials.Plain, (credentials) =>
+export const action = Runtime.formDataAction("Auth.login", Credentials.Plain, (credentials) =>
   Users.authenticate(credentials).pipe(
     Effect.flatMap(Sessions.mint),
     Effect.catchTag("CredentialsNotRecognised", () => Effect.succeed({ error: "Credentials not recognised" })),

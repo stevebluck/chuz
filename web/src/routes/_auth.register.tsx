@@ -8,8 +8,7 @@ import { AuthContent } from "src/auth/auth-layout";
 import { RegisterForm } from "src/auth/register-form";
 import { FormCheckbox } from "src/schemas/form";
 import { Users } from "src/server/App";
-import { Redirect } from "src/server/Redirect";
-import { ValidationError } from "src/server/Remix";
+import { Redirect, ValidationError } from "src/server/Response";
 import { Runtime } from "src/server/Runtime.server";
 import { Sessions } from "src/server/Sessions";
 
@@ -21,7 +20,7 @@ const RegistrationForm = S.struct({
   optInMarketing: S.compose(FormCheckbox, User.OptInMarketing.schema),
 }).pipe(S.identifier("RegistrationForm"));
 
-export const action = Runtime.formDataAction("Register", RegistrationForm, (registration) =>
+export const action = Runtime.formDataAction("Auth.register", RegistrationForm, (registration) =>
   Passwords.hash(registration.password).pipe(
     Effect.map((password) => Credentials.Secure.make({ email: registration.email, password })),
     Effect.flatMap((credentials) =>
@@ -35,7 +34,7 @@ export const action = Runtime.formDataAction("Register", RegistrationForm, (regi
     Effect.flatMap(Sessions.mint),
     Effect.zipRight(Redirect.make(Routes.myAccount)),
     Effect.asUnit,
-    Effect.catchTag("EmailAlreadyInUse", () => Effect.succeed(ValidationError({ email: ["Email already in use"] }))),
+    Effect.catchTag("EmailAlreadyInUse", () => ValidationError.make({ email: ["Email already in use"] })),
   ),
 );
 
@@ -44,7 +43,7 @@ export default function RegisterPage() {
 
   return (
     <AuthContent to={Routes.login} toLabel="Login" title="Create an account" description="Lets get learning!">
-      <RegisterForm error={result || {}} />
+      <RegisterForm error={result?.error || {}} />
     </AuthContent>
   );
 }
