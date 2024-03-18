@@ -1,5 +1,6 @@
 import * as Domain from "@chuz/domain";
 import * as Arbitrary from "@effect/schema/Arbitrary";
+import { Option } from "effect";
 import * as fc from "fast-check";
 
 export namespace Arbs {
@@ -32,8 +33,8 @@ export namespace Arbs {
 
     export const PartialUser: fc.Arbitrary<Domain.User.Partial> = fc.record(
       {
-        firstName: FirstName,
-        lastName: LastName,
+        firstName: FirstName.map((firstName) => Option.some(firstName)),
+        lastName: LastName.map((lastName) => Option.some(lastName)),
         optInMarketing: OptInMarketing,
       },
       { requiredKeys: [] },

@@ -9,7 +9,7 @@ const SESSION_COOKIE = "_session";
 const SESSION_COOKIE_DURATION = Duration.weeks(2);
 
 type CookieSession = {
-  token: Token<Id<User>>;
+  refreshToken: Token<Id<User>>;
 };
 
 type CookieSessionFlashData = {
@@ -22,7 +22,6 @@ export class CookieSessionStorage extends Effect.Tag("@app/CookieSessionStorage"
     getToken: Effect.Effect<Token<Id<User>>, Cause.NoSuchElementException, Http.request.ServerRequest>;
     commit: (session: Session<User>) => Effect.Effect<string>;
     destroy: (session: Session<User>) => Effect.Effect<string>;
-    unsetToken: (session: Session<User>) => Effect.Effect<string>;
   }
 >() {
   static layer = Layer.sync(CookieSessionStorage, () => {
@@ -40,13 +39,14 @@ export class CookieSessionStorage extends Effect.Tag("@app/CookieSessionStorage"
     });
 
     const createRemixSession = (session: Session<User>) =>
-      Effect.sync(() => createSession<CookieSession, CookieSessionFlashData>({ token: session.token }, SESSION_COOKIE));
+      Effect.sync(() =>
+        createSession<CookieSession, CookieSessionFlashData>({ refreshToken: session.token }, SESSION_COOKIE),
+      );
 
     return CookieSessionStorage.of({
       getToken: Http.request.schemaHeaders(S.struct({ cookie: S.string })).pipe(
         Effect.andThen(({ cookie }) => storage.getSession(cookie)),
-        Effect.flatMap((session) => Option.fromNullable(session.get("token"))),
-        Effect.map((token) => Token.make<Id<User>>(token.value)),
+        Effect.flatMap((session) => Option.fromNullable(session.get("refreshToken"))),
         Effect.catchAll(() => Option.none()),
       ),
       commit: (session) =>
@@ -57,12 +57,6 @@ export class CookieSessionStorage extends Effect.Tag("@app/CookieSessionStorage"
       destroy: (session) =>
         createRemixSession(session).pipe(
           Effect.andThen((remixSession) => storage.destroySession(remixSession)),
-          Effect.orDie,
-        ),
-      unsetToken: (session) =>
-        createRemixSession(session).pipe(
-          Effect.tap((remixSession) => remixSession.unset("token")),
-          Effect.andThen((remixSession) => storage.commitSession(remixSession)),
           Effect.orDie,
         ),
     });

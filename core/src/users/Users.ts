@@ -12,7 +12,7 @@ export interface Users {
 
   authenticate(credentials: Credentials.Plain): Effect.Effect<Session<User>, Credentials.NotRecognised>;
 
-  authenticateByOAuth(code: Credentials.AuthCode): Effect.Effect<Session<User>, Credentials.InvalidAuthCode>;
+  authenticateByCode(code: Credentials.Code): Effect.Effect<Session<User>, Credentials.InvalidCode>;
 
   logout(token: Token<Id<User>>): Effect.Effect<void>;
 

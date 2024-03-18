@@ -1,6 +1,6 @@
 import { Credentials, Email, Password, Token, User } from "@chuz/domain";
 import { Users } from "core/users/Users";
-import { Effect, Layer } from "effect";
+import { Effect, Layer, Option } from "effect";
 import * as fc from "fast-check";
 import { afterAll, describe, expect } from "vitest";
 import { Passwords } from "../../src/auth/Passwords";
@@ -26,8 +26,8 @@ export namespace UsersSpec {
 
           expect(session.user.value).toEqual(
             User.make({
-              firstName: register.firstName,
-              lastName: register.lastName,
+              firstName: Option.some(register.firstName),
+              lastName: Option.some(register.lastName),
               email: register.credentials.email,
               optInMarketing: register.optInMarketing,
             }),
@@ -369,8 +369,8 @@ export namespace UsersSpec {
         return yield* _(
           users.register({
             credentials,
-            firstName: register.firstName,
-            lastName: register.lastName,
+            firstName: Option.some(register.firstName),
+            lastName: Option.some(register.lastName),
             optInMarketing: register.optInMarketing,
           }),
         );

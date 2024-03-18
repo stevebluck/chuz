@@ -4,9 +4,9 @@ import { Email } from "./Email";
 import { Password } from "./Password";
 
 export namespace Credentials {
-  export type AuthCode = string & Brand.Brand<"AuthCode">;
-  export namespace AuthCode {
-    export const schema: S.Schema<AuthCode, string> = S.string.pipe(S.brand("AuthCode"));
+  export type Code = string & Brand.Brand<"Code">;
+  export namespace Code {
+    export const schema: S.Schema<Code, string> = S.string.pipe(S.brand("Code"));
   }
 
   export class Plain extends S.Class<Plain>("Plain")({
@@ -32,5 +32,5 @@ export namespace Credentials {
 
   export class NotRecognised extends Data.TaggedError("CredentialsNotRecognised") {}
 
-  export class InvalidAuthCode extends Data.TaggedError("InvalidAuthCode")<{ error: unknown }> {}
+  export class InvalidCode extends Data.TaggedError("InvalidCode")<{ error: unknown }> {}
 }

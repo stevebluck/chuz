@@ -7,7 +7,7 @@ import { Remix } from "./Remix";
 import { Sessions } from "./Sessions";
 
 export const Runtime = await Remix.make({
-  layer: App.Dev,
+  layer: App.Live,
   requestLayer: Sessions.layer.pipe(Layer.provideMerge(CookieSessionStorage.layer)),
   middleware: (self) => self.pipe(Effect.flatMap(setSessionCookie)),
 });

@@ -2,7 +2,7 @@ import { Credentials, Email, Password, User } from "@chuz/domain";
 import * as S from "@effect/schema/Schema";
 import { useActionData } from "@remix-run/react";
 import { Passwords } from "core/auth/Passwords";
-import { Effect } from "effect";
+import { Console, Effect, Option } from "effect";
 import { Routes } from "src/Routes";
 import { AuthContent } from "src/auth/auth-layout";
 import { RegisterForm } from "src/auth/register-form";
@@ -15,22 +15,28 @@ import { Sessions } from "src/server/Sessions";
 const RegistrationForm = S.struct({
   email: Email.schema,
   password: Password.Strong.schema,
-  firstName: User.FirstName.schema,
-  lastName: User.LastName.schema,
+  firstName: S.optional(User.FirstName.schema),
+  lastName: S.optional(User.LastName.schema),
   optInMarketing: S.compose(FormCheckbox, User.OptInMarketing.schema),
-}).pipe(S.identifier("RegistrationForm"));
+});
 
 export const action = Runtime.formDataAction("Auth.register", RegistrationForm, (registration) =>
   Passwords.hash(registration.password).pipe(
-    Effect.map((password) => Credentials.Secure.make({ email: registration.email, password })),
+    Effect.map((password) =>
+      Credentials.Secure.make({
+        email: registration.email,
+        password: Password.Hashed.unsafeFrom(registration.password),
+      }),
+    ),
     Effect.flatMap((credentials) =>
       Users.register({
         credentials,
-        firstName: registration.firstName,
-        lastName: registration.lastName,
+        firstName: Option.fromNullable(registration.firstName),
+        lastName: Option.fromNullable(registration.lastName),
         optInMarketing: registration.optInMarketing,
       }),
     ),
+    Effect.tapErrorCause(Console.log),
     Effect.flatMap(Sessions.mint),
     Effect.zipRight(Redirect.make(Routes.myAccount)),
     Effect.asUnit,

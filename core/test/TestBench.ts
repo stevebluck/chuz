@@ -1,7 +1,7 @@
 import * as Domain from "@chuz/domain";
 import { Passwords } from "core/auth/Passwords";
 import * as Core from "core/index";
-import { Clock, Effect } from "effect";
+import { Clock, Effect, Option } from "effect";
 
 export type TestBench = Core.Capabilities;
 
@@ -28,8 +28,8 @@ export namespace TestBench {
           email: userRegistration.credentials.email,
           password: hashed,
         }),
-        firstName: userRegistration.firstName,
-        lastName: userRegistration.lastName,
+        firstName: Option.some(userRegistration.firstName),
+        lastName: Option.some(userRegistration.lastName),
         optInMarketing: userRegistration.optInMarketing,
       });
 

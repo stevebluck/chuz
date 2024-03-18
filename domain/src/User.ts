@@ -1,6 +1,6 @@
 import { makeRefinement } from "@chuz/prelude";
 import * as S from "@effect/schema/Schema";
-import { Data, Brand } from "effect";
+import { Data, Brand, Option } from "effect";
 import { Credentials, Email } from ".";
 
 export interface User extends S.Schema.Type<typeof User.schema> {}
@@ -10,12 +10,14 @@ export namespace User {
 
   export const schema = S.suspend(() =>
     S.struct({
-      firstName: User.FirstName.schema,
-      lastName: User.LastName.schema,
       email: Email.schema,
+      firstName: S.optionFromNullable(User.FirstName.schema),
+      lastName: S.optionFromNullable(User.LastName.schema),
       optInMarketing: User.OptInMarketing.schema,
     }),
-  ).pipe(S.identifier("User"));
+  );
+
+  export const parse = S.decode(schema);
 
   export interface Partial extends S.Schema.Type<typeof User.Partial.schema> {}
   export namespace Partial {
@@ -26,8 +28,8 @@ export namespace User {
 
   export interface Registration {
     credentials: Credentials.Secure;
-    firstName: User.FirstName;
-    lastName: User.LastName;
+    firstName: Option.Option<User.FirstName>;
+    lastName: Option.Option<User.LastName>;
     optInMarketing: User.OptInMarketing;
   }
 

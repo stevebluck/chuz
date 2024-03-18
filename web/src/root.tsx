@@ -1,6 +1,6 @@
 import { LinksFunction } from "@remix-run/node";
 import { Links, Meta, Outlet, Scripts, ScrollRestoration, useLoaderData } from "@remix-run/react";
-import { Effect } from "effect";
+import { Effect, Option } from "effect";
 import { Runtime } from "./server/Runtime.server";
 import { Sessions } from "./server/Sessions";
 import { cn } from "./styles/classnames";
@@ -28,7 +28,7 @@ export const links: LinksFunction = () => {
 export const loader = Runtime.loader(
   "Root",
   Sessions.getSession.pipe(
-    Effect.map((session) => ({ name: session.user.value.firstName })),
+    Effect.map((session) => ({ name: Option.getOrElse(session.user.value.firstName, () => "Mr NoName") })),
     Effect.catchTag("NoSuchSession", () => Effect.succeed({ name: "Guest" })),
   ),
 );
