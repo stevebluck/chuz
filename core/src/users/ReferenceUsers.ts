@@ -11,17 +11,41 @@ const ONE_DAY = Duration.toMillis("1 days");
 const TWO_DAYS = Duration.toMillis("2 days");
 
 export class ReferenceUsers implements Users {
-  static make = (userTokens: Tokens<Id<User>>, passwordResetTokens: Tokens<Password.Reset<User>>) =>
+  static make = (
+    userTokens: Tokens<Id<User>>,
+    passwordResetTokens: Tokens<Password.Reset<User>>,
+    match: Passwords["match"],
+  ) =>
     Effect.gen(function* (_) {
       const state = yield* _(Ref.make(new State(Table.empty(), Table.empty(), Table.empty(), AutoIncrement.empty())));
-      return new ReferenceUsers(state, userTokens, passwordResetTokens);
+      return new ReferenceUsers(state, userTokens, passwordResetTokens, match);
     });
 
   constructor(
     private readonly state: Ref.Ref<State>,
     private readonly userTokens: Tokens<Id<User>>,
     private readonly passwordResetTokens: Tokens<Password.Reset<User>>,
+    private readonly match: Passwords["match"],
   ) {}
+
+  register = (registration: User.Registration): Effect.Effect<Session<User>, Email.AlreadyInUse> => {
+    return Ref.modify(this.state, (s) => s.register(registration)).pipe(
+      Effect.flatMap(identity),
+      Effect.flatMap((user) =>
+        this.userTokens
+          .issue(user.id, new Token.TimeToLive({ duration: TWO_DAYS }))
+          .pipe(Effect.map((token) => new Session({ user, token, refreshToken: Token.make<string>("whatever") }))),
+      ),
+    );
+  };
+
+  identify = (token: Token<Id<User>>, refreshToken: Token<string>): Effect.Effect<Session<User>, Token.NoSuchToken> => {
+    return this.userTokens.lookup(token).pipe(
+      Effect.flatMap(this.findById),
+      Effect.mapError(() => new Token.NoSuchToken()),
+      Effect.map((user) => new Session({ user, token, refreshToken })),
+    );
+  };
 
   authenticateByCode = (code: Credentials.Code): Effect.Effect<Session<User>, Credentials.InvalidCode> => {
     return Ref.modify(this.state, (s) =>
@@ -40,27 +64,8 @@ export class ReferenceUsers implements Users {
       Effect.flatMap((user) =>
         this.userTokens
           .issue(user.id, new Token.TimeToLive({ duration: TWO_DAYS }))
-          .pipe(Effect.map((token) => new Session({ user, token }))),
+          .pipe(Effect.map((token) => new Session({ user, token, refreshToken: Token.make<string>("whatever") }))),
       ),
-    );
-  };
-
-  register = (registration: User.Registration): Effect.Effect<Session<User>, Email.AlreadyInUse> => {
-    return Ref.modify(this.state, (s) => s.register(registration)).pipe(
-      Effect.flatMap(identity),
-      Effect.flatMap((user) =>
-        this.userTokens
-          .issue(user.id, new Token.TimeToLive({ duration: TWO_DAYS }))
-          .pipe(Effect.map((token) => new Session({ user, token }))),
-      ),
-    );
-  };
-
-  identify = (token: Token<Id<User>>): Effect.Effect<Session<User>, Token.NoSuchToken> => {
-    return this.userTokens.lookup(token).pipe(
-      Effect.flatMap(this.findById),
-      Effect.mapError(() => new Token.NoSuchToken()),
-      Effect.map((user) => new Session({ user, token })),
     );
   };
 
@@ -77,7 +82,7 @@ export class ReferenceUsers implements Users {
     return Ref.get(this.state).pipe(
       Effect.flatMap((s) => s.findCredentialsByEmail(credentials.email)),
       Effect.flatMap((secure) =>
-        Effect.if(Passwords.matches(credentials.password, secure.password), {
+        Effect.if(this.match(credentials.password, secure.password), {
           onTrue: this.findByEmail(credentials.email),
           onFalse: new Credentials.NotRecognised(),
         }),
@@ -85,7 +90,7 @@ export class ReferenceUsers implements Users {
       Effect.flatMap((user) =>
         this.userTokens
           .issue(user.id, new Token.TimeToLive({ duration: TWO_DAYS }))
-          .pipe(Effect.map((token) => new Session({ user, token }))),
+          .pipe(Effect.map((token) => new Session({ user, token, refreshToken: Token.make<string>("whatever") }))),
       ),
       Effect.mapError(() => new Credentials.NotRecognised()),
     );
@@ -120,7 +125,7 @@ export class ReferenceUsers implements Users {
           Effect.mapError(() => new Credentials.NotRecognised()),
           Effect.flatMap((secureCredentials) =>
             // Check the current password is valid and update it
-            Effect.if(Passwords.matches(currentPassword, secureCredentials.password), {
+            Effect.if(this.match(currentPassword, secureCredentials.password), {
               onTrue: Ref.update(this.state, (s) =>
                 s.updatePassword(user.id, user.value.email, secureCredentials.password, updatedPassword),
               ),

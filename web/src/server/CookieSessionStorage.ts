@@ -9,7 +9,8 @@ const SESSION_COOKIE = "_session";
 const SESSION_COOKIE_DURATION = Duration.weeks(2);
 
 type CookieSession = {
-  refreshToken: Token<Id<User>>;
+  token: Token<Id<User>>;
+  refreshToken: Token<string>;
 };
 
 type CookieSessionFlashData = {
@@ -19,7 +20,7 @@ type CookieSessionFlashData = {
 export class CookieSessionStorage extends Effect.Tag("@app/CookieSessionStorage")<
   CookieSessionStorage,
   {
-    getToken: Effect.Effect<Token<Id<User>>, Cause.NoSuchElementException, Http.request.ServerRequest>;
+    get: Effect.Effect<CookieSession, Cause.NoSuchElementException, Http.request.ServerRequest>;
     commit: (session: Session<User>) => Effect.Effect<string>;
     destroy: (session: Session<User>) => Effect.Effect<string>;
   }
@@ -40,13 +41,17 @@ export class CookieSessionStorage extends Effect.Tag("@app/CookieSessionStorage"
 
     const createRemixSession = (session: Session<User>) =>
       Effect.sync(() =>
-        createSession<CookieSession, CookieSessionFlashData>({ refreshToken: session.token }, SESSION_COOKIE),
+        createSession<CookieSession, CookieSessionFlashData>(
+          { refreshToken: session.refreshToken, token: session.token },
+          SESSION_COOKIE,
+        ),
       );
 
     return CookieSessionStorage.of({
-      getToken: Http.request.schemaHeaders(S.struct({ cookie: S.string })).pipe(
+      get: Http.request.schemaHeaders(S.struct({ cookie: S.string })).pipe(
         Effect.andThen(({ cookie }) => storage.getSession(cookie)),
-        Effect.flatMap((session) => Option.fromNullable(session.get("refreshToken"))),
+        Effect.bind("refreshToken", (session) => Option.fromNullable(session.get("refreshToken"))),
+        Effect.bind("token", (session) => Option.fromNullable(session.get("token"))),
         Effect.catchAll(() => Option.none()),
       ),
       commit: (session) =>

@@ -9,7 +9,7 @@ export const action = Runtime.action(
   "Auth.logout",
   Sessions.authenticated.pipe(
     Effect.tap(Sessions.invalidate),
-    Effect.flatMap((session) => Users.logout(session.token)),
+    Effect.flatMap(({ token }) => Users.logout(token)),
     Effect.zipRight(Redirect.make(Routes.home)),
     Effect.catchTags({ Unauthorised: () => Effect.unit }),
   ),

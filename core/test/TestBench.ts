@@ -11,7 +11,7 @@ export namespace TestBench {
     const userTokens = yield* _(Core.ReferenceTokens.create(clock, Domain.Identified.equals));
     const passwordResetTokens = yield* _(Core.ReferenceTokens.create(clock, Domain.Password.Reset.equals));
 
-    const users = yield* _(Core.ReferenceUsers.make(userTokens, passwordResetTokens));
+    const users = yield* _(Core.ReferenceUsers.make(userTokens, passwordResetTokens, matcher));
 
     return { users };
   });
@@ -21,7 +21,7 @@ export namespace TestBench {
   export namespace Seeded {
     export const make: Effect.Effect<Seeded> = Effect.gen(function* (_) {
       const bench = yield* _(TestBench.make);
-      const hashed = yield* _(Passwords.hash(userRegistration.credentials.password));
+      const hashed = yield* _(hash(userRegistration.credentials.password));
 
       const registration = Domain.User.Registration.make({
         credentials: Domain.Credentials.Secure.make({
@@ -49,3 +49,6 @@ const userRegistration = {
     password: Domain.Password.Strong.unsafeFrom("password"),
   }),
 };
+
+const hash = Passwords.hasher({ N: 4 });
+const matcher = Passwords.matcher({ N: 4 });

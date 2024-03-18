@@ -10,16 +10,16 @@ export namespace PasswordSpec {
     describe("Passwords", () => {
       asyncProperty("Passwords are hashed with random salt", Arbs.Passwords.Strong, (password: Password.Strong) =>
         Effect.gen(function* (_) {
-          const hashes = yield* _(Effect.all(Array.from({ length: 5 }, () => password).map(Passwords.hash)));
+          const hashes = yield* _(Effect.all(Array.from({ length: 5 }, () => password).map(hash)));
           expect(new Set(hashes).size).toBe(hashes.length);
         }),
       );
 
       asyncProperty("Passwords only match against their hashes", Arbs.Passwords.Strong, (password: Password.Strong) =>
         Effect.gen(function* (_) {
-          const hashed = yield* _(Passwords.hash(password));
-          const matches = yield* _(Passwords.matches(Password.Plaintext.fromStrong(password), hashed));
-          const doesNotMatch = yield* _(Passwords.matches(Password.Plaintext.unsafeFrom(`mutate-${password}`), hashed));
+          const hashed = yield* _(hash(password));
+          const matches = yield* _(match(Password.Plaintext.fromStrong(password), hashed));
+          const doesNotMatch = yield* _(match(Password.Plaintext.unsafeFrom(`mutate-${password}`), hashed));
           expect(matches).toBe(true);
           expect(doesNotMatch).toBe(false);
         }),
@@ -37,3 +37,6 @@ export namespace PasswordSpec {
     });
   };
 }
+
+const hash = Passwords.hasher({ N: 4 });
+const match = Passwords.matcher({ N: 4 });

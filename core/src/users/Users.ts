@@ -8,7 +8,7 @@ export interface Users {
 
   findByEmail(email: Email): Effect.Effect<Identified<User>, User.NotFound>;
 
-  identify(token: Token<Id<User>>): Effect.Effect<Session<User>, Token.NoSuchToken>;
+  identify(token: Token<Id<User>>, refreshToken: Token<string>): Effect.Effect<Session<User>, Token.NoSuchToken>;
 
   authenticate(credentials: Credentials.Plain): Effect.Effect<Session<User>, Credentials.NotRecognised>;
 
