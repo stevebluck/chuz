@@ -10,37 +10,34 @@ import { ActionFunctionArgs, LoaderFunctionArgs, TypedResponse } from "@remix-ru
 import { Effect, Scope, Layer, ManagedRuntime, ReadonlyRecord, ReadonlyArray, Data, ConfigError } from "effect";
 import { pretty } from "effect/Cause";
 import { isUndefined } from "effect/Predicate";
+import { NoInfer } from "effect/Types";
 import { Redirect, Unauthorized, ValidationError } from "./Response";
 
-type RemixEffect<A, L, R> = Effect.Effect<
-  A,
-  never,
-  L | R | Http.request.ServerRequest | FileSystem.FileSystem | Path.Path | Scope.Scope
->;
+type RemixEffect<A, R> = Effect.Effect<A, never, RequestLayer<R>>;
 
 type RequestLayer<R> = R | Http.request.ServerRequest | FileSystem.FileSystem | Path.Path | Scope.Scope;
 
 interface RemixRuntime<L, R> {
-  loader: <A>(name: string, self: RemixEffect<A, L, R>) => (args: LoaderFunctionArgs) => Promise<TypedResponse<A>>;
-  action: <A>(name: string, self: RemixEffect<A, L, R>) => (args: ActionFunctionArgs) => Promise<TypedResponse<A>>;
+  loader: <A>(name: string, self: RemixEffect<A, L | R>) => (args: LoaderFunctionArgs) => Promise<TypedResponse<A>>;
+  action: <A>(name: string, self: RemixEffect<A, L | R>) => (args: ActionFunctionArgs) => Promise<TypedResponse<A>>;
   loaderSearchParams: <A, In, Out extends Readonly<Record<string, string>>>(
     name: string,
     schema: S.Schema<In, Out>,
-    self: (input: In) => RemixEffect<A | ValidationError, L, R>,
+    self: (input: In) => RemixEffect<A | ValidationError, L | R>,
   ) => (args: LoaderFunctionArgs) => Promise<TypedResponse<A | ValidationError>>;
   formDataAction: <A, In, Out extends Partial<Multipart.Persisted>>(
     name: string,
     schema: S.Schema<In, Out>,
-    self: (input: In) => RemixEffect<A | ValidationError, L, R>,
+    self: (input: In) => RemixEffect<A | ValidationError, L | R>,
   ) => (args: LoaderFunctionArgs) => Promise<TypedResponse<A | ValidationError>>;
 }
 
 interface RemixSettings<L, R> {
   layer: Layer.Layer<L, ConfigError.ConfigError>;
-  requestLayer: Layer.Layer<R, never, RequestLayer<L>>;
+  requestLayer: Layer.Layer<R, never, RequestLayer<NoInfer<L>>>;
   middleware: (
-    self: RemixEffect<Http.response.ServerResponse, L, R>,
-  ) => RemixEffect<Http.response.ServerResponse, L, R>;
+    self: RemixEffect<Http.response.ServerResponse, NoInfer<L | R>>,
+  ) => RemixEffect<Http.response.ServerResponse, NoInfer<L | R>>;
 }
 
 export namespace Remix {
@@ -56,7 +53,7 @@ export namespace Remix {
 
     const makeHandler =
       (type: string) =>
-      <A>(name: String, self: RemixEffect<A, L, R>) => {
+      <A>(name: String, self: RemixEffect<A, L | R>) => {
         const app = Effect.gen(function* (_) {
           return yield* _(
             self,
@@ -99,7 +96,7 @@ export namespace Remix {
     const loaderSearchParams = <A, In, Out extends Readonly<Record<string, string>>>(
       name: string,
       schema: S.Schema<In, Out>,
-      self: (input: In) => RemixEffect<A | ValidationError, L, R>,
+      self: (input: In) => RemixEffect<A | ValidationError, L | R>,
     ) => {
       const eff = Http.request.schemaBodyUrlParams(schema).pipe(
         Effect.flatMap(self),
@@ -115,7 +112,7 @@ export namespace Remix {
     const formDataAction = <A, In, Out extends Partial<Multipart.Persisted>>(
       name: string,
       schema: S.Schema<In, Out>,
-      self: (input: In) => RemixEffect<A | ValidationError, L, R>,
+      self: (input: In) => RemixEffect<A | ValidationError, L | R>,
     ) => {
       const eff = Http.request.schemaBodyForm(schema).pipe(
         Effect.flatMap(self),
@@ -139,6 +136,7 @@ export namespace Remix {
 }
 
 const formatParseError = (error: ParseError): Record<string, string[]> => {
+  console.log(formatError(error));
   return ReadonlyRecord.map(
     ReadonlyArray.groupBy(formatError(error), (i) => i.path.join(".")),
     ReadonlyArray.map((a) => a.message),

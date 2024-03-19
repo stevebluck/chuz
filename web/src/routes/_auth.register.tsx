@@ -5,7 +5,7 @@ import { Effect, Option } from "effect";
 import { Routes } from "src/Routes";
 import { AuthContent } from "src/auth/auth-layout";
 import { RegisterForm } from "src/auth/register-form";
-import { FormCheckbox } from "src/schemas/form";
+import { CheckboxInput } from "src/schemas/form";
 import { Passwords, Users } from "src/server/App";
 import { Redirect, ValidationError } from "src/server/Response";
 import { Runtime } from "src/server/Runtime.server";
@@ -16,7 +16,7 @@ const RegistrationForm = S.struct({
   password: Password.Strong.schema,
   firstName: S.optional(User.FirstName.schema),
   lastName: S.optional(User.LastName.schema),
-  optInMarketing: S.compose(FormCheckbox, User.OptInMarketing.schema),
+  optInMarketing: S.compose(CheckboxInput, User.OptInMarketing.schema),
 });
 
 export const action = Runtime.formDataAction("Auth.register", RegistrationForm, (registration) =>

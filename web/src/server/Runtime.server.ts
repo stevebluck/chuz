@@ -1,16 +1,14 @@
 import * as Http from "@effect/platform/HttpServer";
 import { RequestSession } from "core/index";
-import { Effect, Layer } from "effect";
+import { Effect } from "effect";
 import { App } from "./App";
 import { CookieSessionStorage } from "./CookieSessionStorage";
 import { Remix } from "./Remix";
 import { Sessions } from "./Sessions";
 
-type RequestLayer = Sessions | CookieSessionStorage;
-
-export const Runtime = await Remix.make<App, RequestLayer>({
+export const Runtime = await Remix.make({
   layer: App.live,
-  requestLayer: Sessions.layer.pipe(Layer.merge(CookieSessionStorage.layer)),
+  requestLayer: Sessions.layer,
   middleware: (self) => self.pipe(Effect.flatMap(setSessionCookie)),
 });
 

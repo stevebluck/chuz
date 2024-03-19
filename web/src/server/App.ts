@@ -2,7 +2,8 @@ import { Identified, Password } from "@chuz/domain";
 import { DevTools } from "@effect/experimental";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import * as Core from "core/index";
-import { Clock, Config, ConfigError, Context, Effect, Layer } from "effect";
+import { Clock, Config, Context, Effect, Layer } from "effect";
+import { CookieSessionStorage } from "./CookieSessionStorage";
 
 class Auth extends Context.Tag("@app/Auth")<Auth, SupabaseClient["auth"]>() {
   static config = Config.all({
@@ -77,21 +78,15 @@ export class Users extends Effect.Tag("@app/Users")<Users, Core.Users>() {
 
       return yield* _(Core.SupabaseUsers.make({ emailRedirectTo: "" }, client, db));
     }),
-  ).pipe(Layer.provide(Auth.live), Layer.provide(Database.live));
+  );
 }
 
-export type App = Users | Passwords;
-
 export namespace App {
-  export const dev: Layer.Layer<App, ConfigError.ConfigError> = Layer.mergeAll(
-    Users.dev,
-    Passwords.dev,
-    DevTools.layer(),
+  export const dev = Layer.mergeAll(Users.dev, Passwords.dev, CookieSessionStorage.layer).pipe(
+    Layer.provide(DevTools.layer()),
   );
 
-  export const live: Layer.Layer<App, ConfigError.ConfigError> = Layer.mergeAll(
-    Users.live,
-    Passwords.live,
-    DevTools.layer(),
+  export const live = Layer.mergeAll(Users.dev, Passwords.live, CookieSessionStorage.layer).pipe(
+    Layer.provide(DevTools.layer()),
   );
 }

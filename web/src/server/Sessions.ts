@@ -14,5 +14,5 @@ export class Sessions extends Effect.Tag("@app/Sessions")<Sessions, Core.Session
       Effect.merge,
       Effect.flatMap(Core.UserSessions.make),
     ),
-  ).pipe(Layer.provideMerge(CookieSessionStorage.layer));
+  ).pipe(Layer.provide(CookieSessionStorage.layer));
 }
