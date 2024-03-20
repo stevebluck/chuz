@@ -63,6 +63,7 @@ export class SupabaseUsers implements Users {
       return new SupabaseUsers(config, auth, repo, cache);
     });
 
+  // TODO: write a test to deal with refresh tokens
   identify = (token: Token<Id<User>>, refreshToken: Token<string>): Effect.Effect<Session<User>, Token.NoSuchToken> => {
     return Effect.Do.pipe(
       Effect.bind("session", () => this.cache.get(CacheKey.make(token, refreshToken))),
@@ -105,6 +106,7 @@ export class SupabaseUsers implements Users {
     );
   };
 
+  // TODO: make Credential a sum type and take care of OAuth providers
   authenticate = (credentials: Credentials.Plain): Effect.Effect<Session<User>, Credentials.NotRecognised> => {
     return Effect.promise(() =>
       this.auth.signInWithPassword({ email: credentials.email, password: credentials.password }),
@@ -162,7 +164,7 @@ export class SupabaseUsers implements Users {
   updatePassword(
     token: Token<Id<User>>,
     currentPassword: Password.Plaintext,
-    updatedPasword: Password.Hashed,
+    updatedPasword: Password.Strong,
   ): Effect.Effect<void, User.NotFound | Credentials.NotRecognised> {
     throw new Error("Method not implemented.");
   }
@@ -173,7 +175,7 @@ export class SupabaseUsers implements Users {
 
   resetPassword(
     token: Token<[Email, Id<User>]>,
-    password: Password.Hashed,
+    password: Password.Strong,
   ): Effect.Effect<Identified<User>, Token.NoSuchToken> {
     throw new Error("Method not implemented.");
   }
@@ -224,8 +226,8 @@ const toSession = (user: Identified<User>, session: SbSession) =>
   });
 
 const toUser = (user: DB["users"]): Effect.Effect<Identified<User>, ParseError> =>
-  User.parse({
-    email: user.email || "",
+  User.from({
+    email: user.email,
     firstName: user.first_name,
     lastName: user.last_name,
     optInMarketing: user.opt_in_marketing || false,

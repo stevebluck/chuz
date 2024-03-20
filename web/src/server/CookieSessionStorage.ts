@@ -6,7 +6,7 @@ import { Cause, Duration, Effect, Layer, Option } from "effect";
 
 // config
 const SESSION_COOKIE = "_session";
-const SESSION_COOKIE_DURATION = Duration.weeks(2);
+const SESSION_COOKIE_DURATION = Duration.days(365);
 
 type CookieSession = {
   token: Token<Id<User>>;

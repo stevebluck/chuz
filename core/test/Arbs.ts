@@ -10,22 +10,23 @@ export namespace Arbs {
   }
 
   export namespace Emails {
-    export const Email: fc.Arbitrary<Domain.Email> = fc.emailAddress().map<Domain.Email>(Domain.Email.unsafeFrom);
+    export const Email = fc.emailAddress().map<Domain.Email>(Domain.Email.unsafeFrom);
   }
 
   export namespace Users {
     export const FirstName = Arbitrary.make(Domain.User.FirstName.schema)(fc);
     export const LastName = Arbitrary.make(Domain.User.LastName.schema)(fc);
     export const OptInMarketing = Arbitrary.make(Domain.User.OptInMarketing.schema)(fc);
+    export const StrongCredentials: fc.Arbitrary<Domain.Credentials.Strong> = fc.record({
+      email: Emails.Email,
+      password: Passwords.Strong,
+    });
 
-    export type Register = typeof Register extends fc.Arbitrary<infer A> ? A : never;
-    export const Register = fc.record({
-      credentials: fc.record({
-        email: Emails.Email,
-        password: Passwords.Strong,
-      }),
-      firstName: FirstName,
-      lastName: LastName,
+    export type Register = fc.Arbitrary<Domain.User.Registration>;
+    export const Register: Register = fc.record({
+      credentials: StrongCredentials,
+      firstName: FirstName.map(Option.fromNullable),
+      lastName: LastName.map(Option.fromNullable),
       optInMarketing: OptInMarketing,
     });
 

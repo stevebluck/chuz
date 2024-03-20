@@ -33,30 +33,6 @@ class Database extends Context.Tag("@app/Database")<Database, Core.Database>() {
   );
 }
 
-export class Passwords extends Effect.Tag("@app/Passwords")<Passwords, Core.Passwords>() {
-  static config = {
-    N: 4,
-  };
-
-  static dev = Layer.effect(
-    Passwords,
-    Effect.sync(() => {
-      return Passwords.of({
-        hash: Core.Passwords.hasher(this.config),
-        match: Core.Passwords.matcher(this.config),
-      });
-    }),
-  );
-
-  static live = Layer.succeed(
-    Passwords,
-    Passwords.of({
-      hash: (pw) => Effect.sync(() => Password.Hashed.unsafeFrom(pw)),
-      match: () => Effect.succeed(true),
-    }),
-  );
-}
-
 export class Users extends Effect.Tag("@app/Users")<Users, Core.Users>() {
   static dev = Layer.effect(
     Users,
@@ -64,11 +40,10 @@ export class Users extends Effect.Tag("@app/Users")<Users, Core.Users>() {
       const clock = Clock.make();
       const userTokens = yield* _(Core.ReferenceTokens.create(clock, Identified.equals));
       const passwordResetTokens = yield* _(Core.ReferenceTokens.create(clock, Password.Reset.equals));
-      const passwords = yield* _(Passwords);
 
-      return yield* _(Core.ReferenceUsers.make(userTokens, passwordResetTokens, passwords.match));
+      return yield* _(Core.ReferenceUsers.make(userTokens, passwordResetTokens));
     }),
-  ).pipe(Layer.provide(Passwords.dev));
+  );
 
   static live = Layer.effect(
     Users,
@@ -78,15 +53,11 @@ export class Users extends Effect.Tag("@app/Users")<Users, Core.Users>() {
 
       return yield* _(Core.SupabaseUsers.make({ emailRedirectTo: "" }, client, db));
     }),
-  );
+  ).pipe(Layer.provide(Database.live), Layer.provide(Auth.live));
 }
 
 export namespace App {
-  export const dev = Layer.mergeAll(Users.dev, Passwords.dev, CookieSessionStorage.layer).pipe(
-    Layer.provide(DevTools.layer()),
-  );
+  export const dev = Layer.mergeAll(Users.dev, CookieSessionStorage.layer).pipe(Layer.provide(DevTools.layer()));
 
-  export const live = Layer.mergeAll(Users.dev, Passwords.live, CookieSessionStorage.layer).pipe(
-    Layer.provide(DevTools.layer()),
-  );
+  export const live = Layer.mergeAll(Users.live, CookieSessionStorage.layer).pipe(Layer.provide(DevTools.layer()));
 }

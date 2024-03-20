@@ -5,11 +5,14 @@
       "outputs": ["build/**"],
       "dependsOn": ["^build"]
     },
+    "codegen": {
+      "dependsOn": []
+    },
     "test": {
       "dependsOn": []
     },
     "typecheck": {
-      "dependsOn": ["^build"]
+      "dependsOn": []
     },
     "update:latest": {
       "dependsOn": []

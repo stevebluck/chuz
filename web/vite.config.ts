@@ -12,6 +12,7 @@ export default defineConfig({
     tsconfigPaths(),
   ],
   build: {
+    target: "esnext",
     minify: "terser",
   },
 });

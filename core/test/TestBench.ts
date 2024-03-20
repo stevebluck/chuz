@@ -1,5 +1,4 @@
 import * as Domain from "@chuz/domain";
-import { Passwords } from "core/auth/Passwords";
 import * as Core from "core/index";
 import { Clock, Effect, Option } from "effect";
 
@@ -11,7 +10,7 @@ export namespace TestBench {
     const userTokens = yield* _(Core.ReferenceTokens.create(clock, Domain.Identified.equals));
     const passwordResetTokens = yield* _(Core.ReferenceTokens.create(clock, Domain.Password.Reset.equals));
 
-    const users = yield* _(Core.ReferenceUsers.make(userTokens, passwordResetTokens, matcher));
+    const users = yield* _(Core.ReferenceUsers.make(userTokens, passwordResetTokens));
 
     return { users };
   });
@@ -21,13 +20,9 @@ export namespace TestBench {
   export namespace Seeded {
     export const make: Effect.Effect<Seeded> = Effect.gen(function* (_) {
       const bench = yield* _(TestBench.make);
-      const hashed = yield* _(hash(userRegistration.credentials.password));
 
       const registration = Domain.User.Registration.make({
-        credentials: Domain.Credentials.Secure.make({
-          email: userRegistration.credentials.email,
-          password: hashed,
-        }),
+        credentials: userRegistration.credentials,
         firstName: Option.some(userRegistration.firstName),
         lastName: Option.some(userRegistration.lastName),
         optInMarketing: userRegistration.optInMarketing,
@@ -49,6 +44,3 @@ const userRegistration = {
     password: Domain.Password.Strong.unsafeFrom("password"),
   }),
 };
-
-const hash = Passwords.hasher({ N: 4 });
-const matcher = Passwords.matcher({ N: 4 });

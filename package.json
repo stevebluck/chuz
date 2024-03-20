@@ -3,6 +3,7 @@
   "scripts": {
     "dev": "turbo dev",
     "build": "turbo build",
+    "codegen": "turbo codegen",
     "update:latest": "turbo update:latest",
     "typecheck": "turbo typecheck",
     "test": "turbo test",

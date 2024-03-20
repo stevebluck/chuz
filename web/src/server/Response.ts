@@ -13,5 +13,5 @@ export class ValidationError extends Data.TaggedClass("ValidationError")<{ error
 
 export class Unauthorized extends Data.TaggedClass("Unauthorized")<{}> {
   static make = Effect.sync(() => new Unauthorized());
-  static is = <A>(a: A | Unauthorized): a is Unauthorized => a instanceof Unauthorized;
+  static is = <A>(a: A | Unauthorized): a is Unauthorized => a instanceof ValidationError;
 }

@@ -1,12 +1,12 @@
-import { Credentials, Email, Password, User } from "@chuz/domain";
+import { Email, Password, User } from "@chuz/domain";
 import * as S from "@effect/schema/Schema";
 import { useActionData } from "@remix-run/react";
-import { Effect, Option } from "effect";
+import { Effect } from "effect";
 import { Routes } from "src/Routes";
 import { AuthContent } from "src/auth/auth-layout";
 import { RegisterForm } from "src/auth/register-form";
-import { CheckboxInput } from "src/schemas/form";
-import { Passwords, Users } from "src/server/App";
+import { fromCheckboxInput, optionFromEmptyString } from "src/schemas/form";
+import { Users } from "src/server/App";
 import { Redirect, ValidationError } from "src/server/Response";
 import { Runtime } from "src/server/Runtime.server";
 import { Sessions } from "src/server/Sessions";
@@ -14,27 +14,20 @@ import { Sessions } from "src/server/Sessions";
 const RegistrationForm = S.struct({
   email: Email.schema,
   password: Password.Strong.schema,
-  firstName: S.optional(User.FirstName.schema),
-  lastName: S.optional(User.LastName.schema),
-  optInMarketing: S.compose(CheckboxInput, User.OptInMarketing.schema),
+  firstName: optionFromEmptyString(User.FirstName.schema),
+  lastName: optionFromEmptyString(User.LastName.schema),
+  optInMarketing: fromCheckboxInput(User.OptInMarketing.schema),
 });
 
-export const action = Runtime.formDataAction("Auth.register", RegistrationForm, (registration) =>
-  Passwords.hash(registration.password).pipe(
-    Effect.map((password) => Credentials.Secure.make({ email: registration.email, password })),
-    Effect.flatMap((credentials) =>
-      Users.register({
-        credentials,
-        firstName: Option.fromNullable(registration.firstName),
-        lastName: Option.fromNullable(registration.lastName),
-        optInMarketing: registration.optInMarketing,
-      }),
+export const action = Runtime.formDataAction(
+  "Auth.register",
+  RegistrationForm,
+  ({ email, firstName, lastName, optInMarketing, password }) =>
+    Users.register({ credentials: { email, password }, firstName, lastName, optInMarketing }).pipe(
+      Effect.flatMap(Sessions.mint),
+      Effect.zipRight(Redirect.make(Routes.myAccount)),
+      Effect.catchTag("EmailAlreadyInUse", () => ValidationError.make({ email: ["Email already in use"] })),
     ),
-    Effect.flatMap(Sessions.mint),
-    Effect.zipRight(Redirect.make(Routes.myAccount)),
-    Effect.asUnit,
-    Effect.catchTag("EmailAlreadyInUse", () => ValidationError.make({ email: ["Email already in use"] })),
-  ),
 );
 
 export default function RegisterPage() {
@@ -42,7 +35,7 @@ export default function RegisterPage() {
 
   return (
     <AuthContent to={Routes.login} toLabel="Login" title="Create an account" description="Lets get learning!">
-      <RegisterForm error={result?.error || {}} />
+      <RegisterForm error={{}} />
     </AuthContent>
   );
 }
