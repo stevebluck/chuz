@@ -1,8 +1,7 @@
 import { LinksFunction } from "@remix-run/node";
 import { Links, Meta, Outlet, Scripts, ScrollRestoration, useLoaderData } from "@remix-run/react";
 import { Effect, Option } from "effect";
-import { Runtime } from "./server/Runtime.server";
-import { Sessions } from "./server/Sessions";
+import { App, Sessions } from "./server";
 import { cn } from "./styles/classnames";
 import "./styles/style.css";
 
@@ -25,7 +24,7 @@ export const links: LinksFunction = () => {
   ];
 };
 
-export const loader = Runtime.loader(
+export const loader = App.loader(
   "Root",
   Sessions.getSession.pipe(
     Effect.map((session) => ({ name: Option.getOrElse(session.user.value.firstName, () => "Mr NoName") })),
@@ -33,11 +32,7 @@ export const loader = Runtime.loader(
   ),
 );
 
-export default function AppWithProviders() {
-  return <App />;
-}
-
-export const App = () => {
+export default () => {
   const data = useLoaderData<typeof loader>();
 
   return (

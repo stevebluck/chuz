@@ -1,63 +1,61 @@
-import { Identified, Password } from "@chuz/domain";
 import { DevTools } from "@effect/experimental";
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import * as Core from "core/index";
-import { Clock, Config, Context, Effect, Layer } from "effect";
-import { CookieSessionStorage } from "./CookieSessionStorage";
+import { Config, Duration, Effect, Layer, LogLevel, Logger } from "effect";
+import { SupabaseConfig } from "./Auth";
+import { CookieSessionStorage, CookieSessionStorageConfig } from "./CookieSessionStorage";
+import { PostgressConfig } from "./Database";
+import { Middleware } from "./Middleware";
+import { Remix } from "./Remix";
+import { Sessions } from "./Sessions";
+import { SupabaseUsersConfig, Users } from "./Users";
 
-class Auth extends Context.Tag("@app/Auth")<Auth, SupabaseClient["auth"]>() {
-  static config = Config.all({
-    url: Config.string("SUPABASE_URL"),
-    serviceKey: Config.string("SUPABASE_SERVICE_KEY"),
-  });
+const SupbabaseConfigLive = SupabaseConfig.layer({
+  url: Config.string("SUPABASE_URL"),
+  serviceKey: Config.string("SUPABASE_SERVICE_KEY"),
+});
 
-  static live = Layer.effect(
-    Auth,
-    Effect.gen(this, function* (_) {
-      const config = yield* _(this.config);
-      const client = createClient(config.url, config.serviceKey, {
-        auth: { flowType: "pkce", persistSession: false, debug: false },
-      });
+const ProstregreConfigLive = PostgressConfig.layer({
+  connectionString: Config.string("DATABASE_URL"),
+});
 
-      return client.auth;
-    }),
+const SupabaseUsersConfigLive = SupabaseUsersConfig.layer({
+  callbackUrl: Config.withDefault(Config.string("AUTH_CALLBACK_URL"), "http://localhost:3000/authenticate"),
+});
+
+const CookieSessionStorageConfigLive = CookieSessionStorageConfig.layer({
+  cookieName: Config.withDefault(Config.string("SESSION_COOKIE_NAME"), "_session"),
+  cookieMaxAgeSeconds: Config.withDefault(
+    Config.number("SESSION_COOKIE_DURATION_SECONDS"),
+    Duration.toSeconds(Duration.days(365)),
+  ),
+});
+
+const LogLevelLive = Layer.unwrapEffect(
+  Effect.gen(function* (_) {
+    const debug = yield* _(Config.withDefault(Config.boolean("DEBUG"), false));
+    const level = debug ? LogLevel.All : LogLevel.Info;
+    return Logger.minimumLogLevel(level);
+  }),
+);
+
+export namespace Runtime {
+  export const dev = Layer.mergeAll(Users.dev, CookieSessionStorage.layer).pipe(
+    Layer.provide(CookieSessionStorageConfigLive),
+    Layer.provide(LogLevelLive),
+    Layer.provide(DevTools.layer()),
+  );
+
+  export const live = Layer.mergeAll(Users.live, CookieSessionStorage.layer).pipe(
+    Layer.provide(SupbabaseConfigLive),
+    Layer.provide(ProstregreConfigLive),
+    Layer.provide(SupabaseUsersConfigLive),
+    Layer.provide(LogLevelLive),
+    Layer.provide(CookieSessionStorageConfigLive),
+    Layer.provide(DevTools.layer()),
   );
 }
 
-class Database extends Context.Tag("@app/Database")<Database, Core.Database>() {
-  static config = Config.all({ connectionString: Config.string("DATABASE_URL") });
-
-  static live = Layer.scoped(
-    Database,
-    this.config.pipe(Effect.flatMap((config) => Core.PostgresDatabase(config.connectionString))),
-  );
-}
-
-export class Users extends Effect.Tag("@app/Users")<Users, Core.Users>() {
-  static dev = Layer.effect(
-    Users,
-    Effect.gen(function* (_) {
-      const clock = Clock.make();
-      const userTokens = yield* _(Core.ReferenceTokens.create(clock, Identified.equals));
-      const passwordResetTokens = yield* _(Core.ReferenceTokens.create(clock, Password.Reset.equals));
-
-      return yield* _(Core.ReferenceUsers.make(userTokens, passwordResetTokens));
-    }),
-  );
-
-  static live = Layer.effect(
-    Users,
-    Effect.gen(function* (_) {
-      const db = yield* _(Database);
-      const client = yield* _(Auth);
-
-      return yield* _(Core.SupabaseUsers.make({ emailRedirectTo: "" }, client, db));
-    }),
-  ).pipe(Layer.provide(Database.live), Layer.provide(Auth.live));
-}
-
-export namespace App {
-  export const dev = Layer.mergeAll(Users.dev, CookieSessionStorage.layer).pipe(Layer.provide(DevTools.layer()));
-
-  export const live = Layer.mergeAll(Users.live, CookieSessionStorage.layer).pipe(Layer.provide(DevTools.layer()));
-}
+export const App = await Remix.make({
+  layer: Runtime.live,
+  requestLayer: Sessions.layer,
+  middleware: Middleware.setSessionCookie,
+});

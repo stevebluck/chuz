@@ -6,7 +6,7 @@ import { DB, Database } from "..";
 import { Users } from "./Users";
 
 interface Config {
-  emailRedirectTo: string;
+  callbackUrl: string;
 }
 
 const TEN_MINUTES = Duration.toSeconds(Duration.minutes(10));
@@ -85,7 +85,7 @@ export class SupabaseUsers implements Users {
         email,
         password,
         options: {
-          emailRedirectTo: this.config.emailRedirectTo,
+          emailRedirectTo: this.config.callbackUrl,
           data: {
             first_name: Option.getOrNull(firstName),
             last_name: Option.getOrNull(lastName),

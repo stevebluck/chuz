@@ -6,10 +6,7 @@ import { Routes } from "src/Routes";
 import { AuthContent } from "src/auth/auth-layout";
 import { RegisterForm } from "src/auth/register-form";
 import { fromCheckboxInput, optionFromEmptyString } from "src/schemas/form";
-import { Users } from "src/server/App";
-import { Redirect, ValidationError } from "src/server/Response";
-import { Runtime } from "src/server/Runtime.server";
-import { Sessions } from "src/server/Sessions";
+import { App, Redirect, Sessions, Users, ValidationError } from "src/server";
 
 const RegistrationForm = S.struct({
   email: Email.schema,
@@ -19,7 +16,7 @@ const RegistrationForm = S.struct({
   optInMarketing: fromCheckboxInput(User.OptInMarketing.schema),
 });
 
-export const action = Runtime.formDataAction(
+export const action = App.formDataAction(
   "Auth.register",
   RegistrationForm,
   ({ email, firstName, lastName, optInMarketing, password }) =>

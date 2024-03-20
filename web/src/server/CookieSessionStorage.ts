@@ -2,11 +2,8 @@ import { Id, Session, Token, User } from "@chuz/domain";
 import * as Http from "@effect/platform/HttpServer";
 import * as S from "@effect/schema/Schema";
 import { createCookieSessionStorage, createSession } from "@remix-run/node";
-import { Cause, Duration, Effect, Layer, Option } from "effect";
-
-// config
-const SESSION_COOKIE = "_session";
-const SESSION_COOKIE_DURATION = Duration.days(365);
+import { Cause, Context, Duration, Effect, Layer, Option } from "effect";
+import { LayerUtils } from "./LayerUtils";
 
 type CookieSession = {
   token: Token<Id<User>>;
@@ -17,24 +14,22 @@ type CookieSessionFlashData = {
   error: string;
 };
 
-export class CookieSessionStorage extends Effect.Tag("@app/CookieSessionStorage")<
-  CookieSessionStorage,
-  {
-    get: Effect.Effect<CookieSession, Cause.NoSuchElementException, Http.request.ServerRequest>;
-    commit: (session: Session<User>) => Effect.Effect<string>;
-    destroy: (session: Session<User>) => Effect.Effect<string>;
-  }
->() {
-  static layer = Layer.sync(CookieSessionStorage, () => {
+interface Config {
+  cookieName: string;
+  cookieMaxAgeSeconds: number;
+}
+
+const make = (config: Config) =>
+  Effect.gen(function* (_) {
     const storage = createCookieSessionStorage<CookieSession, CookieSessionFlashData>({
       cookie: {
-        name: SESSION_COOKIE,
+        name: config.cookieName,
         secrets: ["test"],
         isSigned: true,
         secure: process.env.NODE_ENV === "production",
         path: "/",
         sameSite: "lax",
-        maxAge: Duration.toSeconds(SESSION_COOKIE_DURATION),
+        maxAge: config.cookieMaxAgeSeconds,
         httpOnly: true,
       },
     });
@@ -43,7 +38,7 @@ export class CookieSessionStorage extends Effect.Tag("@app/CookieSessionStorage"
       Effect.sync(() =>
         createSession<CookieSession, CookieSessionFlashData>(
           { refreshToken: session.refreshToken, token: session.token },
-          SESSION_COOKIE,
+          config.cookieName,
         ),
       );
 
@@ -56,6 +51,7 @@ export class CookieSessionStorage extends Effect.Tag("@app/CookieSessionStorage"
       ),
       commit: (session) =>
         createRemixSession(session).pipe(
+          // TODO: check cookie limit, maybe need to set two separate cookies
           Effect.andThen((remixSession) => storage.commitSession(remixSession)),
           Effect.orDie,
         ),
@@ -66,4 +62,21 @@ export class CookieSessionStorage extends Effect.Tag("@app/CookieSessionStorage"
         ),
     });
   });
+
+export class CookieSessionStorageConfig extends Context.Tag("@app/CookieSessionStorageConfig")<
+  CookieSessionStorageConfig,
+  Config
+>() {
+  static layer = LayerUtils.config(this);
+}
+
+export class CookieSessionStorage extends Effect.Tag("@app/CookieSessionStorage")<
+  CookieSessionStorage,
+  {
+    get: Effect.Effect<CookieSession, Cause.NoSuchElementException, Http.request.ServerRequest>;
+    commit: (session: Session<User>) => Effect.Effect<string>;
+    destroy: (session: Session<User>) => Effect.Effect<string>;
+  }
+>() {
+  static layer = Layer.effect(CookieSessionStorage, CookieSessionStorageConfig.pipe(Effect.flatMap(make)));
 }

@@ -7,7 +7,7 @@ import { formatError } from "@effect/schema/ArrayFormatter";
 import { ParseError } from "@effect/schema/ParseResult";
 import * as S from "@effect/schema/Schema";
 import { ActionFunctionArgs, LoaderFunctionArgs, TypedResponse } from "@remix-run/node";
-import { Effect, Scope, Layer, ManagedRuntime, ReadonlyRecord, ReadonlyArray, Data, ConfigError } from "effect";
+import { Effect, Scope, Layer, ManagedRuntime, ReadonlyRecord, ReadonlyArray, ConfigError } from "effect";
 import { pretty } from "effect/Cause";
 import { isUndefined } from "effect/Predicate";
 import { NoInfer } from "effect/Types";
@@ -48,50 +48,53 @@ export namespace Remix {
   }: RemixSettings<L, R>): Promise<RemixRuntime<L, R>> => {
     const { runtimeEffect } = ManagedRuntime.make(Layer.mergeAll(layer, NodeFileSystem.layer, Path.layer));
 
-    const handlerEffect = runtimeEffect.pipe(Effect.map(Http.app.toWebHandlerRuntime));
-    const run = await Effect.runPromise(handlerEffect);
+    const handler = runtimeEffect.pipe(Effect.map(Http.app.toWebHandlerRuntime));
 
-    const makeHandler =
-      (type: string) =>
-      <A>(name: String, self: RemixEffect<A, L | R>) => {
-        const app = Effect.gen(function* (_) {
-          return yield* _(
-            self,
+    const run = await Effect.runPromise(handler);
 
-            // TODO: maybe move this to a middleware
-            Effect.flatMap((result) => {
-              if (Redirect.is(result)) {
-                return Http.response.json(null, {
-                  status: 302,
-                  headers: Http.headers.fromInput({ Location: result.location }),
-                });
-              }
+    const makeHandler = <A>(type: string, name: String, self: RemixEffect<A, L | R>) => {
+      const app = Effect.gen(function* (_) {
+        return yield* _(
+          self,
 
-              if (Unauthorized.is(result)) {
-                return Http.response.json(null, { status: 401 });
-              }
+          // TODO: maybe move this to a middleware
+          Effect.flatMap((result) => {
+            if (Redirect.is(result)) {
+              return Http.response.json(null, {
+                status: 302,
+                headers: Http.headers.fromInput({ Location: result.location }),
+              });
+            }
 
-              if (ValidationError.is(result)) {
-                return Http.response.json(result, { status: 400 });
-              }
+            if (Unauthorized.is(result)) {
+              return Http.response.json(null, { status: 401 });
+            }
 
-              if (isUndefined(result)) {
-                return Http.response.json(null, { status: 200 });
-              }
+            if (ValidationError.is(result)) {
+              return Http.response.json(result, { status: 400 });
+            }
 
-              return Http.response.json(result, { status: 200 });
-            }),
-            Effect.catchTags({ BodyError: (e) => Effect.die("body error") }),
-            Effect.withSpan(`${name}.${type}`),
-            middleware,
-            Effect.tapDefect((cause) => Effect.logError(pretty(cause))),
-          );
-        }).pipe(Effect.provide(requestLayer));
+            if (isUndefined(result)) {
+              return Http.response.json(null, { status: 200 });
+            }
 
-        const handler = run(app);
+            return Http.response.json(result, { status: 200 });
+          }),
+          Effect.catchTags({ BodyError: (e) => Effect.die("body error") }),
+          Effect.withSpan(`${name}.${type}`),
+          middleware,
+          Effect.tapDefect((cause) => Effect.logError(pretty(cause))),
+        );
+      }).pipe(Effect.provide(requestLayer));
 
-        return (args: LoaderFunctionArgs | ActionFunctionArgs) => handler(args.request);
-      };
+      const handler = run(app);
+
+      return (args: LoaderFunctionArgs | ActionFunctionArgs) => handler(args.request);
+    };
+
+    const loader = <A>(name: string, self: RemixEffect<A, L | R>) => makeHandler("loader", name, self);
+
+    const action = <A>(name: string, self: RemixEffect<A, L | R>) => makeHandler("action", name, self);
 
     const loaderSearchParams = <A, In, Out extends Readonly<Record<string, string>>>(
       name: string,
@@ -106,7 +109,7 @@ export namespace Remix {
         }),
       );
 
-      return makeHandler("action")(name, eff);
+      return makeHandler("action", name, eff);
     };
 
     const formDataAction = <A, In, Out extends Partial<Multipart.Persisted>>(
@@ -123,12 +126,12 @@ export namespace Remix {
         }),
       );
 
-      return makeHandler("action")(name, eff);
+      return makeHandler("action", name, eff);
     };
 
     return {
-      loader: makeHandler("loader"),
-      action: makeHandler("action"),
+      loader,
+      action,
       loaderSearchParams,
       formDataAction,
     };

@@ -1,8 +1,8 @@
 import { User } from "@chuz/domain";
 import * as Core from "core/index";
 import { Effect, Layer } from "effect";
-import { Users } from "./App";
 import { CookieSessionStorage } from "./CookieSessionStorage";
+import { Users } from "./Users";
 
 export class Sessions extends Effect.Tag("@app/Sessions")<Sessions, Core.Sessions<User>>() {
   static layer = Layer.effect(
@@ -14,5 +14,5 @@ export class Sessions extends Effect.Tag("@app/Sessions")<Sessions, Core.Session
       Effect.merge,
       Effect.flatMap(Core.UserSessions.make),
     ),
-  ).pipe(Layer.provide(CookieSessionStorage.layer));
+  );
 }

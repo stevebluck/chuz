@@ -1,11 +1,9 @@
 import { Effect } from "effect";
 import { Routes } from "src/Routes";
 import { Button } from "src/components/ui/button";
-import { Redirect } from "src/server/Response";
-import { Runtime } from "src/server/Runtime.server";
-import { Sessions } from "src/server/Sessions";
+import { App, Redirect, Sessions } from "src/server";
 
-export const loader = Runtime.loader(
+export const loader = App.loader(
   "MyAccount",
   Sessions.authenticated.pipe(
     Effect.asUnit,
