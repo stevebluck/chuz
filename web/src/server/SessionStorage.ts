@@ -2,31 +2,32 @@ import { Id, Session, Token, User } from "@chuz/domain";
 import * as Http from "@effect/platform/HttpServer";
 import * as S from "@effect/schema/Schema";
 import { createCookieSessionStorage, createSession } from "@remix-run/node";
-import { Cause, Context, Duration, Effect, Layer, Option } from "effect";
+import { Cause, Context, Effect, Layer, Option } from "effect";
 import { LayerUtils } from "./LayerUtils";
 
-type CookieSession = {
+interface CookieSession {
   token: Token<Id<User>>;
   refreshToken: Token<string>;
-};
+}
 
-type CookieSessionFlashData = {
+interface CookieSessionFlashData {
   error: string;
-};
+}
 
 interface Config {
   cookieName: string;
   cookieMaxAgeSeconds: number;
+  cookieSecure: boolean;
 }
 
-const make = (config: Config) =>
+const CookieSessionStorage = (config: Config) =>
   Effect.gen(function* (_) {
     const storage = createCookieSessionStorage<CookieSession, CookieSessionFlashData>({
       cookie: {
         name: config.cookieName,
         secrets: ["test"],
         isSigned: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: config.cookieSecure,
         path: "/",
         sameSite: "lax",
         maxAge: config.cookieMaxAgeSeconds,
@@ -42,7 +43,7 @@ const make = (config: Config) =>
         ),
       );
 
-    return CookieSessionStorage.of({
+    return SessionStorage.of({
       get: Http.request.schemaHeaders(S.struct({ cookie: S.string })).pipe(
         Effect.andThen(({ cookie }) => storage.getSession(cookie)),
         Effect.bind("refreshToken", (session) => Option.fromNullable(session.get("refreshToken"))),
@@ -63,20 +64,17 @@ const make = (config: Config) =>
     });
   });
 
-export class CookieSessionStorageConfig extends Context.Tag("@app/CookieSessionStorageConfig")<
-  CookieSessionStorageConfig,
-  Config
->() {
+export class SessionStorageConfig extends Context.Tag("@app/SessionStorageConfig")<SessionStorageConfig, Config>() {
   static layer = LayerUtils.config(this);
 }
 
-export class CookieSessionStorage extends Effect.Tag("@app/CookieSessionStorage")<
-  CookieSessionStorage,
+export class SessionStorage extends Effect.Tag("@app/SessionStorage")<
+  SessionStorage,
   {
     get: Effect.Effect<CookieSession, Cause.NoSuchElementException, Http.request.ServerRequest>;
     commit: (session: Session<User>) => Effect.Effect<string>;
     destroy: (session: Session<User>) => Effect.Effect<string>;
   }
 >() {
-  static layer = Layer.effect(CookieSessionStorage, CookieSessionStorageConfig.pipe(Effect.flatMap(make)));
+  static layer = Layer.effect(SessionStorage, SessionStorageConfig.pipe(Effect.flatMap(CookieSessionStorage)));
 }

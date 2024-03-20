@@ -1,10 +1,10 @@
 import { DevTools } from "@effect/experimental";
 import { Config, Duration, Effect, Layer, LogLevel, Logger } from "effect";
 import { SupabaseConfig } from "./Auth";
-import { CookieSessionStorage, CookieSessionStorageConfig } from "./CookieSessionStorage";
 import { PostgressConfig } from "./Database";
 import { Middleware } from "./Middleware";
 import { Remix } from "./Remix";
+import { SessionStorage, SessionStorageConfig } from "./SessionStorage";
 import { Sessions } from "./Sessions";
 import { SupabaseUsersConfig, Users } from "./Users";
 
@@ -21,7 +21,8 @@ const SupabaseUsersConfigLive = SupabaseUsersConfig.layer({
   callbackUrl: Config.withDefault(Config.string("AUTH_CALLBACK_URL"), "http://localhost:3000/authenticate"),
 });
 
-const CookieSessionStorageConfigLive = CookieSessionStorageConfig.layer({
+const CookieSessionStorageConfigLive = SessionStorageConfig.layer({
+  cookieSecure: Config.string("NODE_ENV").pipe(Config.map((env) => env === "production")),
   cookieName: Config.withDefault(Config.string("SESSION_COOKIE_NAME"), "_session"),
   cookieMaxAgeSeconds: Config.withDefault(
     Config.number("SESSION_COOKIE_DURATION_SECONDS"),
@@ -37,14 +38,14 @@ const LogLevelLive = Layer.unwrapEffect(
   }),
 );
 
-export namespace Runtime {
-  export const dev = Layer.mergeAll(Users.dev, CookieSessionStorage.layer).pipe(
+namespace AppLayer {
+  export const dev = Layer.mergeAll(Users.dev, SessionStorage.layer).pipe(
     Layer.provide(CookieSessionStorageConfigLive),
     Layer.provide(LogLevelLive),
     Layer.provide(DevTools.layer()),
   );
 
-  export const live = Layer.mergeAll(Users.live, CookieSessionStorage.layer).pipe(
+  export const live = Layer.mergeAll(Users.live, SessionStorage.layer).pipe(
     Layer.provide(SupbabaseConfigLive),
     Layer.provide(ProstregreConfigLive),
     Layer.provide(SupabaseUsersConfigLive),
@@ -55,7 +56,7 @@ export namespace Runtime {
 }
 
 export const App = await Remix.make({
-  layer: Runtime.live,
+  layer: AppLayer.live,
   requestLayer: Sessions.layer,
   middleware: Middleware.setSessionCookie,
 });
