@@ -1,6 +1,5 @@
 import * as S from "@effect/schema/Schema";
 import { Data, Match } from "effect";
-import { Id } from ".";
 import { Email } from "./Email";
 import { Password } from "./Password";
 import { User } from "./User";

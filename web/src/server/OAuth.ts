@@ -29,7 +29,7 @@ const make = Effect.gen(function* (_) {
           Effect.andThen(Google.fromUnknown),
           Effect.andThen((user) =>
             Credentials.Provider.make({
-              id: Id(user.id),
+              id: user.id,
               user: User.make({
                 email: user.email,
                 firstName: user.given_name,
