@@ -6,4 +6,3 @@ export * from "./Credentials";
 export * from "./Errors";
 export * from "./Password";
 export * from "./Session";
-export * from "./IdentityProvider";

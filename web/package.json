@@ -14,10 +14,6 @@
     "@chuz/core": "workspace:*",
     "@chuz/domain": "workspace:*",
     "@chuz/prelude": "workspace:*",
-    "@effect/experimental": "^0.11.0",
-    "@effect/platform": "^0.48.0",
-    "@effect/platform-node": "^0.45.2",
-    "@effect/schema": "^0.64.0",
     "@radix-ui/react-checkbox": "^1.0.4",
     "@radix-ui/react-dropdown-menu": "^2.0.6",
     "@radix-ui/react-label": "^2.0.2",
@@ -29,7 +25,6 @@
     "clsx": "^2.1.0",
     "compression": "^1.7.4",
     "cookie": "^0.6.0",
-    "effect": "^2.4.4",
     "express": "^4.18.3",
     "googleapis": "^134.0.0",
     "isbot": "^5.1.1",
@@ -52,13 +47,20 @@
     "@types/react-dom": "^18.2.22",
     "autoprefixer": "^10.4.18",
     "cross-env": "^7.0.3",
-    "fast-check": "^3.16.0",
     "tailwindcss": "^3.4.1",
     "terser": "^5.29.1",
-    "typescript": "^5.4.2",
     "vite": "^5.1.6",
     "vite-plugin-cjs-interop": "^2.1.0",
     "vite-tsconfig-paths": "^4.3.1"
+  },
+  "peerDependencies": {
+    "effect": "*",
+    "@effect/experimental": "*",
+    "@effect/platform": "*",
+    "@effect/platform-node": "*",
+    "@effect/schema": "*",
+    "typescript": "*",
+    "fast-check": "^3.16.0"
   },
   "engines": {
     "node": ">=18.0.0"

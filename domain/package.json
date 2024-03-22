@@ -9,13 +9,13 @@
     "update:latest": "pnpm update --latest"
   },
   "dependencies": {
-    "@chuz/prelude": "workspace:*",
-    "@effect/schema": "^0.64.0",
-    "effect": "^2.4.4"
+    "@chuz/prelude": "workspace:*"
   },
   "devDependencies": {
-    "@chuz/typescript-config": "workspace:*",
-    "fast-check": "^3.16.0",
-    "typescript": "^5.4.2"
+    "@chuz/typescript-config": "workspace:*"
+  },
+  "peerDependencies": {
+    "@effect/schema": "*",
+    "effect": "*"
   }
 }

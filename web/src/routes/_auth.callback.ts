@@ -1,7 +1,7 @@
 import * as S from "@effect/schema/Schema";
 import { Effect } from "effect";
 import { Routes } from "src/Routes";
-import { Users, App, Sessions, Redirect } from "src/server";
+import { App, Sessions, Redirect } from "src/server";
 import { OAuth } from "src/server/OAuth";
 
 const SearchParams = S.struct({
@@ -10,12 +10,12 @@ const SearchParams = S.struct({
 });
 
 export const loader = App.loaderSearchParams("Auth.callback", SearchParams, ({ code, provider }) =>
-  Effect.gen(function* (_) {
-    const credential = yield* _(OAuth.getCredential({ code, _tag: provider }));
-    const session = yield* _(Users.authenticate(credential), Effect.orDie);
-
-    yield* _(Sessions.mint(session));
-
-    return yield* _(Redirect.make(Routes.myAccount));
-  }),
+  OAuth.exchangeCodeForSession({ code, _tag: provider }).pipe(
+    Effect.tap((session) => Sessions.mint(session)),
+    Effect.andThen(Redirect.make(Routes.myAccount)),
+    Effect.catchTags({
+      CredentialsNotRecognised: () => Redirect.make(Routes.login),
+      EmailAlreadyInUse: () => Redirect.make(Routes.login),
+    }),
+  ),
 );

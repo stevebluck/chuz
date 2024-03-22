@@ -14,21 +14,19 @@
   "dependencies": {
     "@chuz/domain": "workspace:*",
     "@chuz/prelude": "workspace:*",
-    "@effect/schema": "^0.64.0",
-    "bcryptjs": "^2.4.3",
     "date-fns": "^3.4.0",
-    "effect": "^2.4.4",
     "kysely": "^0.27.3",
-    "pg": "^8.11.3",
-    "vitest": "^1.3.1"
+    "pg": "^8.11.3"
   },
   "devDependencies": {
     "@chuz/typescript-config": "workspace:*",
-    "@types/bcryptjs": "^2.4.6",
     "@types/pg": "^8.11.2",
-    "fast-check": "^3.16.0",
     "kysely-codegen": "^0.14.0",
-    "typescript": "^5.4.2",
     "vite-tsconfig-paths": "^4.3.1"
+  },
+  "peerDependencies": {
+    "effect": "*",
+    "@effect/schema": "*",
+    "fast-check": "*"
   }
 }

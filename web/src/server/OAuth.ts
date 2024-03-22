@@ -1,8 +1,10 @@
-import { Credentials, Email, Id, IdentityProvider, User } from "@chuz/domain";
+import { Credentials, Email, User } from "@chuz/domain";
 import * as S from "@effect/schema/Schema";
 import { Context, Effect, Layer } from "effect";
 import { google } from "googleapis";
+import { IdentityProvider } from "./IdentityProvider";
 import { LayerUtils } from "./LayerUtils";
+import { Users } from "./Users";
 
 interface Config {
   redirectUri: string;
@@ -19,13 +21,13 @@ const make = Effect.gen(function* (_) {
   );
 
   return {
-    getCredential: IdentityProvider.Authorise.match({
+    exchangeCodeForSession: IdentityProvider.Authorise.match({
       google: ({ code }) =>
         Effect.promise(() => oauth2Client.getToken(code)).pipe(
           Effect.andThen(({ tokens }) =>
             fetch(`https://www.googleapis.com/oauth2/v1/userinfo?access_token=${tokens.access_token}`),
           ),
-          Effect.andThen((res) => res.json()),
+          Effect.andThen((res) => res.json() as Promise<unknown>),
           Effect.andThen(Google.fromUnknown),
           Effect.andThen((user) =>
             Credentials.Provider.make({
@@ -38,7 +40,11 @@ const make = Effect.gen(function* (_) {
               }),
             }),
           ),
-          Effect.orDie,
+          Effect.flatMap(Users.authenticate),
+          Effect.catchTags({
+            ParseError: Effect.die,
+            UnknownException: Effect.die,
+          }),
         ),
     }),
     generateAuthUrl: IdentityProvider.Provider.match({

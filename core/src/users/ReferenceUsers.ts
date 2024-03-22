@@ -3,9 +3,8 @@ import { AutoIncrement } from "core/persistence/AutoIncrement";
 import { Table } from "core/persistence/Table";
 import { Tokens } from "core/tokens/Tokens";
 import { Users } from "core/users/Users";
-import { Console, Duration, Effect, Either, Option, Ref, identity } from "effect";
+import { Duration, Effect, Either, Option, Ref, identity } from "effect";
 
-// TODO: config?
 const ONE_DAY = Duration.toMillis("1 days");
 const TWO_DAYS = Duration.toMillis("2 days");
 

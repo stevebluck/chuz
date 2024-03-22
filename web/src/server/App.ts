@@ -49,7 +49,6 @@ namespace AppLayer {
     Layer.provide(ProstregreConfigLive),
     Layer.provide(LogLevelLive),
     Layer.provide(CookieSessionStorageConfigLive),
-    Layer.provide(DevTools.layer()),
   );
 }
 
