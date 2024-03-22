@@ -1,6 +1,5 @@
 import { Credentials, Email, Password, Token, User } from "@chuz/domain";
-import { Users } from "core/users/Users";
-import { Effect, Option } from "effect";
+import { Effect } from "effect";
 import * as fc from "fast-check";
 import { afterAll, describe, expect } from "vitest";
 import { Arbs } from "../Arbs";
@@ -53,7 +52,7 @@ export namespace UsersSpec {
         Effect.gen(function* (_) {
           const { users } = yield* _(TestBench);
           const session = yield* _(users.register(registration));
-          const identified = yield* _(users.identify(session.token, Token.make("whatever")));
+          const identified = yield* _(users.identify(session.token));
           expect(identified.user).toEqual(session.user);
         }),
       config,
@@ -67,7 +66,7 @@ export namespace UsersSpec {
           const { users } = yield* _(TestBench);
           const session = yield* _(users.register(registration));
           yield* _(users.logout(session.token));
-          const noSuchTokenError = yield* _(users.identify(session.token, Token.make("whatever")).pipe(Effect.flip));
+          const noSuchTokenError = yield* _(users.identify(session.token).pipe(Effect.flip));
           expect(noSuchTokenError).toEqual(new Token.NoSuchToken());
         }),
       config,
@@ -85,7 +84,7 @@ export namespace UsersSpec {
           const authed = yield* _(users.authenticate(plain.credentials));
           const authed1 = yield* _(users.authenticate(plain.lowercase));
           const authed2 = yield* _(users.authenticate(plain.uppercase));
-          const badCredentials = new Credentials.Plain({
+          const badCredentials = new Credentials.EmailPassword.Plain({
             email: plain.credentials.email,
             password: Password.Plaintext.unsafeFrom(`bad-${plain.credentials.password}`),
           });
@@ -95,6 +94,45 @@ export namespace UsersSpec {
           expect(authed1.user).toEqual(session.user);
           expect(authed2.user).toEqual(session.user);
           expect(credentialsNotRecognisedError).toEqual(new Credentials.NotRecognised());
+        }),
+      config,
+    );
+
+    asyncProperty(
+      "users can authenticate via a third party identity provider",
+      Arbs.Users.ProviderCredential,
+      (credential) =>
+        Effect.gen(function* (_) {
+          const { users } = yield* _(TestBench);
+
+          const session0 = yield* _(users.authenticate(credential));
+          const foundUserByEmail = yield* _(users.findByEmail(credential.user.email));
+
+          expect(session0.user.value).toEqual(credential.user);
+          expect(foundUserByEmail).toEqual(session0.user);
+        }),
+      config,
+    );
+
+    asyncProperty(
+      "users can't authenticate via a third party identity provider after already registering with the same email",
+      Arbs.Users.Register,
+      (registration) =>
+        Effect.gen(function* (_) {
+          const { users } = yield* _(TestBench);
+          const session0 = yield* _(users.register(registration));
+
+          const credential = new Credentials.Provider({
+            id: "test",
+            user: { email: registration.credentials.email, ...registration },
+          });
+
+          const emailAlreadyInUseError = yield* _(users.authenticate(credential), Effect.flip);
+
+          const foundUserById = yield* _(users.findById(session0.user.id));
+
+          expect(foundUserById).toEqual(session0.user);
+          expect(emailAlreadyInUseError).toEqual(new Email.AlreadyInUse({ email: registration.credentials.email }));
         }),
       config,
     );
@@ -157,7 +195,9 @@ export namespace UsersSpec {
               expect(credentialsNotRecognisedError).toEqual(new Credentials.NotRecognised());
 
               const authed2 = yield* _(
-                users.authenticate(new Credentials.Plain({ email: newEmail, password: plain.credentials.password })),
+                users.authenticate(
+                  new Credentials.EmailPassword.Plain({ email: newEmail, password: plain.credentials.password }),
+                ),
               );
               expect(authed2.user.id).toEqual(session.user.id);
             }),
@@ -209,7 +249,7 @@ export namespace UsersSpec {
 
               const authed2 = yield* _(
                 users.authenticate(
-                  new Credentials.Plain({
+                  new Credentials.EmailPassword.Plain({
                     email: register.credentials.email,
                     password: Password.Plaintext.fromStrong(newPassword),
                   }),
@@ -261,8 +301,8 @@ export namespace UsersSpec {
 
               yield* _(users.updatePassword(session1.token, plain.credentials.password, newPassword));
 
-              const error = yield* _(users.identify(session0.token, session0.refreshToken).pipe(Effect.flip));
-              const session2 = yield* _(users.identify(session1.token, session1.refreshToken));
+              const error = yield* _(users.identify(session0.token).pipe(Effect.flip));
+              const session2 = yield* _(users.identify(session1.token));
 
               expect(error).toEqual(new Token.NoSuchToken());
               expect(session1.user).toEqual(session0.user);
@@ -290,7 +330,7 @@ export namespace UsersSpec {
             const error = yield* _(users.authenticate(plain.credentials).pipe(Effect.flip));
             const session1 = yield* _(
               users.authenticate(
-                new Credentials.Plain({
+                new Credentials.EmailPassword.Plain({
                   email: plain.credentials.email,
                   password: Password.Plaintext.fromStrong(newPassword),
                 }),
@@ -316,8 +356,8 @@ export namespace UsersSpec {
             const token = yield* _(users.requestPasswordReset(register.credentials.email));
             yield* _(users.resetPassword(token, newPassword));
 
-            const error0 = yield* _(users.identify(session0.token, session0.refreshToken).pipe(Effect.flip));
-            const error1 = yield* _(users.identify(session1.token, session1.refreshToken).pipe(Effect.flip));
+            const error0 = yield* _(users.identify(session0.token).pipe(Effect.flip));
+            const error1 = yield* _(users.identify(session1.token).pipe(Effect.flip));
 
             expect(error0).toEqual(new Token.NoSuchToken());
             expect(error1).toEqual(new Token.NoSuchToken());
@@ -354,17 +394,17 @@ export namespace UsersSpec {
       );
     });
   };
-  const makePlainCredentials = (credentials: Credentials.Strong) => {
+  const makePlainCredentials = (credentials: Credentials.EmailPassword.Strong) => {
     return {
-      credentials: new Credentials.Plain({
+      credentials: new Credentials.EmailPassword.Plain({
         email: credentials.email,
         password: Password.Plaintext.fromStrong(credentials.password),
       }),
-      lowercase: new Credentials.Plain({
+      lowercase: new Credentials.EmailPassword.Plain({
         email: Email.toLowerCase(credentials.email),
         password: Password.Plaintext.fromStrong(credentials.password),
       }),
-      uppercase: new Credentials.Plain({
+      uppercase: new Credentials.EmailPassword.Plain({
         email: Email.toUpperCase(credentials.email),
         password: Password.Plaintext.fromStrong(credentials.password),
       }),

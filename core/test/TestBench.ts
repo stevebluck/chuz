@@ -39,7 +39,7 @@ const userRegistration = {
   firstName: Domain.User.FirstName.unsafeFrom("Toby"),
   lastName: Domain.User.LastName.unsafeFrom("Lerone"),
   optInMarketing: Domain.User.OptInMarketing.unsafeFrom(true),
-  credentials: new Domain.Credentials.Strong({
+  credentials: new Domain.Credentials.EmailPassword.Strong({
     email: Domain.Email.unsafeFrom("lonestar@an.com"),
     password: Domain.Password.Strong.unsafeFrom("password"),
   }),

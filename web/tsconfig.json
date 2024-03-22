@@ -1,6 +1,6 @@
 {
   "extends": "@chuz/typescript-config/web.json",
-  "include": ["src/**/*", "env.d.ts"],
+  "include": ["src/**/*", "env.d.ts", "src/server/Auth.ts"],
   "compilerOptions": {
     "baseUrl": "./",
     "module": "ESNext",

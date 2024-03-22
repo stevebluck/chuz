@@ -1,28 +1,27 @@
 import { DevTools } from "@effect/experimental";
 import { Config, Duration, Effect, Layer, LogLevel, Logger } from "effect";
-import { SupabaseConfig } from "./Auth";
 import { PostgressConfig } from "./Database";
 import { Middleware } from "./Middleware";
+import { OAuth, OAuthConfig } from "./OAuth";
 import { Remix } from "./Remix";
 import { SessionStorage, SessionStorageConfig } from "./SessionStorage";
 import { Sessions } from "./Sessions";
-import { SupabaseUsersConfig, Users } from "./Users";
+import { Users } from "./Users";
 
-const SupbabaseConfigLive = SupabaseConfig.layer({
-  url: Config.string("SUPABASE_URL"),
-  serviceKey: Config.string("SUPABASE_SERVICE_KEY"),
+const debug = Config.withDefault(Config.boolean("DEBUG"), false);
+
+const OAuthConfigLive = OAuthConfig.layer({
+  googleClientId: Config.string("GOOGLE_CLIENT_ID"),
+  googleClientSecret: Config.string("GOOGLE_CLIENT_SECRET"),
+  redirectUri: Config.withDefault(Config.string("AUTH_CALLBACK_URL"), "http://localhost:5173/callback"),
 });
 
 const ProstregreConfigLive = PostgressConfig.layer({
   connectionString: Config.string("DATABASE_URL"),
 });
 
-const SupabaseUsersConfigLive = SupabaseUsersConfig.layer({
-  callbackUrl: Config.withDefault(Config.string("AUTH_CALLBACK_URL"), "http://localhost:3000/authenticate"),
-});
-
 const CookieSessionStorageConfigLive = SessionStorageConfig.layer({
-  cookieSecure: Config.string("NODE_ENV").pipe(Config.map((env) => env === "production")),
+  cookieSecure: Config.map(Config.string("NODE_ENV"), (env) => env === "production"),
   cookieName: Config.withDefault(Config.string("SESSION_COOKIE_NAME"), "_session"),
   cookieMaxAgeSeconds: Config.withDefault(
     Config.number("SESSION_COOKIE_DURATION_SECONDS"),
@@ -32,23 +31,22 @@ const CookieSessionStorageConfigLive = SessionStorageConfig.layer({
 
 const LogLevelLive = Layer.unwrapEffect(
   Effect.gen(function* (_) {
-    const debug = yield* _(Config.withDefault(Config.boolean("DEBUG"), false));
-    const level = debug ? LogLevel.All : LogLevel.Info;
+    const isDebug = yield* _(debug);
+    const level = isDebug ? LogLevel.All : LogLevel.Info;
     return Logger.minimumLogLevel(level);
   }),
 );
 
 namespace AppLayer {
-  export const dev = Layer.mergeAll(Users.dev, SessionStorage.layer).pipe(
+  export const dev = Layer.mergeAll(Users.dev, SessionStorage.layer, OAuth.live).pipe(
+    Layer.provide(OAuthConfigLive),
     Layer.provide(CookieSessionStorageConfigLive),
     Layer.provide(LogLevelLive),
     Layer.provide(DevTools.layer()),
   );
-
-  export const live = Layer.mergeAll(Users.live, SessionStorage.layer).pipe(
-    Layer.provide(SupbabaseConfigLive),
+  export const live = Layer.mergeAll(Users.live, SessionStorage.layer, OAuth.live).pipe(
+    Layer.provide(OAuthConfigLive),
     Layer.provide(ProstregreConfigLive),
-    Layer.provide(SupabaseUsersConfigLive),
     Layer.provide(LogLevelLive),
     Layer.provide(CookieSessionStorageConfigLive),
     Layer.provide(DevTools.layer()),
@@ -56,7 +54,7 @@ namespace AppLayer {
 }
 
 export const App = await Remix.make({
-  layer: AppLayer.live,
+  layer: AppLayer.dev,
   requestLayer: Sessions.layer,
   middleware: Middleware.setSessionCookie,
 });

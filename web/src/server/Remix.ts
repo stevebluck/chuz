@@ -7,7 +7,7 @@ import { formatError } from "@effect/schema/ArrayFormatter";
 import { ParseError } from "@effect/schema/ParseResult";
 import * as S from "@effect/schema/Schema";
 import { ActionFunctionArgs, LoaderFunctionArgs, TypedResponse } from "@remix-run/node";
-import { Effect, Scope, Layer, ManagedRuntime, ReadonlyRecord, ReadonlyArray, ConfigError } from "effect";
+import { Effect, Scope, Layer, ManagedRuntime, ReadonlyRecord, ReadonlyArray, ConfigError, Option } from "effect";
 import { pretty } from "effect/Cause";
 import { isUndefined } from "effect/Predicate";
 import { NoInfer } from "effect/Types";
@@ -20,7 +20,7 @@ type RequestLayer<R> = R | Http.request.ServerRequest | FileSystem.FileSystem | 
 interface RemixRuntime<L, R> {
   loader: <A>(name: string, self: RemixEffect<A, L | R>) => (args: LoaderFunctionArgs) => Promise<TypedResponse<A>>;
   action: <A>(name: string, self: RemixEffect<A, L | R>) => (args: ActionFunctionArgs) => Promise<TypedResponse<A>>;
-  loaderSearchParams: <A, In, Out extends Readonly<Record<string, string>>>(
+  loaderSearchParams: <A, In, Out extends Partial<Record<string, string>>>(
     name: string,
     schema: S.Schema<In, Out>,
     self: (input: In) => RemixEffect<A | ValidationError, L | R>,
@@ -96,16 +96,18 @@ export namespace Remix {
 
     const action = <A>(name: string, self: RemixEffect<A, L | R>) => makeHandler("action", name, self);
 
-    const loaderSearchParams = <A, In, Out extends Readonly<Record<string, string>>>(
+    const loaderSearchParams = <A, In, Out extends Partial<Record<string, string>>>(
       name: string,
       schema: S.Schema<In, Out>,
       self: (input: In) => RemixEffect<A | ValidationError, L | R>,
     ) => {
-      const eff = Http.request.schemaBodyUrlParams(schema).pipe(
+      const eff = Http.request.ServerRequest.pipe(
+        Effect.map((a) => new URL(a.url)),
+        Effect.map((a) => ReadonlyRecord.fromEntries(a.searchParams.entries()) as Out),
+        Effect.flatMap(S.decode(schema)),
         Effect.flatMap(self),
         Effect.catchTags({
           ParseError: (e) => ValidationError.make(formatParseError(e)),
-          RequestError: Effect.die,
         }),
       );
 
@@ -139,7 +141,6 @@ export namespace Remix {
 }
 
 const formatParseError = (error: ParseError): Record<string, string[]> => {
-  console.log(formatError(error));
   return ReadonlyRecord.map(
     ReadonlyArray.groupBy(formatError(error), (i) => i.path.join(".")),
     ReadonlyArray.map((a) => a.message),

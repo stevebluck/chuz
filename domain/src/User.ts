@@ -20,9 +20,9 @@ export namespace User {
 }
 
 export namespace User {
-  export type FirstName = S.Schema.Type<typeof User.FirstName>;
-  export type LastName = S.Schema.Type<typeof User.LastName>;
-  export type OptInMarketing = S.Schema.Type<typeof User.LastName>;
+  export type FirstName = S.Schema.Type<typeof User.FirstName.schema>;
+  export type LastName = S.Schema.Type<typeof User.LastName.schema>;
+  export type OptInMarketing = S.Schema.Type<typeof User.LastName.schema>;
 
   export interface Partial extends S.Schema.Type<typeof Partial.schema> {}
   export interface Registration extends S.Schema.Type<typeof Registration.schema> {}
@@ -48,7 +48,7 @@ export namespace User {
   export namespace Registration {
     export const schema = S.suspend(() =>
       S.struct({
-        credentials: Credentials.Strong,
+        credentials: Credentials.EmailPassword.Strong,
         firstName: S.option(User.FirstName.schema),
         lastName: S.option(User.LastName.schema),
         optInMarketing: User.OptInMarketing.schema,

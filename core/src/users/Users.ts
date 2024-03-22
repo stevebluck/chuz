@@ -1,4 +1,4 @@
-import { Credentials, Email, Id, Identified, Password, Session, Token, User } from "@chuz/domain";
+import { Credentials, Credential, Email, Id, Identified, Password, Session, Token, User } from "@chuz/domain";
 import { Effect } from "effect";
 
 export interface Users {
@@ -8,11 +8,9 @@ export interface Users {
 
   findByEmail(email: Email): Effect.Effect<Identified<User>, User.NotFound>;
 
-  identify(token: Token<Id<User>>, refreshToken: Token<string>): Effect.Effect<Session<User>, Token.NoSuchToken>;
+  identify(token: Token<Id<User>>): Effect.Effect<Session<User>, Token.NoSuchToken>;
 
-  authenticate(credentials: Credentials.Plain): Effect.Effect<Session<User>, Credentials.NotRecognised>;
-
-  authenticateByCode(code: Credentials.Code): Effect.Effect<Session<User>, Credentials.InvalidCode>;
+  authenticate(credential: Credential): Effect.Effect<Session<User>, Credentials.NotRecognised | Email.AlreadyInUse>;
 
   logout(token: Token<Id<User>>): Effect.Effect<void>;
 

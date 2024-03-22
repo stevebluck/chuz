@@ -12,6 +12,8 @@ export function LoginForm() {
   return (
     <div className={"grid gap-6"}>
       <Form method="POST" action={Routes.login}>
+        <Input name="_tag" type="hidden" value="Plain" />
+
         <div className="grid gap-6">
           <div className="grid gap-2">
             <Label htmlFor="email">Email</Label>
@@ -48,10 +50,13 @@ export function LoginForm() {
         <AppleIcon className="mr-2 h-5 w-5 dark:fill-white" />
         Apple
       </Button>
-      <Button variant="outline" type="button" disabled={isSubmitting}>
-        <GoogleIcon className="mr-2 h-4 w-4" />
-        Google
-      </Button>
+      <Form method="POST" action={Routes.login} className="flex flex-col">
+        <Input name="_tag" type="hidden" value="Google" />
+        <Button variant="outline" disabled={isSubmitting}>
+          <GoogleIcon className="mr-2 h-4 w-4" />
+          Google
+        </Button>
+      </Form>
     </div>
   );
 }

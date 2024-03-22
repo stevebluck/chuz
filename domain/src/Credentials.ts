@@ -1,27 +1,32 @@
 import * as S from "@effect/schema/Schema";
-import { Brand, Data } from "effect";
+import { Data, Match } from "effect";
+import { Id } from ".";
 import { Email } from "./Email";
 import { Password } from "./Password";
+import { User } from "./User";
 
 export namespace Credentials {
-  export type Code = string & Brand.Brand<"Code">;
-  export namespace Code {
-    export const schema: S.Schema<Code, string> = S.string.pipe(S.brand("Code"));
-  }
-
-  export class Plain extends S.Class<Plain>("Plain")({
-    email: Email.schema,
-    password: Password.Plaintext.schema,
+  export class Provider extends S.TaggedClass<Provider>()("Provider", {
+    id: S.string,
+    user: User.schema,
   }) {
-    static parse = S.decodeUnknown(Plain, { errors: "all" });
+    static make = Data.tagged<Provider>("Provider");
   }
 
-  export class Strong extends S.Class<Strong>("Strong")({
-    email: Email.schema,
-    password: Password.Strong.schema,
-  }) {}
+  export namespace EmailPassword {
+    export class Plain extends S.TaggedClass<Plain>()("Plain", {
+      email: Email.schema,
+      password: Password.Plaintext.schema,
+    }) {}
+
+    export class Strong extends S.TaggedClass<Strong>()("Strong", {
+      email: Email.schema,
+      password: Password.Strong.schema,
+    }) {}
+  }
 
   export class NotRecognised extends Data.TaggedError("CredentialsNotRecognised") {}
-
-  export class InvalidCode extends Data.TaggedError("InvalidCode")<{ error: unknown }> {}
+  export const match = Match.typeTags<Credential>();
 }
+
+export type Credential = Credentials.EmailPassword.Plain | Credentials.Provider;

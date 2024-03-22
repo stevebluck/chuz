@@ -1,4 +1,4 @@
-import { Email, Password, User } from "@chuz/domain";
+import { Credentials, Email, Password, User } from "@chuz/domain";
 import * as S from "@effect/schema/Schema";
 import { useActionData } from "@remix-run/react";
 import { Effect } from "effect";
@@ -20,7 +20,12 @@ export const action = App.formDataAction(
   "Auth.register",
   RegistrationForm,
   ({ email, firstName, lastName, optInMarketing, password }) =>
-    Users.register({ credentials: { email, password }, firstName, lastName, optInMarketing }).pipe(
+    Users.register({
+      credentials: new Credentials.EmailPassword.Strong({ email, password }),
+      firstName,
+      lastName,
+      optInMarketing,
+    }).pipe(
       Effect.flatMap(Sessions.mint),
       Effect.zipRight(Redirect.make(Routes.myAccount)),
       Effect.catchTag("EmailAlreadyInUse", () => ValidationError.make({ email: ["Email already in use"] })),

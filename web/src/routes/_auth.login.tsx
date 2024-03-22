@@ -1,21 +1,34 @@
 import { Credentials } from "@chuz/domain";
-import { useActionData } from "@remix-run/react";
-import { Effect } from "effect";
+import * as S from "@effect/schema/Schema";
+import { Effect, Match } from "effect";
 import { Routes } from "src/Routes";
 import { AuthContent } from "src/auth/auth-layout";
 import { LoginForm } from "src/auth/login-form";
-import { Users, Sessions, App } from "src/server";
+import { Users, Sessions, App, Redirect, ValidationError } from "src/server";
+import { OAuth } from "src/server/OAuth";
 
-export const action = App.formDataAction("Auth.login", Credentials.Plain, (credentials) =>
-  Users.authenticate(credentials).pipe(
-    Effect.flatMap(Sessions.mint),
-    Effect.catchTag("CredentialsNotRecognised", () => Effect.succeed({ error: "Credentials not recognised" })),
-  ),
+type Form = S.Schema.Type<typeof Form>;
+const Form = S.union(Credentials.EmailPassword.Plain, S.struct({ _tag: S.literal("Google") }));
+
+const match = Match.typeTags<Form>();
+
+export const action = App.formDataAction(
+  "Auth.login",
+  Form,
+  match({
+    Google: () => Effect.flatMap(OAuth.generateAuthUrl({ _tag: "google" }), Redirect.make),
+    Plain: (cred) =>
+      Users.authenticate(cred).pipe(
+        Effect.flatMap(Sessions.mint),
+        Effect.catchTags({
+          CredentialsNotRecognised: () => ValidationError.make({ error: ["Credentials not recognised"] }),
+          EmailAlreadyInUse: () => ValidationError.make({ error: ["Email already in use"] }),
+        }),
+      ),
+  }),
 );
 
 export default function LoginPage() {
-  const result = useActionData<typeof action>();
-
   return (
     <AuthContent
       to={Routes.register}

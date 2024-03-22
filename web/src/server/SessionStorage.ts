@@ -7,7 +7,6 @@ import { LayerUtils } from "./LayerUtils";
 
 interface CookieSession {
   token: Token<Id<User>>;
-  refreshToken: Token<string>;
 }
 
 interface CookieSessionFlashData {
@@ -37,17 +36,15 @@ const CookieSessionStorage = (config: Config) =>
 
     const createRemixSession = (session: Session<User>) =>
       Effect.sync(() =>
-        createSession<CookieSession, CookieSessionFlashData>(
-          { refreshToken: session.refreshToken, token: session.token },
-          config.cookieName,
-        ),
+        createSession<CookieSession, CookieSessionFlashData>({ token: session.token }, config.cookieName),
       );
 
     return SessionStorage.of({
-      get: Http.request.schemaHeaders(S.struct({ cookie: S.string })).pipe(
+      getToken: Http.request.schemaHeaders(S.struct({ cookie: S.string })).pipe(
         Effect.andThen(({ cookie }) => storage.getSession(cookie)),
-        Effect.bind("refreshToken", (session) => Option.fromNullable(session.get("refreshToken"))),
-        Effect.bind("token", (session) => Option.fromNullable(session.get("token"))),
+        Effect.flatMap((session) => Option.fromNullable(session.get("token"))),
+        // TODO: Make a proper schema for phantom types
+        Effect.map((token) => Token.make<Id<User>>(token.value)),
         Effect.catchAll(() => Option.none()),
       ),
       commit: (session) =>
@@ -71,7 +68,7 @@ export class SessionStorageConfig extends Context.Tag("@app/SessionStorageConfig
 export class SessionStorage extends Effect.Tag("@app/SessionStorage")<
   SessionStorage,
   {
-    get: Effect.Effect<CookieSession, Cause.NoSuchElementException, Http.request.ServerRequest>;
+    getToken: Effect.Effect<Token<Id<User>>, Cause.NoSuchElementException, Http.request.ServerRequest>;
     commit: (session: Session<User>) => Effect.Effect<string>;
     destroy: (session: Session<User>) => Effect.Effect<string>;
   }
