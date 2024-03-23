@@ -1,7 +1,6 @@
 export * from "./users/Users";
 export * from "./users/ReferenceUsers";
 export * from "./users/RdmsUsers";
-export * from "./auth/Sessions";
 export * from "./tokens/Tokens";
 export * from "./tokens/ReferenceTokens";
 export * from "./persistence/Database";

@@ -1,26 +1,26 @@
 import * as Http from "@effect/platform/HttpServer";
-import { RequestSession } from "core/index";
-import { Effect } from "effect";
-import { SessionStorage } from "./SessionStorage";
-import { Sessions } from "./Sessions";
+import { Effect, Option } from "effect";
+import { RequestState } from "./RequestState/RequestState";
+import { RequestSession, Sessions } from "./Sessions";
 
 export namespace Middleware {
-  export const setSessionCookie = <E, R>(
+  export const setCookies = <E, R>(
     self: Effect.Effect<Http.response.ServerResponse, E, R>,
-  ): Effect.Effect<Http.response.ServerResponse, E, Sessions | SessionStorage | R> =>
-    Effect.flatMap(self, (res) =>
-      Sessions.get.pipe(
-        Effect.flatMap(
-          RequestSession.makeMatcher({
-            Set: ({ session }) => SessionStorage.commit(session),
-            Unset: ({ session }) => SessionStorage.destroy(session),
-            InvalidToken: ({ session }) => SessionStorage.destroy(session),
-            NotProvided: () => Effect.fail(res),
-            Provided: () => Effect.fail(res),
-          }),
-        ),
+  ): Effect.Effect<Http.response.ServerResponse, E, Sessions | RequestState | R> =>
+    Effect.flatMap(self, (res) => {
+      return Sessions.get.pipe(
+        Effect.tap(setToken),
+        Effect.flatMap(() => RequestState.commit),
         Effect.flatMap((cookie) => Http.response.setHeader(res, "Set-Cookie", cookie)),
         Effect.merge,
-      ),
-    );
+      );
+    });
 }
+
+const setToken = RequestSession.match({
+  Set: ({ session }) => RequestState.set("token", Option.some(session.token.value)),
+  Unset: () => RequestState.set("token", Option.none()),
+  InvalidToken: () => RequestState.set("token", Option.none()),
+  NotProvided: () => Effect.unit,
+  Provided: () => Effect.unit,
+});

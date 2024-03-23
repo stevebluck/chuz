@@ -26,9 +26,9 @@ export const links: LinksFunction = () => {
 
 export const loader = App.loader(
   "Root",
-  Sessions.getSession.pipe(
+  Sessions.authenticated.pipe(
     Effect.map((session) => ({ name: Option.getOrElse(session.user.value.firstName, () => "Mr NoName") })),
-    Effect.catchTag("NoSuchSession", () => Effect.succeed({ name: "Guest" })),
+    Effect.catchAll(() => Effect.succeed({ name: "Guest" })),
   ),
 );
 

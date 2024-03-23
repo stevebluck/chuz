@@ -2,16 +2,17 @@ import * as Core from "core/index";
 import { Context, Effect, Layer } from "effect";
 import { LayerUtils } from "./LayerUtils";
 
-export class PostgressConfig extends Context.Tag("@app/PostgressConfig")<
-  PostgressConfig,
-  { connectionString: string }
->() {
+interface Config {
+  connectionString: string;
+}
+
+export class PostgresConfig extends Context.Tag("@app/PostgressConfig")<PostgresConfig, Config>() {
   static layer = LayerUtils.config(this);
 }
 
 export class Database extends Context.Tag("@app/Database")<Database, Core.Database>() {
   static live = Layer.scoped(
     Database,
-    PostgressConfig.pipe(Effect.flatMap((config) => Core.PostgressDatabase.make(config.connectionString))),
+    PostgresConfig.pipe(Effect.flatMap((config) => Core.PostgressDatabase.make(config.connectionString))),
   );
 }
