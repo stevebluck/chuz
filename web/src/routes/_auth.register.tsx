@@ -7,6 +7,7 @@ import { AuthContent } from "src/auth/auth-layout";
 import { RegisterForm } from "src/auth/register-form";
 import { fromCheckboxInput, optionFromEmptyString } from "src/schemas/form";
 import { Remix, Session, Users, ServerResponse } from "src/server";
+import { PasswordHasher } from "src/server/Passwords";
 import { ServerRequest } from "src/server/ServerRequest";
 
 const RegistrationForm = S.struct({
@@ -19,12 +20,16 @@ const RegistrationForm = S.struct({
 
 export const action = Remix.action(
   ServerRequest.formData(RegistrationForm).pipe(
-    Effect.map(({ email, password, ...registration }) => ({
-      credentials: new Credentials.EmailPassword.Strong({ email, password }),
-      firstName: registration.firstName,
-      lastName: registration.lastName,
-      optInMarketing: registration.optInMarketing,
-    })),
+    Effect.flatMap(({ email, password, ...registration }) =>
+      PasswordHasher.hash(password).pipe(
+        Effect.map((hashed) => ({
+          credentials: new Credentials.EmailPassword.Secure({ email, password: hashed }),
+          firstName: registration.firstName,
+          lastName: registration.lastName,
+          optInMarketing: registration.optInMarketing,
+        })),
+      ),
+    ),
     Effect.flatMap(Users.register),
     Effect.flatMap(Session.mint),
     Effect.flatMap(() => ServerResponse.Redirect(Routes.myAccount)),

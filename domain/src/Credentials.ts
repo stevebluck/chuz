@@ -22,6 +22,11 @@ export namespace Credentials {
       email: Email.schema,
       password: Password.Strong.schema,
     }) {}
+
+    export class Secure extends S.TaggedClass<Secure>()("Secure", {
+      email: Email.schema,
+      password: Password.Hashed.schema,
+    }) {}
   }
 
   export class NotRecognised extends Data.TaggedError("CredentialsNotRecognised") {}

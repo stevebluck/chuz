@@ -21,13 +21,13 @@ export interface Users {
   updatePassword(
     token: Token<Id<User>>,
     currentPassword: Password.Plaintext,
-    updatedPasword: Password.Strong,
+    updatedPasword: Password.Hashed,
   ): Effect.Effect<void, Credentials.NotRecognised | User.NotFound>;
 
   requestPasswordReset(email: Email): Effect.Effect<Token<[Email, Id<User>]>, Credentials.NotRecognised>;
 
   resetPassword(
     token: Token<[Email, Id<User>]>,
-    password: Password.Strong,
+    password: Password.Hashed,
   ): Effect.Effect<Identified<User>, Token.NoSuchToken>;
 }

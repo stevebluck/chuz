@@ -1,7 +1,8 @@
 import { Credentials, Email, Password, Token, User } from "@chuz/domain";
-import { Effect } from "effect";
+import { Effect, Option } from "effect";
 import * as fc from "fast-check";
 import { afterAll, describe, expect } from "vitest";
+import { Passwords, Users } from "../../src";
 import { Arbs } from "../Arbs";
 import { asyncProperty } from "../Property";
 import { SpecConfig, defaultSpecConfig } from "../SpecConfig";
@@ -18,7 +19,7 @@ export namespace UsersSpec {
         Effect.gen(function* (_) {
           const { users } = yield* _(TestBench);
           const registerUserWithEmail = (email: Email) =>
-            users.register({ ...register, credentials: { ...register.credentials, email } });
+            registerUser(users, { ...register, credentials: { ...register.credentials, email } });
 
           const session = yield* _(registerUserWithEmail(register.credentials.email));
 
@@ -51,7 +52,7 @@ export namespace UsersSpec {
       (registration) =>
         Effect.gen(function* (_) {
           const { users } = yield* _(TestBench);
-          const session = yield* _(users.register(registration));
+          const session = yield* _(registerUser(users, registration));
           const identified = yield* _(users.identify(session.token));
           expect(identified.user).toEqual(session.user);
         }),
@@ -64,7 +65,7 @@ export namespace UsersSpec {
       (registration) =>
         Effect.gen(function* (_) {
           const { users } = yield* _(TestBench);
-          const session = yield* _(users.register(registration));
+          const session = yield* _(registerUser(users, registration));
           yield* _(users.logout(session.token));
           const noSuchTokenError = yield* _(users.identify(session.token).pipe(Effect.flip));
           expect(noSuchTokenError).toEqual(new Token.NoSuchToken());
@@ -78,7 +79,7 @@ export namespace UsersSpec {
       (registration) =>
         Effect.gen(function* (_) {
           const { users } = yield* _(TestBench);
-          const session = yield* _(users.register(registration));
+          const session = yield* _(registerUser(users, registration));
           const plain = makePlainCredentials(registration.credentials);
 
           const authed = yield* _(users.authenticate(plain.credentials));
@@ -120,7 +121,7 @@ export namespace UsersSpec {
       (registration) =>
         Effect.gen(function* (_) {
           const { users } = yield* _(TestBench);
-          const session0 = yield* _(users.register(registration));
+          const session0 = yield* _(registerUser(users, registration));
 
           const credential = new Credentials.Provider({
             id: "test",
@@ -143,7 +144,7 @@ export namespace UsersSpec {
       (registration) =>
         Effect.gen(function* (_) {
           const { users } = yield* _(TestBench);
-          const session = yield* _(users.register(registration));
+          const session = yield* _(registerUser(users, registration));
           const foundUserById = yield* _(users.findById(session.user.id));
           const foundUserByEmail = yield* _(users.findByEmail(registration.credentials.email));
           const foundUserByEmail1 = yield* _(users.findByEmail(Email.toLowerCase(registration.credentials.email)));
@@ -164,7 +165,7 @@ export namespace UsersSpec {
         ([registration, draft]) =>
           Effect.gen(function* (_) {
             const { users } = yield* _(TestBench);
-            const session = yield* _(users.register(registration));
+            const session = yield* _(registerUser(users, registration));
             const foundById = yield* _(users.findById(session.user.id));
             yield* _(users.update(session.user.id, draft));
             const foundById2 = yield* _(users.findById(session.user.id));
@@ -181,7 +182,7 @@ export namespace UsersSpec {
           ([registration, newEmail]) =>
             Effect.gen(function* (_) {
               const { users } = yield* _(TestBench);
-              const session = yield* _(users.register(registration));
+              const session = yield* _(registerUser(users, registration));
               const plain = makePlainCredentials(registration.credentials);
 
               const authed = yield* _(users.authenticate(plain.credentials));
@@ -210,9 +211,9 @@ export namespace UsersSpec {
           ([register1, register2]) =>
             Effect.gen(function* (_) {
               const { users } = yield* _(TestBench);
-              const user1 = yield* _(users.register(register1));
+              const user1 = yield* _(registerUser(users, register1));
 
-              const user2 = yield* _(users.register(register2));
+              const user2 = yield* _(registerUser(users, register2));
 
               const lowercase = Email.toLowerCase(user1.user.value.email);
               const uppercase = Email.toUpperCase(user1.user.value.email);
@@ -236,13 +237,14 @@ export namespace UsersSpec {
           ([register, newPassword]) =>
             Effect.gen(function* (_) {
               const { users } = yield* _(TestBench);
-              const session = yield* _(users.register(register));
+              const session = yield* _(registerUser(users, register));
               const plain = makePlainCredentials(register.credentials);
+              const hashedNewPassword = yield* _(hash(newPassword));
 
               const authed = yield* _(users.authenticate(plain.credentials));
               expect(authed.user).toEqual(session.user);
 
-              yield* _(users.updatePassword(session.token, plain.credentials.password, newPassword));
+              yield* _(users.updatePassword(session.token, plain.credentials.password, hashedNewPassword));
 
               const credentialsNotRecognisedError = yield* _(users.authenticate(plain.credentials).pipe(Effect.flip));
               expect(credentialsNotRecognisedError).toEqual(new Credentials.NotRecognised());
@@ -267,12 +269,13 @@ export namespace UsersSpec {
           ([register, newPassword]) =>
             Effect.gen(function* (_) {
               const { users } = yield* _(TestBench);
-              const session = yield* _(users.register(register));
+              const session = yield* _(registerUser(users, register));
               const plain = makePlainCredentials(register.credentials);
+              const hashedPassword = yield* _(hash(newPassword));
 
               const error0 = yield* _(
                 users
-                  .updatePassword(session.token, Password.Plaintext.unsafeFrom("whatever"), newPassword)
+                  .updatePassword(session.token, Password.Plaintext.unsafeFrom("whatever"), hashedPassword)
                   .pipe(Effect.flip),
               );
               expect(error0).toEqual(new Credentials.NotRecognised());
@@ -280,7 +283,7 @@ export namespace UsersSpec {
               yield* _(users.logout(session.token));
 
               const error1 = yield* _(
-                users.updatePassword(session.token, plain.credentials.password, newPassword).pipe(Effect.flip),
+                users.updatePassword(session.token, plain.credentials.password, hashedPassword).pipe(Effect.flip),
               );
               expect(error1).toEqual(new User.NotFound());
             }),
@@ -293,13 +296,14 @@ export namespace UsersSpec {
           ([register, newPassword]) =>
             Effect.gen(function* (_) {
               const { users } = yield* _(TestBench);
-              const session0 = yield* _(users.register(register));
+              const session0 = yield* _(registerUser(users, register));
 
               const plain = makePlainCredentials(register.credentials);
+              const hashedPassword = yield* _(hash(newPassword));
 
               const session1 = yield* _(users.authenticate(plain.credentials));
 
-              yield* _(users.updatePassword(session1.token, plain.credentials.password, newPassword));
+              yield* _(users.updatePassword(session1.token, plain.credentials.password, hashedPassword));
 
               const error = yield* _(users.identify(session0.token).pipe(Effect.flip));
               const session2 = yield* _(users.identify(session1.token));
@@ -320,12 +324,13 @@ export namespace UsersSpec {
         ([register, newPassword]) =>
           Effect.gen(function* (_) {
             const { users } = yield* _(TestBench);
-            const session0 = yield* _(users.register(register));
+            const session0 = yield* _(registerUser(users, register));
             const plain = makePlainCredentials(register.credentials);
+            const hashedPassword = yield* _(hash(newPassword));
 
             const token = yield* _(users.requestPasswordReset(register.credentials.email));
 
-            yield* _(users.resetPassword(token, newPassword));
+            yield* _(users.resetPassword(token, hashedPassword));
 
             const error = yield* _(users.authenticate(plain.credentials).pipe(Effect.flip));
             const session1 = yield* _(
@@ -349,12 +354,14 @@ export namespace UsersSpec {
         ([register, newPassword]) =>
           Effect.gen(function* (_) {
             const { users } = yield* _(TestBench);
-            const session0 = yield* _(users.register(register));
+            const session0 = yield* _(registerUser(users, register));
             const plain = makePlainCredentials(register.credentials);
+            const hashedPassword = yield* _(hash(newPassword));
+
             const session1 = yield* _(users.authenticate(plain.credentials));
 
             const token = yield* _(users.requestPasswordReset(register.credentials.email));
-            yield* _(users.resetPassword(token, newPassword));
+            yield* _(users.resetPassword(token, hashedPassword));
 
             const error0 = yield* _(users.identify(session0.token).pipe(Effect.flip));
             const error1 = yield* _(users.identify(session1.token).pipe(Effect.flip));
@@ -371,10 +378,11 @@ export namespace UsersSpec {
         ([register, newPassword]) =>
           Effect.gen(function* (_) {
             const { users } = yield* _(TestBench);
-            yield* _(users.register(register));
+            yield* _(registerUser(users, register));
             const token = yield* _(users.requestPasswordReset(register.credentials.email));
-            yield* _(users.resetPassword(token, newPassword));
-            const error = yield* _(users.resetPassword(token, newPassword).pipe(Effect.flip));
+            const hashedNewPassword = yield* _(hash(newPassword));
+            yield* _(users.resetPassword(token, hashedNewPassword));
+            const error = yield* _(users.resetPassword(token, hashedNewPassword).pipe(Effect.flip));
 
             expect(error).toEqual(new Token.NoSuchToken());
           }),
@@ -394,6 +402,24 @@ export namespace UsersSpec {
       );
     });
   };
+  const registerUser = (users: Users, register: Arbs.Users.Register) =>
+    Effect.gen(function* (_) {
+      const hashed = yield* _(hash(register.credentials.password));
+      const credentials = new Credentials.EmailPassword.Secure({
+        email: register.credentials.email,
+        password: hashed,
+      });
+
+      return yield* _(
+        users.register({
+          credentials,
+          firstName: register.firstName,
+          lastName: register.lastName,
+          optInMarketing: register.optInMarketing,
+        }),
+      );
+    });
+
   const makePlainCredentials = (credentials: Credentials.EmailPassword.Strong) => {
     return {
       credentials: new Credentials.EmailPassword.Plain({
@@ -411,3 +437,5 @@ export namespace UsersSpec {
     };
   };
 }
+
+const hash = Passwords.hasher({ N: 2 });

@@ -9,17 +9,17 @@ import { Users, Session, Remix, ServerResponse } from "src/server";
 import { OAuth } from "src/server/OAuth";
 import { ServerRequest } from "src/server/ServerRequest";
 
-type Form = S.Schema.Type<typeof Form>;
-const Form = S.union(
+type LoginFormFields = S.Schema.Type<typeof LoginFormFields>;
+const LoginFormFields = S.union(
   Credentials.EmailPassword.Plain,
   S.struct({ _tag: S.literal("Provider"), provider: S.literal("google") }),
 );
 
-const match = Match.typeTags<Form>();
+const match = Match.typeTags<LoginFormFields>();
 
 // Manually set the cookie with the OAuth state im sending to google
 export const action = Remix.action(
-  ServerRequest.formData(Form).pipe(
+  ServerRequest.formData(LoginFormFields).pipe(
     Effect.flatMap(
       match({
         Provider: ({ provider }) => OAuth.generateAuthUrl(provider),
@@ -42,7 +42,6 @@ export const action = Remix.action(
 export default function LoginPage() {
   const data = useActionData();
 
-  console.log({ actionData: data });
   return (
     <AuthContent
       to={Routes.register}

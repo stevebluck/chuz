@@ -48,7 +48,7 @@ export namespace User {
   export namespace Registration {
     export const schema = S.suspend(() =>
       S.struct({
-        credentials: Credentials.EmailPassword.Strong,
+        credentials: Credentials.EmailPassword.Secure,
         firstName: S.option(User.FirstName.schema),
         lastName: S.option(User.LastName.schema),
         optInMarketing: User.OptInMarketing.schema,

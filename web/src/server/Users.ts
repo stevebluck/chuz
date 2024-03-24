@@ -2,6 +2,7 @@ import { Identified, Password } from "@chuz/domain";
 import * as Core from "core/index";
 import { Clock, Effect, Layer } from "effect";
 import { Database } from "./Database";
+import { PasswordHasherConfig } from "./Passwords";
 
 export class Users extends Effect.Tag("@app/Users")<Users, Core.Users>() {
   static dev = Layer.effect(
@@ -10,8 +11,11 @@ export class Users extends Effect.Tag("@app/Users")<Users, Core.Users>() {
       const clock = Clock.make();
       const userTokens = yield* _(Core.ReferenceTokens.create(clock, Identified.equals));
       const passwordResetTokens = yield* _(Core.ReferenceTokens.create(clock, Password.Reset.equals));
+      const passwordsConfig = yield* _(PasswordHasherConfig);
 
-      return yield* _(Core.ReferenceUsers.make(userTokens, passwordResetTokens));
+      return yield* _(
+        Core.ReferenceUsers.make(userTokens, passwordResetTokens, Core.Passwords.matcher(passwordsConfig)),
+      );
     }),
   );
 
@@ -19,8 +23,9 @@ export class Users extends Effect.Tag("@app/Users")<Users, Core.Users>() {
     Users,
     Effect.gen(function* (_) {
       const db = yield* _(Database);
+      const passwordsConfig = yield* _(PasswordHasherConfig);
 
-      return yield* _(Core.RdmsUsers.make(db));
+      return yield* _(Core.RdmsUsers.make(db, Core.Passwords.matcher(passwordsConfig)));
     }),
   ).pipe(Layer.provide(Database.live));
 }

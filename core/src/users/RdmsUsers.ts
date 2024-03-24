@@ -1,12 +1,16 @@
 import { User, Session, Email, Id, Identified, Token, Credentials, Password, Credential } from "@chuz/domain";
 import { Effect } from "effect";
-import { DB, Database } from "..";
+import { DB, Database, Passwords } from "..";
 import { Users } from "./Users";
 
 export class RdmsUsers implements Users {
-  constructor(private readonly db: Database) {}
+  constructor(
+    private readonly db: Database,
+    match: Passwords.Match,
+  ) {}
 
-  static make = (db: Database): Effect.Effect<Users> => Effect.sync(() => new RdmsUsers(db));
+  static make = (db: Database, match: Passwords.Match): Effect.Effect<Users> =>
+    Effect.sync(() => new RdmsUsers(db, match));
 
   identify = (token: Token<Id<User>>): Effect.Effect<Session<User>, Token.NoSuchToken> => {
     throw new Error("Method not implemented.");
@@ -47,7 +51,7 @@ export class RdmsUsers implements Users {
   updatePassword(
     token: Token<Id<User>>,
     currentPassword: Password.Plaintext,
-    updatedPasword: Password.Strong,
+    updatedPasword: Password.Hashed,
   ): Effect.Effect<void, User.NotFound | Credentials.NotRecognised> {
     throw new Error("Method not implemented.");
   }
@@ -58,7 +62,7 @@ export class RdmsUsers implements Users {
 
   resetPassword(
     token: Token<[Email, Id<User>]>,
-    password: Password.Strong,
+    password: Password.Hashed,
   ): Effect.Effect<Identified<User>, Token.NoSuchToken> {
     throw new Error("Method not implemented.");
   }

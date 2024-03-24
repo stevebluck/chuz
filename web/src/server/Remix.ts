@@ -4,6 +4,7 @@ import { Config, Duration, Effect, Layer, LogLevel, Logger, Option, Ref } from "
 import { pretty } from "effect/Cause";
 import { PostgresConfig } from "./Database";
 import { OAuth, OAuthConfig } from "./OAuth";
+import { PasswordHasher, PasswordHasherConfig } from "./Passwords";
 import { Runtime } from "./Runtime";
 import { ServerResponse } from "./ServerResponse";
 import { RequestSession, Session } from "./Sessions";
@@ -24,6 +25,14 @@ const ProstresConfigLive = PostgresConfig.layer({
   connectionString: Config.string("DATABASE_URL"),
 });
 
+const PasswordsConfigLive = PasswordHasherConfig.layer({
+  N: Config.succeed(16384),
+});
+
+const PasswordsConfigDev = PasswordHasherConfig.layer({
+  N: Config.succeed(4),
+});
+
 const TokenCookieConfigLive = TokenCookieConfig.layer({
   secure: Config.map(Config.string("NODE_ENV"), (env) => env === "production"),
   name: Config.withDefault(Config.string("SESSION_COOKIE_NAME"), "_session"),
@@ -38,16 +47,18 @@ const LogLevelLive = Layer.unwrapEffect(
   }),
 );
 
-const Dev = Layer.mergeAll(Users.dev, OAuth.layer, TokenCookie.layer).pipe(
+const Dev = Layer.mergeAll(Users.dev, OAuth.layer, TokenCookie.layer, PasswordHasher.layer).pipe(
   Layer.provide(TokenCookieConfigLive),
   Layer.provide(OAuthConfigLive),
+  Layer.provide(PasswordsConfigDev),
   Layer.provide(LogLevelLive),
   Layer.provide(DevTools.layer()),
 );
 
-const Live = Layer.mergeAll(Users.live, OAuth.layer, TokenCookie.layer).pipe(
+const Live = Layer.mergeAll(Users.live, OAuth.layer, TokenCookie.layer, PasswordHasher.layer).pipe(
   Layer.provide(TokenCookieConfigLive),
   Layer.provide(OAuthConfigLive),
+  Layer.provide(PasswordsConfigLive),
   Layer.provide(ProstresConfigLive),
   Layer.provide(LogLevelLive),
 );

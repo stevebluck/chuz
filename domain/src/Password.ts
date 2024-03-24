@@ -28,6 +28,14 @@ export namespace Password {
     export const { from, unsafeFrom, is } = makeRefinement(schema);
   }
 
+  export type Hashed = string & Brand.Brand<"Hashed">;
+  export namespace Hashed {
+    const HashedBrand = Brand.nominal<Hashed>();
+    export const schema = S.string.pipe(S.fromBrand(HashedBrand), S.identifier("Password.Hashed"));
+    export const { from, unsafeFrom, is } = makeRefinement(schema);
+    export const equals = Equivalence.strict<Hashed>();
+  }
+
   export type Reset<A> = [Email, Id<A>];
   export namespace Reset {
     export const equals = Equivalence.make<Reset<any>>(

@@ -17,14 +17,15 @@ export namespace Arbs {
     export const FirstName = Arbitrary.make(Domain.User.FirstName.schema)(fc);
     export const LastName = Arbitrary.make(Domain.User.LastName.schema)(fc);
     export const OptInMarketing = Arbitrary.make(Domain.User.OptInMarketing.schema)(fc);
+
     export const StrongCredentials: fc.Arbitrary<Domain.Credentials.EmailPassword.Strong> = fc.record({
       _tag: fc.constant("Strong"),
       email: Emails.Email,
       password: Passwords.Strong,
     });
 
-    export type Register = fc.Arbitrary<Domain.User.Registration>;
-    export const Register: Register = fc.record({
+    export type Register = typeof Register extends fc.Arbitrary<infer A> ? A : never;
+    export const Register = fc.record({
       credentials: StrongCredentials,
       firstName: FirstName.map(Option.fromNullable),
       lastName: LastName.map(Option.fromNullable),

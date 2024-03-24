@@ -9,8 +9,9 @@ export namespace TestBench {
     const clock = Clock.make();
     const userTokens = yield* _(Core.ReferenceTokens.create(clock, Domain.Identified.equals));
     const passwordResetTokens = yield* _(Core.ReferenceTokens.create(clock, Domain.Password.Reset.equals));
+    const match = Core.Passwords.matcher({ N: 2 });
 
-    const users = yield* _(Core.ReferenceUsers.make(userTokens, passwordResetTokens));
+    const users = yield* _(Core.ReferenceUsers.make(userTokens, passwordResetTokens, match));
 
     return { users };
   });
@@ -20,9 +21,16 @@ export namespace TestBench {
   export namespace Seeded {
     export const make: Effect.Effect<Seeded> = Effect.gen(function* (_) {
       const bench = yield* _(TestBench.make);
+      const hash = Core.Passwords.hasher({ N: 2 });
+
+      const password = yield* _(hash(userRegistration.credentials.password));
+      const credentials = new Domain.Credentials.EmailPassword.Secure({
+        email: userRegistration.credentials.email,
+        password,
+      });
 
       const registration = Domain.User.Registration.make({
-        credentials: userRegistration.credentials,
+        credentials,
         firstName: Option.some(userRegistration.firstName),
         lastName: Option.some(userRegistration.lastName),
         optInMarketing: userRegistration.optInMarketing,
