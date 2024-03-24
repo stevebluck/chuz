@@ -44,21 +44,25 @@ const make = Effect.gen(function* (_) {
           Effect.catchTags({
             ParseError: Effect.die,
             UnknownException: Effect.die,
+            CredentialsNotRecognised: Effect.die,
           }),
         ),
     }),
-    generateAuthUrl: IdentityProvider.Provider.match({
-      google: () =>
-        Effect.sync(() =>
-          oauth2Client.generateAuthUrl({
-            access_type: "offline",
-            scope: [
-              "https://www.googleapis.com/auth/userinfo.email",
-              "https://www.googleapis.com/auth/userinfo.profile",
-            ],
-          }),
-        ),
-    }),
+    generateAuthUrl: (tag: IdentityProvider.Provider["_tag"]) =>
+      IdentityProvider.Provider.match({
+        google: () =>
+          Effect.sync(() =>
+            oauth2Client.generateAuthUrl({
+              access_type: "offline",
+              state: "dave",
+
+              scope: [
+                "https://www.googleapis.com/auth/userinfo.email",
+                "https://www.googleapis.com/auth/userinfo.profile",
+              ],
+            }),
+          ),
+      })({ _tag: tag }),
   };
 });
 
@@ -79,5 +83,5 @@ export class OAuthConfig extends Context.Tag("@app/OAuthConfig")<OAuthConfig, Co
 }
 
 export class OAuth extends Effect.Tag("@app/OAuth")<OAuth, Effect.Effect.Success<typeof make>>() {
-  static live = Layer.effect(OAuth, make);
+  static layer = Layer.effect(OAuth, make);
 }

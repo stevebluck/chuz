@@ -1,13 +1,12 @@
 import { Effect } from "effect";
 import { Routes } from "src/Routes";
 import { Button } from "src/components/ui/button";
-import { App, Redirect, Sessions } from "src/server";
+import { Remix, Session, ServerResponse } from "src/server";
 
-export const loader = App.loader(
-  "MyAccount",
-  Sessions.authenticated.pipe(
-    Effect.asUnit,
-    Effect.catchTag("Unauthorised", () => Redirect.make(Routes.login)),
+export const loader = Remix.loader(
+  Session.authenticated.pipe(
+    Effect.flatMap(() => ServerResponse.Ok()),
+    Effect.catchTag("Unauthorised", () => ServerResponse.Redirect(Routes.login)),
   ),
 );
 

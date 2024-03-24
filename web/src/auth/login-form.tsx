@@ -51,7 +51,8 @@ export function LoginForm() {
         Apple
       </Button>
       <Form method="POST" action={Routes.login} className="flex flex-col">
-        <Input name="_tag" type="hidden" value="Google" />
+        <Input name="_tag" type="hidden" value="Provider" />
+        <Input name="provider" type="hidden" value="google" />
         <Button variant="outline" disabled={isSubmitting}>
           <GoogleIcon className="mr-2 h-4 w-4" />
           Google

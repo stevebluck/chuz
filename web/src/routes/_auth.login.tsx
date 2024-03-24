@@ -4,31 +4,45 @@ import { Effect, Match } from "effect";
 import { Routes } from "src/Routes";
 import { AuthContent } from "src/auth/auth-layout";
 import { LoginForm } from "src/auth/login-form";
-import { Users, Sessions, App, Redirect, ValidationError } from "src/server";
+import { useActionData } from "src/hooks/useActionData";
+import { Users, Session, Remix, ServerResponse } from "src/server";
 import { OAuth } from "src/server/OAuth";
+import { ServerRequest } from "src/server/ServerRequest";
 
 type Form = S.Schema.Type<typeof Form>;
-const Form = S.union(Credentials.EmailPassword.Plain, S.struct({ _tag: S.literal("Google") }));
+const Form = S.union(
+  Credentials.EmailPassword.Plain,
+  S.struct({ _tag: S.literal("Provider"), provider: S.literal("google") }),
+);
 
 const match = Match.typeTags<Form>();
 
-export const action = App.formDataAction(
-  "Auth.login",
-  Form,
-  match({
-    Google: () => Effect.flatMap(OAuth.generateAuthUrl({ _tag: "google" }), Redirect.make),
-    Plain: (cred) =>
-      Users.authenticate(cred).pipe(
-        Effect.flatMap(Sessions.mint),
-        Effect.catchTags({
-          CredentialsNotRecognised: () => ValidationError.make({ error: ["Credentials not recognised"] }),
-          EmailAlreadyInUse: () => ValidationError.make({ error: ["Email already in use"] }),
-        }),
-      ),
-  }),
+// Manually set the cookie with the OAuth state im sending to google
+export const action = Remix.action(
+  ServerRequest.formData(Form).pipe(
+    Effect.flatMap(
+      match({
+        Provider: ({ provider }) => OAuth.generateAuthUrl(provider),
+        Plain: (credential) =>
+          Users.authenticate(credential).pipe(
+            Effect.tap(Session.mint),
+            Effect.map(() => Routes.myAccount),
+          ),
+      }),
+    ),
+    Effect.flatMap(ServerResponse.Redirect),
+    Effect.catchTags({
+      FormDataError: ({ error }) => ServerResponse.ValidationError(error),
+      CredentialsNotRecognised: () => ServerResponse.ValidationError({ email: ["Invalid email or password"] }),
+      EmailAlreadyInUse: () => ServerResponse.ValidationError({ email: ["Email already in use"] }),
+    }),
+  ),
 );
 
 export default function LoginPage() {
+  const data = useActionData();
+
+  console.log({ actionData: data });
   return (
     <AuthContent
       to={Routes.register}

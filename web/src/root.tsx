@@ -1,7 +1,7 @@
 import { LinksFunction } from "@remix-run/node";
 import { Links, Meta, Outlet, Scripts, ScrollRestoration, useLoaderData } from "@remix-run/react";
 import { Effect, Option } from "effect";
-import { App, Sessions } from "./server";
+import { Remix, ServerResponse, Session } from "./server";
 import { cn } from "./styles/classnames";
 import "./styles/style.css";
 
@@ -24,16 +24,16 @@ export const links: LinksFunction = () => {
   ];
 };
 
-export const loader = App.loader(
-  "Root",
-  Sessions.authenticated.pipe(
+export const loader = Remix.loader(
+  Session.authenticated.pipe(
     Effect.map((session) => ({ name: Option.getOrElse(session.user.value.firstName, () => "Mr NoName") })),
     Effect.catchAll(() => Effect.succeed({ name: "Guest" })),
+    Effect.flatMap(ServerResponse.Ok),
   ),
 );
 
 export default () => {
-  const data = useLoaderData<typeof loader>();
+  const data = useLoaderData<{ name: string }>();
 
   return (
     <html lang="en" className={cn("h-full")}>

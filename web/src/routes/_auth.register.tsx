@@ -6,7 +6,8 @@ import { Routes } from "src/Routes";
 import { AuthContent } from "src/auth/auth-layout";
 import { RegisterForm } from "src/auth/register-form";
 import { fromCheckboxInput, optionFromEmptyString } from "src/schemas/form";
-import { App, Redirect, Sessions, Users, ValidationError } from "src/server";
+import { Remix, Session, Users, ServerResponse } from "src/server";
+import { ServerRequest } from "src/server/ServerRequest";
 
 const RegistrationForm = S.struct({
   email: Email.schema,
@@ -16,20 +17,22 @@ const RegistrationForm = S.struct({
   optInMarketing: fromCheckboxInput(User.OptInMarketing.schema),
 });
 
-export const action = App.formDataAction(
-  "Auth.register",
-  RegistrationForm,
-  ({ email, firstName, lastName, optInMarketing, password }) =>
-    Users.register({
+export const action = Remix.action(
+  ServerRequest.formData(RegistrationForm).pipe(
+    Effect.map(({ email, password, ...registration }) => ({
       credentials: new Credentials.EmailPassword.Strong({ email, password }),
-      firstName,
-      lastName,
-      optInMarketing,
-    }).pipe(
-      Effect.flatMap(Sessions.mint),
-      Effect.zipRight(Redirect.make(Routes.myAccount)),
-      Effect.catchTag("EmailAlreadyInUse", () => ValidationError.make({ email: ["Email already in use"] })),
-    ),
+      firstName: registration.firstName,
+      lastName: registration.lastName,
+      optInMarketing: registration.optInMarketing,
+    })),
+    Effect.flatMap(Users.register),
+    Effect.flatMap(Session.mint),
+    Effect.flatMap(() => ServerResponse.Redirect(Routes.myAccount)),
+    Effect.catchTags({
+      FormDataError: ({ error }) => ServerResponse.ValidationError(error),
+      EmailAlreadyInUse: () => ServerResponse.ValidationError({ email: ["Email already in use"] }),
+    }),
+  ),
 );
 
 export default function RegisterPage() {

@@ -1,14 +1,12 @@
 import { Effect } from "effect";
 import { Routes } from "src/Routes";
-import { Users, App, Sessions, Redirect } from "src/server";
+import { Users, Remix, Session, ServerResponse } from "src/server";
 
-export const action = App.action(
-  "Auth.logout",
-  Sessions.authenticated.pipe(
-    Effect.tap(Sessions.invalidate),
+export const action = Remix.action(
+  Session.authenticated.pipe(
+    Effect.zipLeft(Session.invalidate),
     Effect.flatMap(({ token }) => Users.logout(token)),
-    // TODO: change to Response.redirect()
-    Effect.zipRight(Redirect.make(Routes.home)),
-    Effect.catchTags({ Unauthorised: () => Effect.unit }),
+    Effect.flatMap(() => ServerResponse.Redirect(Routes.home)),
+    Effect.catchTags({ Unauthorised: () => ServerResponse.Redirect(Routes.home) }),
   ),
 );

@@ -1,148 +1,91 @@
-import * as NodeFileSystem from "@effect/platform-node/NodeFileSystem";
-import * as FileSystem from "@effect/platform/FileSystem";
-import * as Multipart from "@effect/platform/Http/Multipart";
-import * as Http from "@effect/platform/HttpServer";
-import * as Path from "@effect/platform/Path";
-import { formatError } from "@effect/schema/ArrayFormatter";
-import { ParseError } from "@effect/schema/ParseResult";
-import * as S from "@effect/schema/Schema";
-import { ActionFunctionArgs, LoaderFunctionArgs, TypedResponse } from "@remix-run/node";
-import { Effect, Scope, Layer, ManagedRuntime, ReadonlyRecord, ReadonlyArray, ConfigError, Option } from "effect";
+import { Id, Token, User } from "@chuz/domain";
+import { DevTools } from "@effect/experimental";
+import { Config, Duration, Effect, Layer, LogLevel, Logger, Option, Ref } from "effect";
 import { pretty } from "effect/Cause";
-import { isUndefined } from "effect/Predicate";
-import { NoInfer } from "effect/Types";
-import { Redirect, Unauthorized, ValidationError } from "./Response";
+import { PostgresConfig } from "./Database";
+import { OAuth, OAuthConfig } from "./OAuth";
+import { Runtime } from "./Runtime";
+import { ServerResponse } from "./ServerResponse";
+import { RequestSession, Session } from "./Sessions";
+import { Users } from "./Users";
+import { TokenCookie, TokenCookieConfig } from "./cookies/TokenCookie";
 
-type RemixEffect<A, R> = Effect.Effect<A, never, RequestLayer<R>>;
+const debug = Config.withDefault(Config.boolean("DEBUG"), false);
 
-type RequestLayer<R> = R | Http.request.ServerRequest | FileSystem.FileSystem | Path.Path | Scope.Scope;
+const mode = Config.withDefault(Config.literal("dev", "live")("APP_MODE"), "dev" as const);
 
-interface RemixRuntime<L, R> {
-  loader: <A>(name: string, self: RemixEffect<A, L | R>) => (args: LoaderFunctionArgs) => Promise<TypedResponse<A>>;
-  action: <A>(name: string, self: RemixEffect<A, L | R>) => (args: ActionFunctionArgs) => Promise<TypedResponse<A>>;
-  loaderSearchParams: <A, In, Out extends Partial<Record<string, string>>>(
-    name: string,
-    schema: S.Schema<In, Out>,
-    self: (input: In) => RemixEffect<A | ValidationError, L | R>,
-  ) => (args: LoaderFunctionArgs) => Promise<TypedResponse<A | ValidationError>>;
-  formDataAction: <A, In, Out extends Partial<Multipart.Persisted>>(
-    name: string,
-    schema: S.Schema<In, Out>,
-    self: (input: In) => RemixEffect<A | ValidationError, L | R>,
-  ) => (args: LoaderFunctionArgs) => Promise<TypedResponse<A | ValidationError>>;
-}
+const OAuthConfigLive = OAuthConfig.layer({
+  googleClientId: Config.string("GOOGLE_CLIENT_ID"),
+  googleClientSecret: Config.string("GOOGLE_CLIENT_SECRET"),
+  redirectUri: Config.withDefault(Config.string("AUTH_CALLBACK_URL"), "http://localhost:5173/callback"),
+});
 
-interface RemixSettings<L, R> {
-  layer: Layer.Layer<L, ConfigError.ConfigError>;
-  requestLayer: Layer.Layer<R, never, RequestLayer<NoInfer<L>>>;
-  middleware: (
-    self: RemixEffect<Http.response.ServerResponse, NoInfer<L | R>>,
-  ) => RemixEffect<Http.response.ServerResponse, NoInfer<L | R>>;
-}
+const ProstresConfigLive = PostgresConfig.layer({
+  connectionString: Config.string("DATABASE_URL"),
+});
 
-export namespace Remix {
-  export const make = async <L, R>({
-    layer,
-    requestLayer,
-    middleware,
-  }: RemixSettings<L, R>): Promise<RemixRuntime<L, R>> => {
-    const { runtimeEffect } = ManagedRuntime.make(Layer.mergeAll(layer, NodeFileSystem.layer, Path.layer));
+const TokenCookieConfigLive = TokenCookieConfig.layer({
+  secure: Config.map(Config.string("NODE_ENV"), (env) => env === "production"),
+  name: Config.withDefault(Config.string("SESSION_COOKIE_NAME"), "_session"),
+  maxAge: Config.withDefault(Config.number("SESSION_COOKIE_DURATION_SECONDS"), Duration.toSeconds(Duration.days(365))),
+});
 
-    const handler = runtimeEffect.pipe(Effect.map(Http.app.toWebHandlerRuntime));
+const LogLevelLive = Layer.unwrapEffect(
+  Effect.gen(function* (_) {
+    const isDebug = yield* _(debug);
+    const level = isDebug ? LogLevel.All : LogLevel.Info;
+    return Logger.minimumLogLevel(level);
+  }),
+);
 
-    const run = await Effect.runPromise(handler);
+const Dev = Layer.mergeAll(Users.dev, OAuth.layer, TokenCookie.layer).pipe(
+  Layer.provide(TokenCookieConfigLive),
+  Layer.provide(OAuthConfigLive),
+  Layer.provide(LogLevelLive),
+  Layer.provide(DevTools.layer()),
+);
 
-    const makeHandler = <A>(type: string, name: String, self: RemixEffect<A, L | R>) => {
-      const app = Effect.gen(function* (_) {
+const Live = Layer.mergeAll(Users.live, OAuth.layer, TokenCookie.layer).pipe(
+  Layer.provide(TokenCookieConfigLive),
+  Layer.provide(OAuthConfigLive),
+  Layer.provide(ProstresConfigLive),
+  Layer.provide(LogLevelLive),
+);
+
+// TODO move to the schema definition so don't need to new up a token
+const Sessions = Layer.effect(
+  Session,
+  TokenCookie.parse.pipe(
+    Effect.map((token) => Token.make<Id<User>>(token)),
+    Effect.flatMap(Users.identify),
+    Effect.map((session) => RequestSession.Provided({ session })),
+    Effect.orElseSucceed(() => RequestSession.NotProvided()),
+    Effect.flatMap((rs) => Ref.make<RequestSession>(rs)),
+    Effect.map(Session.make),
+  ),
+);
+
+export const Remix = await Runtime.make({
+  layer: Layer.unwrapEffect(mode.pipe(Effect.map((mode) => (mode === "dev" ? Dev : Live)))),
+  requestLayer: Sessions,
+  interpreter: (self) => {
+    return Effect.flatMap(self, (response) =>
+      Effect.gen(function* (_) {
+        const cookie = yield* _(TokenCookie);
+
+        const requestSession = yield* _(Session.get);
+
         return yield* _(
-          self,
-
-          // TODO: maybe move this to a middleware
-          Effect.flatMap((result) => {
-            if (Redirect.is(result)) {
-              return Http.response.json(null, {
-                status: 302,
-                headers: Http.headers.fromInput({ Location: result.location }),
-              });
-            }
-
-            if (Unauthorized.is(result)) {
-              return Http.response.json(null, { status: 401 });
-            }
-
-            if (ValidationError.is(result)) {
-              return Http.response.json(result, { status: 400 });
-            }
-
-            if (isUndefined(result)) {
-              return Http.response.json(null, { status: 200 });
-            }
-
-            return Http.response.json(result, { status: 200 });
+          requestSession,
+          RequestSession.match({
+            Set: ({ session }) => ServerResponse.setCookie(cookie, Option.some(session.token.value))(response),
+            Unset: () => ServerResponse.setCookie(cookie, Option.none())(response),
+            InvalidToken: () => ServerResponse.setCookie(cookie, Option.none())(response),
+            NotProvided: () => Effect.succeed(response),
+            Provided: () => Effect.succeed(response),
           }),
-          Effect.catchTags({ BodyError: (e) => Effect.die("body error") }),
-          Effect.withSpan(`${name}.${type}`),
-          middleware,
-          Effect.tapDefect((cause) => Effect.logError(pretty(cause))),
         );
-      }).pipe(Effect.provide(requestLayer));
-
-      const handler = run(app);
-
-      return (args: LoaderFunctionArgs | ActionFunctionArgs) => handler(args.request);
-    };
-
-    const loader = <A>(name: string, self: RemixEffect<A, L | R>) => makeHandler("loader", name, self);
-
-    const action = <A>(name: string, self: RemixEffect<A, L | R>) => makeHandler("action", name, self);
-
-    const loaderSearchParams = <A, In, Out extends Partial<Record<string, string>>>(
-      name: string,
-      schema: S.Schema<In, Out>,
-      self: (input: In) => RemixEffect<A | ValidationError, L | R>,
-    ) => {
-      const eff = Http.request.ServerRequest.pipe(
-        Effect.map((a) => new URL(a.url)),
-        Effect.map((a) => ReadonlyRecord.fromEntries(a.searchParams.entries()) as Out),
-        Effect.flatMap(S.decode(schema)),
-        Effect.flatMap(self),
-        Effect.catchTags({
-          ParseError: (e) => ValidationError.make(formatParseError(e)),
-        }),
-      );
-
-      return makeHandler("action", name, eff);
-    };
-
-    const formDataAction = <A, In, Out extends Partial<Multipart.Persisted>>(
-      name: string,
-      schema: S.Schema<In, Out>,
-      self: (input: In) => RemixEffect<A | ValidationError, L | R>,
-    ) => {
-      const eff = Http.request.schemaBodyForm(schema).pipe(
-        Effect.flatMap(self),
-        Effect.catchTags({
-          MultipartError: Effect.die,
-          ParseError: (e) => ValidationError.make(formatParseError(e)),
-          RequestError: Effect.die,
-        }),
-      );
-
-      return makeHandler("action", name, eff);
-    };
-
-    return {
-      loader,
-      action,
-      loaderSearchParams,
-      formDataAction,
-    };
-  };
-}
-
-const formatParseError = (error: ParseError): Record<string, string[]> => {
-  return ReadonlyRecord.map(
-    ReadonlyArray.groupBy(formatError(error), (i) => i.path.join(".")),
-    ReadonlyArray.map((a) => a.message),
-  );
-};
+      }),
+    ).pipe(Effect.tapDefect((cause) => Effect.logError(pretty(cause))));
+  },
+});
