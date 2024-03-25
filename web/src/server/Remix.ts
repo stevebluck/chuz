@@ -1,12 +1,10 @@
 import { Id, Token, User } from "@chuz/domain";
 import { DevTools } from "@effect/experimental";
-import { Config, Duration, Effect, Layer, LogLevel, Logger, Option, Ref } from "effect";
-import { pretty } from "effect/Cause";
+import { Config, Duration, Effect, Layer, LogLevel, Logger, Ref } from "effect";
 import { PostgresConfig } from "./Database";
 import { OAuth, OAuthConfig } from "./OAuth";
 import { PasswordHasher, PasswordHasherConfig } from "./Passwords";
 import { Runtime } from "./Runtime";
-import { ServerResponse } from "./ServerResponse";
 import { RequestSession, Session } from "./Sessions";
 import { Users } from "./Users";
 import { TokenCookie, TokenCookieConfig } from "./cookies/TokenCookie";
@@ -18,7 +16,7 @@ const mode = Config.withDefault(Config.literal("dev", "live")("APP_MODE"), "dev"
 const OAuthConfigLive = OAuthConfig.layer({
   googleClientId: Config.string("GOOGLE_CLIENT_ID"),
   googleClientSecret: Config.string("GOOGLE_CLIENT_SECRET"),
-  redirectUri: Config.withDefault(Config.string("AUTH_CALLBACK_URL"), "http://localhost:5173/callback"),
+  redirectUri: Config.withDefault(Config.string("AUTH_CALLBACK_URL"), "http://localhost:5173/login"),
 });
 
 const ProstresConfigLive = PostgresConfig.layer({
@@ -36,7 +34,7 @@ const PasswordsConfigDev = PasswordHasherConfig.layer({
 const TokenCookieConfigLive = TokenCookieConfig.layer({
   secure: Config.map(Config.string("NODE_ENV"), (env) => env === "production"),
   name: Config.withDefault(Config.string("SESSION_COOKIE_NAME"), "_session"),
-  maxAge: Config.withDefault(Config.number("SESSION_COOKIE_DURATION_SECONDS"), Duration.toSeconds(Duration.days(365))),
+  maxAge: Config.withDefault(Config.number("SESSION_COOKIE_DURATION_MILLIS"), Duration.toMillis("365 days")),
 });
 
 const LogLevelLive = Layer.unwrapEffect(
@@ -66,7 +64,7 @@ const Live = Layer.mergeAll(Users.live, OAuth.layer, TokenCookie.layer, Password
 // TODO move to the schema definition so don't need to new up a token
 const Sessions = Layer.effect(
   Session,
-  TokenCookie.parse.pipe(
+  TokenCookie.read.pipe(
     Effect.map((token) => Token.make<Id<User>>(token)),
     Effect.flatMap(Users.identify),
     Effect.map((session) => RequestSession.Provided({ session })),
@@ -89,14 +87,16 @@ export const Remix = await Runtime.make({
         return yield* _(
           requestSession,
           RequestSession.match({
-            Set: ({ session }) => ServerResponse.setCookie(cookie, Option.some(session.token.value))(response),
-            Unset: () => ServerResponse.setCookie(cookie, Option.none())(response),
-            InvalidToken: () => ServerResponse.setCookie(cookie, Option.none())(response),
+            Set: ({ session }) => cookie.save(session.token.value)(response),
+            Unset: () => cookie.remove(response),
+            InvalidToken: () => cookie.remove(response),
             NotProvided: () => Effect.succeed(response),
             Provided: () => Effect.succeed(response),
           }),
+
+          Effect.catchTag("CookieError", () => response),
         );
       }),
-    ).pipe(Effect.tapDefect((cause) => Effect.logError(pretty(cause))));
+    ).pipe(Effect.tapErrorCause(Effect.logError));
   },
 });

@@ -1,5 +1,5 @@
+import * as Core from "@chuz/core";
 import { Identified, Password } from "@chuz/domain";
-import * as Core from "core/index";
 import { Clock, Effect, Layer } from "effect";
 import { Database } from "./Database";
 import { PasswordHasherConfig } from "./Passwords";

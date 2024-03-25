@@ -15,15 +15,16 @@
     "**/*": "prettier --write --ignore-unknown"
   },
   "dependencies": {
-    "@effect/experimental": "^0.14.0",
-    "@effect/platform": "^0.48.15",
-    "@effect/platform-node": "^0.45.17",
-    "@effect/schema": "^0.64.11",
-    "effect": "^2.4.11"
+    "@effect/experimental": "^0.14.2",
+    "@effect/platform": "^0.48.17",
+    "@effect/platform-node": "^0.45.19",
+    "@effect/schema": "^0.64.13",
+    "effect": "^2.4.13"
   },
   "devDependencies": {
     "@trivago/prettier-plugin-sort-imports": "^4.3.0",
-    "fast-check": "^3.16.0",
+    "@types/node": "^20.11.30",
+    "fast-check": "^3.17.0",
     "husky": "^9.0.11",
     "lint-staged": "^15.2.2",
     "prettier": "^3.2.5",

@@ -1,48 +1,54 @@
-import { schemaHeaders, ServerRequest } from "@effect/platform/Http/ServerRequest";
+import { Cookie as HttpCookie } from "@effect/platform/Http/Cookies";
+import * as Http from "@effect/platform/HttpServer";
 import * as S from "@effect/schema/Schema";
-import { CookieOptions, createCookie, Cookie as RemixCookie } from "@remix-run/node";
-import { Data, Effect, identity, Option } from "effect";
+import { createHmac, timingSafeEqual } from "crypto";
+import { Data, Effect, Equal, Equivalence, ReadonlyRecord } from "effect";
 
-interface Cookies<A> {
-  parse: Effect.Effect<A, CookieNotPresent, ServerRequest>;
-  serialise: (value: Option.Option<A>) => Effect.Effect<string>;
-}
-
-export class Cookie<A> implements Cookies<A> {
-  cookie: RemixCookie;
-
+export class Cookie<A> {
   constructor(
     private readonly name: string,
     private readonly schema: S.Schema<A, string>,
-    private readonly config: CookieOptions,
-  ) {
-    this.cookie = createCookie(this.name, {
-      secrets: ["test"],
-      secure: this.config.secure,
-      path: "/",
-      sameSite: "lax",
-      maxAge: this.config.maxAge,
-      httpOnly: true,
-      decode: identity,
-      encode: identity,
-    });
-  }
+    public readonly options: HttpCookie["options"] & { secret: string },
+  ) {}
 
-  serialise = (opt: Option.Option<A>) =>
-    Option.match(opt, {
-      onNone: () => Effect.promise(() => this.cookie.serialize("", { maxAge: 1 })),
-      onSome: (value) =>
-        Effect.succeed(value).pipe(
-          Effect.flatMap(S.encode(this.schema)),
-          Effect.andThen((string) => this.cookie.serialize(string)),
-          Effect.orDie,
-        ),
-    });
+  // TODO: move to Crypto.ts in prelude?
+  private sign = (val: string) => {
+    return val + "." + createHmac("sha256", this.options.secret).update(val).digest("base64").replace(/\=+$/, "");
+  };
 
-  parse = Effect.suspend(() =>
-    schemaHeaders(S.struct({ cookie: S.string })).pipe(
-      Effect.map(({ cookie }) => cookie),
-      Effect.andThen((str) => this.cookie.parse(str)),
+  private unsign = (input: string) => {
+    const tentativeValue = input.slice(0, input.lastIndexOf(".")),
+      expectedInput = this.sign(tentativeValue),
+      expectedBuffer = Buffer.from(expectedInput),
+      inputBuffer = Buffer.from(input);
+    return expectedBuffer.length === inputBuffer.length && timingSafeEqual(expectedBuffer, inputBuffer)
+      ? Effect.succeed(tentativeValue)
+      : Effect.fail(new UnsignError());
+  };
+
+  equals: Equivalence.Equivalence<A> = Equal.equals;
+
+  remove = (res: Http.response.ServerResponse) =>
+    Http.request.ServerRequest.pipe(
+      Effect.map((res) => res.cookies),
+      Effect.flatMap(ReadonlyRecord.get(this.name)),
+      Effect.flatMap(() => Http.response.unsafeSetCookie(this.name, "", { maxAge: 0 })(res)),
+      Effect.orElseSucceed(() => res),
+    );
+
+  save = (value: A) => (res: Http.response.ServerResponse) =>
+    Effect.succeed(value).pipe(
+      Effect.flatMap(S.encode(this.schema)),
+      Effect.map(this.sign),
+      Effect.flatMap((str) => Http.response.setCookie(this.name, str, this.options)(res)),
+      Effect.catchTag("ParseError", (e) => Effect.die(e)),
+    );
+
+  read = Effect.suspend(() =>
+    Http.request.ServerRequest.pipe(
+      Effect.map((res) => res.cookies),
+      Effect.flatMap(ReadonlyRecord.get(this.name)),
+      Effect.flatMap(this.unsign),
       Effect.flatMap(S.decode(this.schema)),
       Effect.mapError(() => new CookieNotPresent()),
     ),
@@ -50,3 +56,5 @@ export class Cookie<A> implements Cookies<A> {
 }
 
 class CookieNotPresent extends Data.TaggedError("CookieNotPresent") {}
+
+class UnsignError extends Data.TaggedError("UnsignError") {}

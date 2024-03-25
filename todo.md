@@ -4,10 +4,10 @@
 
 ## Todo
 
-- [] Add config
-- [] Add password hasher
+- [x] Add config
+- [x] Add password hasher
+- [x] Add Add Response union
 - [] Add returnTo logic for auth
-- [] Add Add ActionError
 
 ## Features
 

@@ -1,6 +1,7 @@
 import { Credentials, Email, User } from "@chuz/domain";
+import { Uuid } from "@chuz/prelude";
 import * as S from "@effect/schema/Schema";
-import { Context, Effect, Layer } from "effect";
+import { Console, Context, Data, Effect, Layer } from "effect";
 import { google } from "googleapis";
 import { IdentityProvider } from "./IdentityProvider";
 import { LayerUtils } from "./LayerUtils";
@@ -21,13 +22,13 @@ const make = Effect.gen(function* (_) {
   );
 
   return {
-    exchangeCodeForSession: IdentityProvider.Authorise.match({
+    exchangeCodeForSession: IdentityProvider.match({
       google: ({ code }) =>
-        Effect.promise(() => oauth2Client.getToken(code)).pipe(
-          Effect.andThen(({ tokens }) =>
-            fetch(`https://www.googleapis.com/oauth2/v1/userinfo?access_token=${tokens.access_token}`),
-          ),
-          Effect.andThen((res) => res.json() as Promise<unknown>),
+        Effect.tryPromise({
+          try: () => oauth2Client.getToken(code),
+          catch: (e) => new ExchangeCodeError({ error: e }),
+        }).pipe(
+          Effect.flatMap(({ tokens }) => getGoogleUrl(tokens.access_token!)),
           Effect.andThen(Google.fromUnknown),
           Effect.andThen((user) =>
             Credentials.Provider.make({
@@ -43,19 +44,17 @@ const make = Effect.gen(function* (_) {
           Effect.flatMap(Users.authenticate),
           Effect.catchTags({
             ParseError: Effect.die,
-            UnknownException: Effect.die,
             CredentialsNotRecognised: Effect.die,
           }),
         ),
     }),
-    generateAuthUrl: (tag: IdentityProvider.Provider["_tag"]) =>
+    generateAuthUrl: (tag: IdentityProvider.Provider["_tag"], state: Uuid) =>
       IdentityProvider.Provider.match({
         google: () =>
           Effect.sync(() =>
             oauth2Client.generateAuthUrl({
               access_type: "offline",
-              state: "dave",
-
+              state,
               scope: [
                 "https://www.googleapis.com/auth/userinfo.email",
                 "https://www.googleapis.com/auth/userinfo.profile",
@@ -78,6 +77,15 @@ class Google extends S.Class<Google>("Google")({
   static fromUnknown = S.decodeUnknown(Google);
 }
 
+const getGoogleUrl = (accessToken: string) =>
+  Effect.tryPromise({
+    try: (signal) =>
+      fetch(`https://www.googleapis.com/oauth2/v1/userinfo?access_token=${accessToken}`, { signal }).then(
+        (res) => res.json() as Promise<unknown>,
+      ),
+    catch: (e) => new ExchangeCodeError({ error: e }),
+  });
+
 export class OAuthConfig extends Context.Tag("@app/OAuthConfig")<OAuthConfig, Config>() {
   static layer = LayerUtils.config(this);
 }
@@ -85,3 +93,5 @@ export class OAuthConfig extends Context.Tag("@app/OAuthConfig")<OAuthConfig, Co
 export class OAuth extends Effect.Tag("@app/OAuth")<OAuth, Effect.Effect.Success<typeof make>>() {
   static layer = Layer.effect(OAuth, make);
 }
+
+class ExchangeCodeError extends Data.TaggedError("ExchangeCodeError")<{ error: unknown }> {}

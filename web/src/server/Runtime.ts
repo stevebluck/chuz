@@ -37,10 +37,10 @@ export namespace Runtime {
 
     const run = await Effect.runPromise(handler);
 
-    const makeHandler = <A>(self: Effect.Effect<ServerResponse, never, RequestLayer<L | R>>) => {
+    const makeHandler = (self: Effect.Effect<ServerResponse, never, RequestLayer<L | R>>) => {
       const runnable = Effect.provide(interpreter(self), requestLayer);
 
-      return ({ request }: LoaderFunctionArgs) => run(runnable)(request).then((a) => a as TypedResponse<A>);
+      return ({ request }: LoaderFunctionArgs) => run(runnable)(request);
     };
 
     return {

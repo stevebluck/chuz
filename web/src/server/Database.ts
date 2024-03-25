@@ -1,4 +1,4 @@
-import * as Core from "core/index";
+import * as Core from "@chuz/core";
 import { Context, Effect, Layer } from "effect";
 import { LayerUtils } from "./LayerUtils";
 

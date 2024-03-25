@@ -1,6 +1,7 @@
 import { User, Session, Email, Id, Identified, Token, Credentials, Password, Credential } from "@chuz/domain";
 import { Effect } from "effect";
-import { DB, Database, Passwords } from "..";
+import { Passwords } from "../auth/Passwords";
+import { DB, Database } from "../persistence/Database";
 import { Users } from "./Users";
 
 export class RdmsUsers implements Users {

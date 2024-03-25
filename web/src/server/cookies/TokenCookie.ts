@@ -1,11 +1,12 @@
 import * as S from "@effect/schema/Schema";
 import { Context, Effect, Layer } from "effect";
+import { DurationInput } from "effect/Duration";
 import { LayerUtils } from "../LayerUtils";
 import { Cookie } from "./Cookie";
 
 interface Config {
   name: string;
-  maxAge: number;
+  maxAge: DurationInput;
   secure: boolean;
 }
 
@@ -20,7 +21,7 @@ export class TokenCookie extends Effect.Tag("@app/TokenCookie")<TokenCookie, Coo
       const config = yield* _(TokenCookieConfig);
 
       return new Cookie(config.name, S.string, {
-        secrets: ["test"],
+        secret: "test",
         secure: config.secure,
         path: "/",
         sameSite: "lax",

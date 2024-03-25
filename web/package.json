@@ -24,7 +24,6 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
     "compression": "^1.7.4",
-    "cookie": "^0.6.0",
     "express": "^4.18.3",
     "googleapis": "^134.0.0",
     "isbot": "^5.1.1",
@@ -40,7 +39,6 @@
     "@chuz/typescript-config": "workspace:*",
     "@remix-run/dev": "^2.8.1",
     "@types/compression": "^1.7.5",
-    "@types/cookie": "^0.6.0",
     "@types/express": "^4.17.21",
     "@types/morgan": "^1.9.9",
     "@types/react": "^18.2.65",
@@ -54,13 +52,13 @@
     "vite-tsconfig-paths": "^4.3.1"
   },
   "peerDependencies": {
-    "effect": "*",
     "@effect/experimental": "*",
     "@effect/platform": "*",
     "@effect/platform-node": "*",
     "@effect/schema": "*",
-    "typescript": "*",
-    "fast-check": "^3.16.0"
+    "effect": "*",
+    "fast-check": "^3.16.0",
+    "typescript": "*"
   },
   "engines": {
     "node": ">=18.0.0"
