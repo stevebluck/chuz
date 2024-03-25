@@ -1,7 +1,8 @@
 import { Effect } from "effect";
 import { Routes } from "src/Routes";
 import { Button } from "src/components/ui/button";
-import { Remix, Session, ServerResponse } from "src/server";
+import { Session, ServerResponse } from "src/server";
+import { Remix } from "src/server/Remix";
 
 export const loader = Remix.loader(
   Session.authenticated.pipe(

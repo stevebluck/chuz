@@ -6,8 +6,9 @@ import { Routes } from "src/Routes";
 import { AuthContent } from "src/auth/auth-layout";
 import { RegisterForm } from "src/auth/register-form";
 import { fromCheckboxInput, optionFromEmptyString } from "src/schemas/form";
-import { Remix, Session, Users, ServerResponse } from "src/server";
+import { Session, Users, ServerResponse } from "src/server";
 import { PasswordHasher } from "src/server/Passwords";
+import { Remix } from "src/server/Remix";
 import { ServerRequest } from "src/server/ServerRequest";
 
 const RegistrationForm = S.struct({

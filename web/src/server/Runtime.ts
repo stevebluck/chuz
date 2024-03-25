@@ -1,51 +1,105 @@
-import * as NodeFileSystem from "@effect/platform-node/NodeFileSystem";
-import * as FileSystem from "@effect/platform/FileSystem";
-import { ServerResponse } from "@effect/platform/Http/ServerResponse";
+import { Id, Token, User } from "@chuz/domain";
+import { DevTools } from "@effect/experimental";
+import { ServerRequest } from "@effect/platform/Http/ServerRequest";
 import * as Http from "@effect/platform/HttpServer";
-import * as Path from "@effect/platform/Path";
-import { ActionFunctionArgs, LoaderFunctionArgs, TypedResponse } from "@remix-run/node";
-import { Effect, Scope, Layer, ManagedRuntime, ConfigError } from "effect";
-import { NoInfer } from "effect/Types";
+import { Config, Duration, Effect, Layer, LogLevel, Logger, Ref } from "effect";
+import { PostgresConfig } from "./Database";
+import { OAuth, OAuthConfig } from "./OAuth";
+import { PasswordHasher, PasswordHasherConfig } from "./Passwords";
+import { Remix } from "./Remix";
+import { RequestSession, Session } from "./Sessions";
+import { Users } from "./Users";
+import { TokenCookie, TokenCookieConfig } from "./cookies/TokenCookie";
 
-type RequestLayer<R> = R | Http.request.ServerRequest | FileSystem.FileSystem | Path.Path | Scope.Scope;
+const debug = Config.withDefault(Config.boolean("DEBUG"), false);
 
-type RemixLoader<A> = (args: LoaderFunctionArgs) => Promise<TypedResponse<A>>;
+const mode = Config.withDefault(Config.literal("dev", "live")("APP_MODE"), "dev" as const);
 
-type RemixAction<A> = (args: ActionFunctionArgs) => Promise<TypedResponse<A>>;
+const OAuthConfigLive = OAuthConfig.layer({
+  googleClientId: Config.string("GOOGLE_CLIENT_ID"),
+  googleClientSecret: Config.string("GOOGLE_CLIENT_SECRET"),
+  redirectUri: Config.withDefault(Config.string("AUTH_CALLBACK_URL"), "http://localhost:5173/login"),
+});
 
-interface RemixRuntime<L, R> {
-  loader: <A>(self: Effect.Effect<ServerResponse, never, RequestLayer<L | R>>) => RemixLoader<A>;
-  action: <A>(self: Effect.Effect<ServerResponse, never, RequestLayer<L | R>>) => RemixAction<A>;
-}
+const ProstresConfigLive = PostgresConfig.layer({
+  connectionString: Config.string("DATABASE_URL"),
+});
 
-interface RemixSettings<L, R> {
-  layer: Layer.Layer<L, ConfigError.ConfigError>;
-  requestLayer: Layer.Layer<R, never, RequestLayer<NoInfer<L>>>;
-  interpreter: (
-    self: Effect.Effect<ServerResponse, never, RequestLayer<L | R>>,
-  ) => Effect.Effect<ServerResponse, never, RequestLayer<L | R>>;
-}
+const PasswordsConfigLive = PasswordHasherConfig.layer({
+  N: Config.succeed(16384),
+});
 
-export namespace Runtime {
-  export const make = async <L, R>({
-    layer,
-    requestLayer,
-    interpreter,
-  }: RemixSettings<L, R>): Promise<RemixRuntime<L, R>> => {
-    const { runtimeEffect } = ManagedRuntime.make(Layer.mergeAll(layer, NodeFileSystem.layer, Path.layer));
-    const handler = runtimeEffect.pipe(Effect.map(Http.app.toWebHandlerRuntime));
+const PasswordsConfigDev = PasswordHasherConfig.layer({
+  N: Config.succeed(4),
+});
 
-    const run = await Effect.runPromise(handler);
+const TokenCookieConfigLive = TokenCookieConfig.layer({
+  secure: Config.map(Config.string("NODE_ENV"), (env) => env === "production"),
+  name: Config.withDefault(Config.string("SESSION_COOKIE_NAME"), "_session"),
+  maxAge: Config.withDefault(Config.number("SESSION_COOKIE_DURATION_MILLIS"), Duration.toMillis("365 days")),
+});
 
-    const makeHandler = (self: Effect.Effect<ServerResponse, never, RequestLayer<L | R>>) => {
-      const runnable = Effect.provide(interpreter(self), requestLayer);
+const LogLevelLive = Layer.unwrapEffect(
+  Effect.gen(function* (_) {
+    const isDebug = yield* _(debug);
+    const level = isDebug ? LogLevel.All : LogLevel.Info;
+    return Logger.minimumLogLevel(level);
+  }),
+);
 
-      return ({ request }: LoaderFunctionArgs) => run(runnable)(request);
-    };
+const Dev = Layer.mergeAll(Users.dev, OAuth.layer, TokenCookie.layer, PasswordHasher.layer).pipe(
+  Layer.provide(TokenCookieConfigLive),
+  Layer.provide(OAuthConfigLive),
+  Layer.provide(PasswordsConfigDev),
+  Layer.provide(LogLevelLive),
+  Layer.provide(DevTools.layer()),
+);
 
-    return {
-      loader: makeHandler,
-      action: makeHandler,
-    };
-  };
-}
+const Live = Layer.mergeAll(Users.live, OAuth.layer, TokenCookie.layer, PasswordHasher.layer).pipe(
+  Layer.provide(TokenCookieConfigLive),
+  Layer.provide(OAuthConfigLive),
+  Layer.provide(PasswordsConfigLive),
+  Layer.provide(ProstresConfigLive),
+  Layer.provide(LogLevelLive),
+);
+
+// TODO move to the schema definition so don't need to new up a token
+const Sessions = Layer.effect(
+  Session,
+  TokenCookie.read.pipe(
+    Effect.map((token) => Token.make<Id<User>>(token)),
+    Effect.flatMap(Users.identify),
+    Effect.map((session) => RequestSession.Provided({ session })),
+    Effect.orElseSucceed(() => RequestSession.NotProvided()),
+    Effect.flatMap((rs) => Ref.make<RequestSession>(rs)),
+    Effect.map(Session.make),
+  ),
+);
+
+export const AppLayer = Layer.unwrapEffect(mode.pipe(Effect.map((mode) => (mode === "dev" ? Dev : Live))));
+
+export const RequestLayer = Sessions;
+
+export const middleware = <E, R>(
+  self: Effect.Effect<Http.response.ServerResponse, E, R>,
+): Effect.Effect<Http.response.ServerResponse, E, R | TokenCookie | Session | ServerRequest> =>
+  Effect.gen(function* (_) {
+    const cookie = yield* _(TokenCookie);
+
+    const requestSession = yield* _(Session.get);
+
+    const response = yield* _(self);
+
+    return yield* _(
+      requestSession,
+      RequestSession.match({
+        Set: ({ session }) => cookie.save(session.token.value)(response),
+        Unset: () => cookie.remove(response),
+        InvalidToken: () => cookie.remove(response),
+        NotProvided: () => Effect.succeed(response),
+        Provided: () => Effect.succeed(response),
+      }),
+
+      Effect.catchTag("CookieError", () => response),
+    );
+  }).pipe(Effect.tapErrorCause(Effect.logError));

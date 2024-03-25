@@ -41,6 +41,7 @@ const make = Effect.gen(function* (_) {
               }),
             }),
           ),
+          // TODO lift logic to register/authenticate here
           Effect.flatMap(Users.authenticate),
           Effect.catchTags({
             ParseError: Effect.die,
