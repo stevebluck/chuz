@@ -23,9 +23,8 @@ export class Users extends Effect.Tag("@app/Users")<Users, Core.Users>() {
     Users,
     Effect.gen(function* (_) {
       const db = yield* _(Database);
-      const passwordsConfig = yield* _(PasswordHasherConfig);
 
-      return yield* _(Core.RdmsUsers.make(db, Core.Passwords.matcher(passwordsConfig)));
+      return yield* _(Core.RdmsUsers.make(db));
     }),
   ).pipe(Layer.provide(Database.live));
 }

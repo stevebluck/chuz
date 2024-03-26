@@ -9,7 +9,6 @@ export namespace TestBench {
     const clock = Clock.make();
     const userTokens = yield* _(Core.ReferenceTokens.create(clock, Domain.Identified.equals));
     const passwordResetTokens = yield* _(Core.ReferenceTokens.create(clock, Domain.Password.Reset.equals));
-    const match = Core.Passwords.matcher({ N: 2 });
 
     const users = yield* _(Core.ReferenceUsers.make(userTokens, passwordResetTokens, match));
 
@@ -21,10 +20,9 @@ export namespace TestBench {
   export namespace Seeded {
     export const make: Effect.Effect<Seeded> = Effect.gen(function* (_) {
       const bench = yield* _(TestBench.make);
-      const hash = Core.Passwords.hasher({ N: 2 });
 
       const password = yield* _(hash(userRegistration.credentials.password));
-      const credentials = new Domain.Credentials.EmailPassword.Secure({
+      const credentials = new Domain.Credential.EmailPassword.Secure({
         email: userRegistration.credentials.email,
         password,
       });
@@ -47,8 +45,11 @@ const userRegistration = {
   firstName: Domain.User.FirstName.unsafeFrom("Toby"),
   lastName: Domain.User.LastName.unsafeFrom("Lerone"),
   optInMarketing: Domain.User.OptInMarketing.unsafeFrom(true),
-  credentials: new Domain.Credentials.EmailPassword.Strong({
+  credentials: new Domain.Credential.EmailPassword.Strong({
     email: Domain.Email.unsafeFrom("lonestar@an.com"),
     password: Domain.Password.Strong.unsafeFrom("password"),
   }),
 };
+
+const match = Core.Passwords.matcher({ N: 2 });
+const hash = Core.Passwords.hasher({ N: 2 });

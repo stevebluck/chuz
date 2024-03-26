@@ -1,4 +1,4 @@
-import { Credentials, Email, Password, User } from "@chuz/domain";
+import { Credential, Email, Password, User } from "@chuz/domain";
 import * as S from "@effect/schema/Schema";
 import { useActionData } from "@remix-run/react";
 import { Effect } from "effect";
@@ -24,7 +24,7 @@ export const action = Remix.action(
     Effect.flatMap(({ email, password, ...registration }) =>
       PasswordHasher.hash(password).pipe(
         Effect.map((hashed) => ({
-          credentials: new Credentials.EmailPassword.Secure({ email, password: hashed }),
+          credentials: new Credential.EmailPassword.Secure({ email, password: hashed }),
           firstName: registration.firstName,
           lastName: registration.lastName,
           optInMarketing: registration.optInMarketing,

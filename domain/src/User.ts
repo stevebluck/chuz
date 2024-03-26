@@ -1,6 +1,6 @@
 import * as S from "@effect/schema/Schema";
 import { Data } from "effect";
-import { Credentials, Email } from ".";
+import { Credential, Email } from ".";
 
 export interface User extends S.Schema.Type<typeof User.schema> {}
 
@@ -48,12 +48,20 @@ export namespace User {
   export namespace Registration {
     export const schema = S.suspend(() =>
       S.struct({
-        credentials: Credentials.EmailPassword.Secure,
+        credentials: Credential.schema,
         firstName: S.option(User.FirstName.schema),
         lastName: S.option(User.LastName.schema),
         optInMarketing: User.OptInMarketing.schema,
       }),
     );
+
+    export const fromProviderCredential = (credential: Credential.Provider) =>
+      make({
+        credentials: credential,
+        firstName: credential.firstName,
+        lastName: credential.lastName,
+        optInMarketing: User.OptInMarketing.unsafeFrom(true),
+      });
 
     export const make = Data.case<Registration>();
   }

@@ -2,71 +2,62 @@ import { Id, Token, User } from "@chuz/domain";
 import { DevTools } from "@effect/experimental";
 import { ServerRequest } from "@effect/platform/Http/ServerRequest";
 import * as Http from "@effect/platform/HttpServer";
-import { Config, Duration, Effect, Layer, LogLevel, Logger, Ref } from "effect";
+import { Config, Effect, Layer, LogLevel, Logger, Match, Ref, Secret } from "effect";
 import { PostgresConfig } from "./Database";
-import { OAuth, OAuthConfig } from "./OAuth";
 import { PasswordHasher, PasswordHasherConfig } from "./Passwords";
-import { Remix } from "./Remix";
 import { RequestSession, Session } from "./Sessions";
 import { Users } from "./Users";
-import { TokenCookie, TokenCookieConfig } from "./cookies/TokenCookie";
+import { AppCookies, AppCookiesConfig } from "./cookies/AppCookies";
+import { Auth } from "./oauth/Auth";
+import { GoogleAuthConfig } from "./oauth/GoogleAuth";
 
-const debug = Config.withDefault(Config.boolean("DEBUG"), false);
+const IsDebug = Config.withDefault(Config.boolean("DEBUG"), false);
 
-const mode = Config.withDefault(Config.literal("dev", "live")("APP_MODE"), "dev" as const);
+const IsProduction = Config.map(Config.string("NODE_ENV"), (env) => env === "production");
 
-const OAuthConfigLive = OAuthConfig.layer({
-  googleClientId: Config.string("GOOGLE_CLIENT_ID"),
-  googleClientSecret: Config.string("GOOGLE_CLIENT_SECRET"),
-  redirectUri: Config.withDefault(Config.string("AUTH_CALLBACK_URL"), "http://localhost:5173/login"),
+const GoogleAuthConfigLive = GoogleAuthConfig.layer({
+  clientId: Config.string("GOOGLE_CLIENT_ID"),
+  clientSecret: Config.string("GOOGLE_CLIENT_SECRET"),
+  // TODO: Move to AuthConfig
+  redirectUri: Config.string("AUTH_CALLBACK_URL").pipe(Config.withDefault("http://localhost:5173/login?_tag=google")),
 });
 
-const ProstresConfigLive = PostgresConfig.layer({
-  connectionString: Config.string("DATABASE_URL"),
-});
+const PostgresConfigLive = PostgresConfig.layer({ connectionString: Config.string("DATABASE_URL") });
 
-const PasswordsConfigLive = PasswordHasherConfig.layer({
-  N: Config.succeed(16384),
-});
+const PasswordHasherConfigLive = PasswordHasherConfig.layer({ N: Config.succeed(16384) });
+const PasswordHasherConfigDev = PasswordHasherConfig.layer({ N: Config.succeed(4) });
 
-const PasswordsConfigDev = PasswordHasherConfig.layer({
-  N: Config.succeed(4),
-});
-
-const TokenCookieConfigLive = TokenCookieConfig.layer({
-  secure: Config.map(Config.string("NODE_ENV"), (env) => env === "production"),
-  name: Config.withDefault(Config.string("SESSION_COOKIE_NAME"), "_session"),
-  maxAge: Config.withDefault(Config.number("SESSION_COOKIE_DURATION_MILLIS"), Duration.toMillis("365 days")),
+const AppCookiesConfigLive = AppCookiesConfig.layer({
+  secure: IsProduction,
+  secrets: Config.array(Config.secret("COOKIE_SECRET")).pipe(Config.withDefault([Secret.fromString("chuzwozza")])),
 });
 
 const LogLevelLive = Layer.unwrapEffect(
   Effect.gen(function* (_) {
-    const isDebug = yield* _(debug);
+    const isDebug = yield* _(IsDebug);
     const level = isDebug ? LogLevel.All : LogLevel.Info;
     return Logger.minimumLogLevel(level);
   }),
 );
 
-const Dev = Layer.mergeAll(Users.dev, OAuth.layer, TokenCookie.layer, PasswordHasher.layer).pipe(
-  Layer.provide(TokenCookieConfigLive),
-  Layer.provide(OAuthConfigLive),
-  Layer.provide(PasswordsConfigDev),
-  Layer.provide(LogLevelLive),
+const Configs = Layer.mergeAll(AppCookiesConfigLive, GoogleAuthConfigLive, PasswordHasherConfigLive, LogLevelLive);
+
+const Dev = Layer.mergeAll(Users.dev, Auth.layer, AppCookies.layer, PasswordHasher.layer).pipe(
+  Layer.provide(Configs),
+  Layer.provide(PasswordHasherConfigDev),
   Layer.provide(DevTools.layer()),
 );
 
-const Live = Layer.mergeAll(Users.live, OAuth.layer, TokenCookie.layer, PasswordHasher.layer).pipe(
-  Layer.provide(TokenCookieConfigLive),
-  Layer.provide(OAuthConfigLive),
-  Layer.provide(PasswordsConfigLive),
-  Layer.provide(ProstresConfigLive),
-  Layer.provide(LogLevelLive),
+const Live = Layer.mergeAll(Users.live, Auth.layer, AppCookies.layer, PasswordHasher.layer).pipe(
+  Layer.provide(Configs),
+  Layer.provide(PostgresConfigLive),
 );
 
 // TODO move to the schema definition so don't need to new up a token
 const Sessions = Layer.effect(
   Session,
-  TokenCookie.read.pipe(
+  AppCookies.token.pipe(
+    Effect.flatMap((token) => token.read),
     Effect.map((token) => Token.make<Id<User>>(token)),
     Effect.flatMap(Users.identify),
     Effect.map((session) => RequestSession.Provided({ session })),
@@ -76,19 +67,31 @@ const Sessions = Layer.effect(
   ),
 );
 
-export const AppLayer = Layer.unwrapEffect(mode.pipe(Effect.map((mode) => (mode === "dev" ? Dev : Live))));
+type AppMode = Effect.Effect.Success<typeof AppMode>;
+const AppMode = Config.literal("live", "dev")("APP_MODE").pipe(Config.withDefault("dev" as const));
+
+export const AppLayer = Layer.unwrapEffect(
+  Effect.map(
+    AppMode,
+    Match.type<AppMode>().pipe(
+      Match.when("live", () => Live),
+      Match.when("dev", () => Dev),
+      Match.exhaustive,
+    ),
+  ),
+);
 
 export const RequestLayer = Sessions;
 
 export const middleware = <E, R>(
   self: Effect.Effect<Http.response.ServerResponse, E, R>,
-): Effect.Effect<Http.response.ServerResponse, E, R | TokenCookie | Session | ServerRequest> =>
+): Effect.Effect<Http.response.ServerResponse, E, R | AppCookies | Session | ServerRequest> =>
   Effect.gen(function* (_) {
-    const cookie = yield* _(TokenCookie);
-
-    const requestSession = yield* _(Session.get);
+    const cookie = yield* _(AppCookies.token);
 
     const response = yield* _(self);
+
+    const requestSession = yield* _(Session.get);
 
     return yield* _(
       requestSession,

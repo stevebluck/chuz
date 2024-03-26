@@ -6,7 +6,7 @@ import * as Path from "@effect/platform/Path";
 import { ActionFunctionArgs, LoaderFunctionArgs, TypedResponse } from "@remix-run/node";
 import { Effect, Scope, Layer, ManagedRuntime, ConfigError } from "effect";
 import { NoInfer } from "effect/Types";
-import { AppLayer, RequestLayer, middleware } from ".";
+import { AppLayer, RequestLayer, middleware } from "./Runtime";
 
 type RequestLayer<R> = R | Http.request.ServerRequest | FileSystem.FileSystem | Path.Path | Scope.Scope;
 

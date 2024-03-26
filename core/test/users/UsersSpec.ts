@@ -1,4 +1,4 @@
-import { Credentials, Email, Password, Token, User } from "@chuz/domain";
+import { Credential, Email, Password, Token, User } from "@chuz/domain";
 import { Effect, Option } from "effect";
 import * as fc from "fast-check";
 import { afterAll, describe, expect } from "vitest";
@@ -85,7 +85,7 @@ export namespace UsersSpec {
           const authed = yield* _(users.authenticate(plain.credentials));
           const authed1 = yield* _(users.authenticate(plain.lowercase));
           const authed2 = yield* _(users.authenticate(plain.uppercase));
-          const badCredentials = new Credentials.EmailPassword.Plain({
+          const badCredentials = new Credential.EmailPassword.Plain({
             email: plain.credentials.email,
             password: Password.Plaintext.unsafeFrom(`bad-${plain.credentials.password}`),
           });
@@ -94,7 +94,7 @@ export namespace UsersSpec {
           expect(authed.user).toEqual(session.user);
           expect(authed1.user).toEqual(session.user);
           expect(authed2.user).toEqual(session.user);
-          expect(credentialsNotRecognisedError).toEqual(new Credentials.NotRecognised());
+          expect(credentialsNotRecognisedError).toEqual(new Credential.NotRecognised());
         }),
       config,
     );
@@ -106,10 +106,13 @@ export namespace UsersSpec {
         Effect.gen(function* (_) {
           const { users } = yield* _(TestBench);
 
-          const session0 = yield* _(users.authenticate(credential));
-          const foundUserByEmail = yield* _(users.findByEmail(credential.user.email));
+          const registration = User.Registration.fromProviderCredential(credential);
+          yield* _(users.register(registration));
 
-          expect(session0.user.value).toEqual(credential.user);
+          const session0 = yield* _(users.authenticate(credential));
+          const foundUserByEmail = yield* _(users.findByEmail(credential.email));
+
+          expect(session0.user.value.email).toEqual(credential.email);
           expect(foundUserByEmail).toEqual(session0.user);
         }),
       config,
@@ -123,9 +126,10 @@ export namespace UsersSpec {
           const { users } = yield* _(TestBench);
           const session0 = yield* _(registerUser(users, registration));
 
-          const credential = new Credentials.Provider({
+          const credential = new Credential.Provider({
             id: "test",
-            user: { email: registration.credentials.email, ...registration },
+            email: registration.credentials.email,
+            ...registration,
           });
 
           const emailAlreadyInUseError = yield* _(users.authenticate(credential), Effect.flip);
@@ -193,11 +197,11 @@ export namespace UsersSpec {
               expect(updated.value.email).toEqual(newEmail);
 
               const credentialsNotRecognisedError = yield* _(users.authenticate(plain.credentials).pipe(Effect.flip));
-              expect(credentialsNotRecognisedError).toEqual(new Credentials.NotRecognised());
+              expect(credentialsNotRecognisedError).toEqual(new Credential.NotRecognised());
 
               const authed2 = yield* _(
                 users.authenticate(
-                  new Credentials.EmailPassword.Plain({ email: newEmail, password: plain.credentials.password }),
+                  new Credential.EmailPassword.Plain({ email: newEmail, password: plain.credentials.password }),
                 ),
               );
               expect(authed2.user.id).toEqual(session.user.id);
@@ -247,11 +251,11 @@ export namespace UsersSpec {
               yield* _(users.updatePassword(session.token, plain.credentials.password, hashedNewPassword));
 
               const credentialsNotRecognisedError = yield* _(users.authenticate(plain.credentials).pipe(Effect.flip));
-              expect(credentialsNotRecognisedError).toEqual(new Credentials.NotRecognised());
+              expect(credentialsNotRecognisedError).toEqual(new Credential.NotRecognised());
 
               const authed2 = yield* _(
                 users.authenticate(
-                  new Credentials.EmailPassword.Plain({
+                  new Credential.EmailPassword.Plain({
                     email: register.credentials.email,
                     password: Password.Plaintext.fromStrong(newPassword),
                   }),
@@ -278,7 +282,7 @@ export namespace UsersSpec {
                   .updatePassword(session.token, Password.Plaintext.unsafeFrom("whatever"), hashedPassword)
                   .pipe(Effect.flip),
               );
-              expect(error0).toEqual(new Credentials.NotRecognised());
+              expect(error0).toEqual(new Credential.NotRecognised());
 
               yield* _(users.logout(session.token));
 
@@ -335,14 +339,14 @@ export namespace UsersSpec {
             const error = yield* _(users.authenticate(plain.credentials).pipe(Effect.flip));
             const session1 = yield* _(
               users.authenticate(
-                new Credentials.EmailPassword.Plain({
+                new Credential.EmailPassword.Plain({
                   email: plain.credentials.email,
                   password: Password.Plaintext.fromStrong(newPassword),
                 }),
               ),
             );
 
-            expect(error).toEqual(new Credentials.NotRecognised());
+            expect(error).toEqual(new Credential.NotRecognised());
             expect(session1.user).toEqual(session0.user);
           }),
         config,
@@ -396,7 +400,7 @@ export namespace UsersSpec {
           Effect.gen(function* (_) {
             const { users } = yield* _(TestBench);
             const error = yield* _(users.requestPasswordReset(email).pipe(Effect.flip));
-            expect(error).toEqual(new Credentials.NotRecognised());
+            expect(error).toEqual(new Credential.NotRecognised());
           }),
         config,
       );
@@ -405,7 +409,7 @@ export namespace UsersSpec {
   const registerUser = (users: Users, register: Arbs.Users.Register) =>
     Effect.gen(function* (_) {
       const hashed = yield* _(hash(register.credentials.password));
-      const credentials = new Credentials.EmailPassword.Secure({
+      const credentials = new Credential.EmailPassword.Secure({
         email: register.credentials.email,
         password: hashed,
       });
@@ -420,17 +424,17 @@ export namespace UsersSpec {
       );
     });
 
-  const makePlainCredentials = (credentials: Credentials.EmailPassword.Strong) => {
+  const makePlainCredentials = (credentials: Credential.EmailPassword.Strong) => {
     return {
-      credentials: new Credentials.EmailPassword.Plain({
+      credentials: new Credential.EmailPassword.Plain({
         email: credentials.email,
         password: Password.Plaintext.fromStrong(credentials.password),
       }),
-      lowercase: new Credentials.EmailPassword.Plain({
+      lowercase: new Credential.EmailPassword.Plain({
         email: Email.toLowerCase(credentials.email),
         password: Password.Plaintext.fromStrong(credentials.password),
       }),
-      uppercase: new Credentials.EmailPassword.Plain({
+      uppercase: new Credential.EmailPassword.Plain({
         email: Email.toUpperCase(credentials.email),
         password: Password.Plaintext.fromStrong(credentials.password),
       }),

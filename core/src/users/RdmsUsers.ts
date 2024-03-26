@@ -1,17 +1,22 @@
-import { User, Session, Email, Id, Identified, Token, Credentials, Password, Credential } from "@chuz/domain";
+import {
+  User,
+  Session,
+  Email,
+  Id,
+  Identified,
+  Token,
+  Credential,
+  Password,
+  AuthenticateCredential,
+} from "@chuz/domain";
 import { Effect } from "effect";
-import { Passwords } from "../auth/Passwords";
 import { DB, Database } from "../persistence/Database";
 import { Users } from "./Users";
 
 export class RdmsUsers implements Users {
-  constructor(
-    private readonly db: Database,
-    match: Passwords.Match,
-  ) {}
+  constructor(private readonly db: Database) {}
 
-  static make = (db: Database, match: Passwords.Match): Effect.Effect<Users> =>
-    Effect.sync(() => new RdmsUsers(db, match));
+  static make = (db: Database): Effect.Effect<Users> => Effect.sync(() => new RdmsUsers(db));
 
   identify = (token: Token<Id<User>>): Effect.Effect<Session<User>, Token.NoSuchToken> => {
     throw new Error("Method not implemented.");
@@ -21,7 +26,7 @@ export class RdmsUsers implements Users {
     throw new Error("Method not implemented.");
   };
 
-  authenticate = (credential: Credential): Effect.Effect<Session<User>, Credentials.NotRecognised> => {
+  authenticate = (credential: AuthenticateCredential): Effect.Effect<Session<User>, Credential.NotRecognised> => {
     throw new Error("Method not implemented.");
   };
 
@@ -53,11 +58,11 @@ export class RdmsUsers implements Users {
     token: Token<Id<User>>,
     currentPassword: Password.Plaintext,
     updatedPasword: Password.Hashed,
-  ): Effect.Effect<void, User.NotFound | Credentials.NotRecognised> {
+  ): Effect.Effect<void, User.NotFound | Credential.NotRecognised> {
     throw new Error("Method not implemented.");
   }
 
-  requestPasswordReset(email: Email): Effect.Effect<Token<[Email, Id<User>]>, Credentials.NotRecognised> {
+  requestPasswordReset(email: Email): Effect.Effect<Token<[Email, Id<User>]>, Credential.NotRecognised> {
     throw new Error("Method not implemented.");
   }
 

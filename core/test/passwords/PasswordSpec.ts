@@ -38,5 +38,6 @@ export namespace PasswordSpec {
   };
 }
 
-const hash = Passwords.hasher({ N: 4 });
-const match = Passwords.matcher({ N: 4 });
+const config = { N: 2 };
+const hash = Passwords.hasher(config);
+const match = Passwords.matcher(config);

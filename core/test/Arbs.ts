@@ -18,7 +18,7 @@ export namespace Arbs {
     export const LastName = Arbitrary.make(Domain.User.LastName.schema)(fc);
     export const OptInMarketing = Arbitrary.make(Domain.User.OptInMarketing.schema)(fc);
 
-    export const StrongCredentials: fc.Arbitrary<Domain.Credentials.EmailPassword.Strong> = fc.record({
+    export const StrongCredentials: fc.Arbitrary<Domain.Credential.EmailPassword.Strong> = fc.record({
       _tag: fc.constant("Strong"),
       email: Emails.Email,
       password: Passwords.Strong,
@@ -34,7 +34,7 @@ export namespace Arbs {
 
     export const User = Arbitrary.make(Domain.User.schema)(fc);
 
-    export const ProviderCredential = Arbitrary.make(Domain.Credentials.Provider)(fc);
+    export const ProviderCredential = Arbitrary.make(Domain.Credential.Provider)(fc);
 
     export const PartialUser: fc.Arbitrary<Domain.User.Partial> = fc.record(
       {

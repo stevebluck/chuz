@@ -1,4 +1,14 @@
-import { Credentials, Credential, Email, Id, Identified, Password, Session, Token, User } from "@chuz/domain";
+import {
+  Credential,
+  Email,
+  Id,
+  Identified,
+  Password,
+  Session,
+  Token,
+  User,
+  AuthenticateCredential,
+} from "@chuz/domain";
 import { Effect } from "effect";
 
 export interface Users {
@@ -10,7 +20,7 @@ export interface Users {
 
   identify(token: Token<Id<User>>): Effect.Effect<Session<User>, Token.NoSuchToken>;
 
-  authenticate(credential: Credential): Effect.Effect<Session<User>, Credentials.NotRecognised | Email.AlreadyInUse>;
+  authenticate(credential: AuthenticateCredential): Effect.Effect<Session<User>, Credential.NotRecognised>;
 
   logout(token: Token<Id<User>>): Effect.Effect<void>;
 
@@ -22,9 +32,9 @@ export interface Users {
     token: Token<Id<User>>,
     currentPassword: Password.Plaintext,
     updatedPasword: Password.Hashed,
-  ): Effect.Effect<void, Credentials.NotRecognised | User.NotFound>;
+  ): Effect.Effect<void, Credential.NotRecognised | User.NotFound>;
 
-  requestPasswordReset(email: Email): Effect.Effect<Token<[Email, Id<User>]>, Credentials.NotRecognised>;
+  requestPasswordReset(email: Email): Effect.Effect<Token<[Email, Id<User>]>, Credential.NotRecognised>;
 
   resetPassword(
     token: Token<[Email, Id<User>]>,
