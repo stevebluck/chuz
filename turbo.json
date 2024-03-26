@@ -12,6 +12,7 @@
       "dependsOn": []
     },
     "typecheck": {
+      "cache": false,
       "dependsOn": []
     },
     "update:latest": {

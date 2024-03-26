@@ -1,5 +1,5 @@
-import * as S from "@effect/schema/Schema";
-import { Option } from "effect";
+import { Option } from "@chuz/prelude";
+import * as S from "@chuz/prelude/Schema";
 
 const CheckboxInput = S.transform(
   S.orUndefined(S.literal("on")),

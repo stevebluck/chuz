@@ -1,8 +1,10 @@
-import { Id, Token, User } from "@chuz/domain";
+import { Token, User } from "@chuz/domain";
+import { Config, Effect, Layer, LogLevel, Logger, Match, Ref, Secret } from "@chuz/prelude";
 import { DevTools } from "@effect/experimental";
+import { BodyError } from "@effect/platform/Http/Body";
 import { ServerRequest } from "@effect/platform/Http/ServerRequest";
 import * as Http from "@effect/platform/HttpServer";
-import { Config, Effect, Layer, LogLevel, Logger, Match, Ref, Secret } from "effect";
+import { ServerResponse } from ".";
 import { PostgresConfig } from "./Database";
 import { PasswordHasher, PasswordHasherConfig } from "./Passwords";
 import { RequestSession, Session } from "./Sessions";
@@ -18,7 +20,6 @@ const IsProduction = Config.map(Config.string("NODE_ENV"), (env) => env === "pro
 const GoogleAuthConfigLive = GoogleAuthConfig.layer({
   clientId: Config.string("GOOGLE_CLIENT_ID"),
   clientSecret: Config.string("GOOGLE_CLIENT_SECRET"),
-  // TODO: Move to AuthConfig
   redirectUri: Config.string("AUTH_CALLBACK_URL").pipe(Config.withDefault("http://localhost:5173/login?_tag=google")),
 });
 
@@ -53,12 +54,11 @@ const Live = Layer.mergeAll(Users.live, Auth.layer, AppCookies.layer, PasswordHa
   Layer.provide(PostgresConfigLive),
 );
 
-// TODO move to the schema definition so don't need to new up a token
 const Sessions = Layer.effect(
   Session,
   AppCookies.token.pipe(
     Effect.flatMap((token) => token.read),
-    Effect.map((token) => Token.make<Id<User>>(token)),
+    Effect.map((token) => Token.make<User.Id>(token)),
     Effect.flatMap(Users.identify),
     Effect.map((session) => RequestSession.Provided({ session })),
     Effect.orElseSucceed(() => RequestSession.NotProvided()),
@@ -84,7 +84,7 @@ export const AppLayer = Layer.unwrapEffect(
 export const RequestLayer = Sessions;
 
 export const middleware = <E, R>(
-  self: Effect.Effect<Http.response.ServerResponse, E, R>,
+  self: Effect.Effect<Http.response.ServerResponse, BodyError, R>,
 ): Effect.Effect<Http.response.ServerResponse, E, R | AppCookies | Session | ServerRequest> =>
   Effect.gen(function* (_) {
     const cookie = yield* _(AppCookies.token);
@@ -102,7 +102,11 @@ export const middleware = <E, R>(
         NotProvided: () => Effect.succeed(response),
         Provided: () => Effect.succeed(response),
       }),
-
-      Effect.catchTag("CookieError", () => response),
     );
-  }).pipe(Effect.tapErrorCause(Effect.logError));
+  }).pipe(
+    Effect.catchTags({
+      CookieError: (e) => ServerResponse.ServerError(`Something went wrong with setting a cookie: ${e.reason}`),
+    }),
+    Effect.catchTags({ BodyError: (e) => Effect.die(e) }),
+    Effect.tapErrorCause(Effect.logError),
+  );

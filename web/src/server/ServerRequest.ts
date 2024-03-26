@@ -1,8 +1,8 @@
+import { Data, Effect, ReadonlyRecord } from "@chuz/prelude";
+import { Context as _Context } from "@chuz/prelude";
+import * as S from "@chuz/prelude/Schema";
 import * as Http from "@effect/platform/HttpServer";
 import { ParseError } from "@effect/schema/ParseResult";
-import * as S from "@effect/schema/Schema";
-import { Data, Effect, ReadonlyRecord } from "effect";
-import { Context as _Context } from "effect";
 
 export namespace ServerRequest {
   export const searchParams = <A, Out extends Record<string, string | undefined>>(
@@ -16,14 +16,9 @@ export namespace ServerRequest {
     );
 
   export const formData = <A, Out extends Partial<Record<string, string>>>(schema: S.Schema<A, Out>) =>
-    Http.request.ServerRequest.pipe(
-      Effect.flatMap((req) => req.urlParamsBody),
-      Effect.map((_) => Object.fromEntries(_) as Out),
-      Effect.flatMap(S.decode(schema, { errors: "all" })),
-      Effect.catchTags({ RequestError: Effect.die }),
-      Effect.mapError((error) => new FormDataError({ error })),
-    );
+    Http.request
+      .schemaBodyForm(schema, { errors: "all" })
+      .pipe(Effect.catchTags({ MultipartError: Effect.die, RequestError: Effect.die }));
 
   class SearchParamsError extends Data.TaggedError("SearchParamsError")<{ error: ParseError }> {}
-  class FormDataError extends Data.TaggedError("FormDataError")<{ error: ParseError }> {}
 }

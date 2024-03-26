@@ -1,8 +1,13 @@
-import * as S from "@effect/schema/Schema";
-import { Context, Effect, Layer, Secret } from "effect";
+import { Context, Effect, Layer, Secret } from "@chuz/prelude";
+import * as S from "@chuz/prelude/Schema";
 import { LayerUtils } from "../LayerUtils";
 import { Auth } from "../oauth/Auth";
 import { Cookie } from "./Cookie";
+
+interface Cookies {
+  token: Cookie<string>;
+  authState: Cookie<Auth.State>;
+}
 
 interface Config {
   secure: boolean;
@@ -13,13 +18,7 @@ export class AppCookiesConfig extends Context.Tag("@app/TokenCookieConfig")<AppC
   static layer = LayerUtils.config(this);
 }
 
-export class AppCookies extends Effect.Tag("@app/AppCookies")<
-  AppCookies,
-  {
-    token: Cookie<string>;
-    authState: Cookie<Auth.State>;
-  }
->() {
+export class AppCookies extends Effect.Tag("@app/AppCookies")<AppCookies, Cookies>() {
   static layer = Layer.effect(
     AppCookies,
     Effect.gen(function* (_) {

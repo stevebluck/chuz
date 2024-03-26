@@ -12,13 +12,9 @@ export default function Index() {
     <div>
       <header>
         <ThemeToggle />
-        <Link to={Routes.login}>Login</Link>
       </header>
+      <Link to={Routes.login}>Login</Link>
       <Outlet />
     </div>
   );
 }
-
-// get token from cookie
-// users.identify(token)
-// provide

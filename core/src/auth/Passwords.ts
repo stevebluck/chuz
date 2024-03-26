@@ -1,6 +1,6 @@
 import { Password } from "@chuz/domain";
+import { Effect } from "@chuz/prelude";
 import { scryptSync, randomBytes, timingSafeEqual, ScryptOptions } from "crypto";
-import { Effect } from "effect";
 
 export namespace Passwords {
   export type Hash = (password: Password.Strong) => Effect.Effect<Password.Hashed>;
@@ -10,7 +10,7 @@ export namespace Passwords {
       return Effect.sync(() => {
         const salt = randomBytes(16).toString("hex");
         const buf = scryptSync(password, salt, 64, config);
-        return Password.Hashed.unsafeFrom(`${buf.toString("hex")}.${salt}`);
+        return Password.Hashed(`${buf.toString("hex")}.${salt}`);
       });
     };
 

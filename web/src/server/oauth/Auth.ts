@@ -1,14 +1,14 @@
-import { Credential, Email, Session, User } from "@chuz/domain";
+import { Credentials, Email, User } from "@chuz/domain";
 import { Uuid } from "@chuz/prelude";
-import * as S from "@effect/schema/Schema";
-import { Data, Effect, Layer, Match } from "effect";
+import { Data, Effect, Equal, Equivalence, Layer, Match } from "@chuz/prelude";
+import * as S from "@chuz/prelude/Schema";
 import { Users } from "..";
 import { GoogleAuth } from "./GoogleAuth";
 
 interface Auths {
   exchangeCodeForSession: (
     provider: Auth.ProviderCode,
-  ) => Effect.Effect<Session<User>, Auth.ExchangeCodeError | Email.AlreadyInUse | Credential.NotRecognised, Users>;
+  ) => Effect.Effect<User.Session, Auth.ExchangeCodeError | Email.AlreadyInUse | Credentials.NotRecognised, Users>;
   generateAuthUrl: (provider: Auth.ProviderState) => Effect.Effect<string, Auth.GenerateUrlError>;
 }
 
@@ -30,24 +30,27 @@ export class Auth extends Effect.Tag("@app/OAuth")<Auth, Auths>() {
 
 export namespace Auth {
   export type Code = S.Schema.Type<typeof Code>;
+  export type ProviderName = S.Schema.Type<typeof ProviderName>;
+  export type State = S.Schema.Type<typeof State.schema>;
+  export type ProviderCode = { _tag: ProviderName; code: Code };
+  export type ProviderState = { _tag: ProviderName; state: State };
+
   export const Code = S.string.pipe(S.brand("AuthCode"));
 
-  export type State = S.Schema.Type<typeof State.schema>;
   export namespace State {
     export const schema = S.UUID.pipe(S.brand("AuthState"));
     export const make = Uuid.make.pipe(Effect.map(S.decodeSync(schema)));
+    export class DoesNotMatch extends Data.TaggedError("StateDoesNotMatch") {}
+    export const equals: Equivalence.Equivalence<S.Schema.Type<typeof schema>> = Equal.equals;
   }
 
-  export type ProviderName = S.Schema.Type<typeof ProviderName>;
   export const ProviderName = S.literal("google");
 
-  export type ProviderCode = { _tag: ProviderName; code: Code };
   export namespace ProviderCode {
     export const { google } = Data.taggedEnum<ProviderCode>();
     export const match = Match.typeTags<ProviderCode>();
   }
 
-  export type ProviderState = { _tag: ProviderName; state: State };
   export namespace ProviderState {
     export const match = Match.typeTags<ProviderState>();
   }

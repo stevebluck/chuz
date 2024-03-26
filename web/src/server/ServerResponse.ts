@@ -1,32 +1,34 @@
+import { Effect, Predicate, ReadonlyArray, ReadonlyRecord } from "@chuz/prelude";
+import { Context as _Context } from "@chuz/prelude";
 import * as Http from "@effect/platform/HttpServer";
 import { formatError } from "@effect/schema/ArrayFormatter";
 import { ParseError } from "@effect/schema/ParseResult";
-import { Effect, Predicate, ReadonlyArray, ReadonlyRecord } from "effect";
-import { Context as _Context } from "effect";
 
 export namespace ServerResponse {
-  export const Ok = <A>(data: A | void) =>
-    Http.response
-      .json(Predicate.isUndefined(data) ? null : data)
-      .pipe(Effect.catchTag("BodyError", (e) => Effect.die(e)));
+  export const Ok = <A>(data: A | void) => Http.response.json(Predicate.isUndefined(data) ? null : data);
+  export const Unit = () => Http.response.json(null);
 
   export const Redirect = (location: string) =>
-    Http.response.json(null, { status: 302 }).pipe(
-      Effect.flatMap(Http.response.setHeader("Location", location)),
-      Effect.catchTag("BodyError", (e) => Effect.die(e)),
-    );
+    Http.response.json(null, { status: 302 }).pipe(Effect.flatMap(Http.response.setHeader("Location", location)));
 
-  export const Unauthorized = Http.response
-    .json(null, { status: 401 })
-    .pipe(Effect.catchTag("BodyError", (e) => Effect.die(e)));
+  export const Unauthorized = Http.response.json(null, { status: 401 });
 
-  export const ValidationError = (error: Record<string, string[]> | ParseError) => {
+  export const ServerError = (error: string) => Http.response.json({ error }, { status: 500 });
+
+  export const FormError = (error: ParseError) => {
     const res =
       error instanceof ParseError
-        ? Http.response.json(formatParseError(error), { status: 400 })
+        ? Http.response.json(
+            { _tag: "FormError", error: ReadonlyRecord.map(formatParseError(error), (a) => a[0]) },
+            { status: 400 },
+          )
         : Http.response.json(error, { status: 400 });
 
-    return Effect.catchTag(res, "BodyError", (e) => Effect.die(e));
+    return res;
+  };
+
+  export const BadRequest = <E extends { _tag: string }>(error: E) => {
+    return Http.response.json(error, { status: 400 });
   };
 
   const formatParseError = (error: ParseError): Record<string, string[]> => {

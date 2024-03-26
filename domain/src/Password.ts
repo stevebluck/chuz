@@ -1,45 +1,21 @@
-import { makeRefinement } from "@chuz/prelude";
-import * as S from "@effect/schema/Schema";
-import { Equivalence, Brand } from "effect";
+import { Equivalence, Brand } from "@chuz/prelude";
+import * as S from "@chuz/prelude/Schema";
 import { Email, Id, Identified } from ".";
 
-export namespace Password {
-  export type Plaintext = string & Brand.Brand<"Plaintext">;
-  export namespace Plaintext {
-    const PlaintextBrand = Brand.nominal<Plaintext>();
-    export const schema = S.NonEmpty.pipe(
-      S.message(() => "A password is required"),
-      S.fromBrand(PlaintextBrand),
-      S.identifier("Password.Plaintext"),
-    );
-    export const { from, unsafeFrom, is } = makeRefinement(schema);
-    export const fromStrong = (password: Strong): Plaintext => unsafeFrom(password);
-  }
+export type Plaintext = string & Brand.Brand<"PlaintextPassword">;
+export type Strong = string & Brand.Brand<"StrongPassword">;
+export type Hashed = string & Brand.Brand<"HashedPassword">;
+export type Reset<A> = [Email.Email, Id<A>];
 
-  export type Strong = string & Brand.Brand<"Strong">;
-  export namespace Strong {
-    const StrongBrand = Brand.nominal<Strong>();
-    export const schema = S.string.pipe(
-      S.minLength(8),
-      S.maxLength(64),
-      S.fromBrand(StrongBrand),
-      S.identifier("Password.Strong"),
-    );
-    export const { from, unsafeFrom, is } = makeRefinement(schema);
-  }
+export const Plaintext = S.NonEmpty.pipe(S.brand("PlaintextPassword"));
 
-  export type Hashed = string & Brand.Brand<"Hashed">;
-  export namespace Hashed {
-    const HashedBrand = Brand.nominal<Hashed>();
-    export const schema = S.string.pipe(S.fromBrand(HashedBrand), S.identifier("Password.Hashed"));
-    export const { from, unsafeFrom, is } = makeRefinement(schema);
-    export const equals = Equivalence.strict<Hashed>();
-  }
+export const Strong = S.string.pipe(S.minLength(8), S.maxLength(64), S.brand("StrongPassword"));
+export const strongFrom = S.decodeEither(Strong);
 
-  export type Reset<A> = [Email, Id<A>];
-  export namespace Reset {
-    export const equals = Equivalence.make<Reset<any>>(
-      ([email1, id1], [email2, id2]) => Email.equals(email1, email2) && Identified.equals(id1, id2),
-    );
-  }
-}
+export const Hashed = S.string.pipe(S.brand("HashedPassword"));
+
+export const equals = Equivalence.strict<Hashed>();
+
+export const resetEquals = Equivalence.make<Reset<any>>(
+  ([email1, id1], [email2, id2]) => Email.equals(email1, email2) && Identified.equals(id1, id2),
+);

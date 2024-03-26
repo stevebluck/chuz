@@ -1,5 +1,5 @@
 import { User, Session as DomainSession } from "@chuz/domain";
-import { Data, Effect, Match, Option, Ref } from "effect";
+import { Data, Effect, Match, Option, Ref } from "@chuz/prelude";
 
 interface Sessions<A> {
   get: Effect.Effect<RequestSession>;
@@ -7,10 +7,10 @@ interface Sessions<A> {
   set: (requestSession: RequestSession) => Effect.Effect<void>;
   invalidate: Effect.Effect<void>;
   authenticated: Effect.Effect<DomainSession<A>, Unauthorised>;
-  guest: Effect.Effect<void, Unauthorised>;
+  guest: Effect.Effect<void, AlreadyAuthenticated>;
 }
 
-export class Session extends Effect.Tag("@app/Session")<Session, Sessions<User>>() {
+export class Session extends Effect.Tag("@app/Session")<Session, Sessions<User.User>>() {
   static make = (ref: Ref.Ref<RequestSession>) =>
     Session.of({
       get: Effect.suspend(() => Ref.get(ref)),
@@ -39,15 +39,15 @@ export class Session extends Effect.Tag("@app/Session")<Session, Sessions<User>>
             Unset: () => Option.some({}),
           }),
         ),
-        Effect.mapError(() => new Unauthorised()),
+        Effect.mapError(() => new AlreadyAuthenticated()),
       ),
     });
 }
 
 export type RequestSession = Data.TaggedEnum<{
   NotProvided: {};
-  Provided: { session: DomainSession<User> };
-  Set: { session: DomainSession<User> };
+  Provided: { session: User.Session };
+  Set: { session: User.Session };
   Unset: {};
   InvalidToken: {};
 }> & {};
@@ -57,4 +57,5 @@ export namespace RequestSession {
   export const match = Match.typeTags<RequestSession>();
 }
 
-export class Unauthorised extends Data.TaggedError("Unauthorised") {}
+class Unauthorised extends Data.TaggedError("Unauthorised") {}
+class AlreadyAuthenticated extends Data.TaggedError("AlreadyAuthenticated") {}

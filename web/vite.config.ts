@@ -14,5 +14,8 @@ export default defineConfig({
   build: {
     target: "esnext",
     minify: "terser",
+    rollupOptions: {
+      external: ["crypto"],
+    },
   },
 });

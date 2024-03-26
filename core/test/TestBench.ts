@@ -1,38 +1,38 @@
-import * as Domain from "@chuz/domain";
+import { Credentials, Email, Identified, Password, Session, User } from "@chuz/domain";
+import { Clock, Effect, Option } from "@chuz/prelude";
 import * as Core from "core/index";
-import { Clock, Effect, Option } from "effect";
 
 export type TestBench = Core.Capabilities;
 
 export namespace TestBench {
   export const make: Effect.Effect<Core.Capabilities> = Effect.gen(function* (_) {
     const clock = Clock.make();
-    const userTokens = yield* _(Core.ReferenceTokens.create(clock, Domain.Identified.equals));
-    const passwordResetTokens = yield* _(Core.ReferenceTokens.create(clock, Domain.Password.Reset.equals));
+    const userTokens = yield* _(Core.ReferenceTokens.create(clock, Identified.equals));
+    const passwordResetTokens = yield* _(Core.ReferenceTokens.create(clock, Password.resetEquals));
 
     const users = yield* _(Core.ReferenceUsers.make(userTokens, passwordResetTokens, match));
 
     return { users };
   });
 
-  export type Seeded = Core.Capabilities & { seed: { session: Domain.Session<Domain.User> } };
+  export type Seeded = Core.Capabilities & { seed: { session: Session<User.User> } };
 
   export namespace Seeded {
     export const make: Effect.Effect<Seeded> = Effect.gen(function* (_) {
       const bench = yield* _(TestBench.make);
 
       const password = yield* _(hash(userRegistration.credentials.password));
-      const credential = new Domain.Credential.EmailPassword.Secure({
+      const credential = new Credentials.EmailPassword.Secure({
         email: userRegistration.credentials.email,
         password,
       });
 
-      const registration = Domain.User.Registration.make({
-        credential,
+      const registration: User.Registration = {
+        credentials: credential,
         firstName: Option.some(userRegistration.firstName),
         lastName: Option.some(userRegistration.lastName),
         optInMarketing: userRegistration.optInMarketing,
-      });
+      };
 
       const session = yield* _(bench.users.register(registration));
 
@@ -42,12 +42,12 @@ export namespace TestBench {
 }
 
 const userRegistration = {
-  firstName: Domain.User.FirstName.unsafeFrom("Toby"),
-  lastName: Domain.User.LastName.unsafeFrom("Lerone"),
-  optInMarketing: Domain.User.OptInMarketing.unsafeFrom(true),
-  credentials: new Domain.Credential.EmailPassword.Strong({
-    email: Domain.Email.unsafeFrom("lonestar@an.com"),
-    password: Domain.Password.Strong.unsafeFrom("password"),
+  firstName: User.FirstName("Toby"),
+  lastName: User.LastName("Lerone"),
+  optInMarketing: User.OptInMarketing(true),
+  credentials: new Credentials.EmailPassword.Strong({
+    email: Email.unsafeFrom("lonestar@an.com"),
+    password: Password.Strong("password"),
   }),
 };
 

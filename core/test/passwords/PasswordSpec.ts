@@ -1,5 +1,5 @@
 import { Password } from "@chuz/domain";
-import { Effect, Either } from "effect";
+import { Effect, Either } from "@chuz/prelude";
 import { describe, expect, test } from "vitest";
 import { Passwords } from "../../src/auth/Passwords";
 import { Arbs } from "../Arbs";
@@ -18,21 +18,21 @@ export namespace PasswordSpec {
       asyncProperty("Passwords only match against their hashes", Arbs.Passwords.Strong, (password: Password.Strong) =>
         Effect.gen(function* (_) {
           const hashed = yield* _(hash(password));
-          const matches = yield* _(match(Password.Plaintext.fromStrong(password), hashed));
-          const doesNotMatch = yield* _(match(Password.Plaintext.unsafeFrom(`mutate-${password}`), hashed));
+          const matches = yield* _(match(Password.Plaintext(password), hashed));
+          const doesNotMatch = yield* _(match(Password.Plaintext(`mutate-${password}`), hashed));
           expect(matches).toBe(true);
           expect(doesNotMatch).toBe(false);
         }),
       );
 
       test("Strong passwords must have a minimum length of 8 characters", () => {
-        expect(Either.isLeft(Password.Strong.from("1234567"))).toBe(true);
-        expect(Either.isRight(Password.Strong.from("12345678"))).toBe(true);
+        expect(Either.isLeft(Password.strongFrom("1234567"))).toBe(true);
+        expect(Either.isRight(Password.strongFrom("12345678"))).toBe(true);
       });
 
       test("Strong passwords must have a maximum length of 64 characters", () => {
-        expect(Either.isLeft(Password.Strong.from(Array(65).fill("a").join("")))).toBe(true);
-        expect(Either.isRight(Password.Strong.from(Array(64).fill("a").join("")))).toBe(true);
+        expect(Either.isLeft(Password.strongFrom(Array(65).fill("a").join("")))).toBe(true);
+        expect(Either.isRight(Password.strongFrom(Array(64).fill("a").join("")))).toBe(true);
       });
     });
   };

@@ -1,8 +1,8 @@
+import { Data, Effect, ReadonlyRecord } from "@chuz/prelude";
+import * as S from "@chuz/prelude/Schema";
 import { Cookie as HttpCookie } from "@effect/platform/Http/Cookies";
 import * as Http from "@effect/platform/HttpServer";
-import * as S from "@effect/schema/Schema";
 import { createHmac, timingSafeEqual } from "crypto";
-import { Data, Effect, Equal, Equivalence, ReadonlyRecord } from "effect";
 
 export class Cookie<A> {
   constructor(
@@ -25,8 +25,6 @@ export class Cookie<A> {
       ? Effect.succeed(tentativeValue)
       : Effect.fail(new UnsignError());
   };
-
-  equals: Equivalence.Equivalence<A> = Equal.equals;
 
   remove = (res: Http.response.ServerResponse) =>
     Http.request.ServerRequest.pipe(

@@ -1,6 +1,6 @@
-import { Credential, Email, Session, User } from "@chuz/domain";
-import * as S from "@effect/schema/Schema";
-import { Context, Effect, Layer } from "effect";
+import { Credentials, User, Email } from "@chuz/domain";
+import { Context, Effect, Layer } from "@chuz/prelude";
+import * as S from "@chuz/prelude/Schema";
 import { google } from "googleapis";
 import { Users } from "..";
 import { LayerUtils } from "../LayerUtils";
@@ -32,7 +32,7 @@ export class GoogleAuth extends Effect.Tag("@app/auth/GoogleAuth")<GoogleAuth, P
             Effect.flatMap(({ tokens }) => getUserInfo(tokens.access_token!)),
             Effect.andThen(GoogleUser.fromUnknown),
             Effect.flatMap((user) =>
-              registerOrAuthenticate(new Credential.Provider({ id: user.id, email: user.email }), user),
+              registerOrAuthenticate(new Credentials.IdentityProvider({ id: user.id, email: user.email }), user),
             ),
             Effect.catchTags({ ParseError: (e) => new Auth.ExchangeCodeError({ error: e }) }),
           ),
@@ -53,12 +53,12 @@ export class GoogleAuth extends Effect.Tag("@app/auth/GoogleAuth")<GoogleAuth, P
 }
 
 class GoogleUser extends S.Class<GoogleUser>("GoogleUser")({
-  id: Credential.Provider.fields.id,
+  id: Credentials.IdentityProvider.fields.id,
   email: Email.schema,
   verified_email: S.boolean,
   name: S.optionFromNullish(S.string, null),
-  given_name: S.optionFromNullish(User.FirstName.schema, null),
-  family_name: S.optionFromNullish(User.LastName.schema, null),
+  given_name: S.optionFromNullish(User.FirstName, null),
+  family_name: S.optionFromNullish(User.LastName, null),
   picture: S.optionFromNullish(S.string, null),
 }) {
   static fromUnknown = S.decodeUnknown(GoogleUser);
@@ -74,17 +74,15 @@ const getUserInfo = (token: string) =>
   });
 
 const registerOrAuthenticate = (
-  credential: Credential.Provider,
+  credential: Credentials.IdentityProvider,
   user: GoogleUser,
-): Effect.Effect<Session<User>, Email.AlreadyInUse | Credential.NotRecognised, Users> =>
+): Effect.Effect<User.Session, Email.AlreadyInUse | Credentials.NotRecognised, Users> =>
   Effect.if(Effect.match(Users.findByEmail(user.email), { onSuccess: () => true, onFailure: () => false }), {
     onTrue: Users.authenticate(credential),
-    onFalse: Users.register(
-      User.Registration.make({
-        credential,
-        firstName: user.given_name,
-        lastName: user.family_name,
-        optInMarketing: User.OptInMarketing.unsafeFrom(false),
-      }),
-    ),
+    onFalse: Users.register({
+      credentials: credential,
+      firstName: user.given_name,
+      lastName: user.family_name,
+      optInMarketing: User.OptInMarketing(false),
+    }),
   });

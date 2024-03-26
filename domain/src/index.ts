@@ -1,8 +1,7 @@
-export * from "./Email";
-export * from "./User";
-export * from "./Token";
+export * as Email from "./Email";
+export * as User from "./User";
+export * as Token from "./Token";
 export * from "./Identified";
-export * from "./Credentials";
-export * from "./Errors";
-export * from "./Password";
+export * as Credentials from "./Credentials";
+export * as Password from "./Password";
 export * from "./Session";

@@ -1,4 +1,4 @@
-import { Brand } from "effect";
+import { Brand } from "@chuz/prelude";
 
 export type Route = string & Brand.Brand<"Route">;
 const Route = Brand.nominal<Route>();

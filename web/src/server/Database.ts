@@ -1,5 +1,5 @@
 import * as Core from "@chuz/core";
-import { Context, Effect, Layer } from "effect";
+import { Context, Effect, Layer } from "@chuz/prelude";
 import { LayerUtils } from "./LayerUtils";
 
 interface Config {
