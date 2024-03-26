@@ -11,6 +11,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@effect/experimental": "*",
+    "@effect/platform": "*",
+    "@effect/platform-node": "*",
     "@chuz/core": "workspace:*",
     "@chuz/domain": "workspace:*",
     "@chuz/prelude": "workspace:*",
@@ -53,12 +56,6 @@
     "vite-tsconfig-paths": "^4.3.1"
   },
   "peerDependencies": {
-    "@effect/experimental": "*",
-    "@effect/platform": "*",
-    "@effect/platform-node": "*",
-    "@effect/schema": "*",
-    "effect": "*",
-    "fast-check": "^3.16.0",
     "typescript": "*"
   },
   "engines": {

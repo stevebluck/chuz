@@ -14,8 +14,8 @@
     "fast-check": "^3.16.0",
     "typescript": "^5.4.2"
   },
-  "peerDependencies": {
-    "@effect/schema": "*",
-    "effect": "*"
+  "dependencies": {
+    "effect": "*",
+    "@effect/schema": "*"
   }
 }

@@ -65,18 +65,9 @@ importers:
       '@chuz/prelude':
         specifier: workspace:*
         version: link:../prelude
-      '@effect/schema':
-        specifier: '*'
-        version: 0.64.14(effect@2.4.14)(fast-check@3.17.0)
       date-fns:
         specifier: ^3.4.0
         version: 3.6.0
-      effect:
-        specifier: '*'
-        version: 2.4.14
-      fast-check:
-        specifier: '*'
-        version: 3.17.0
       kysely:
         specifier: ^0.27.3
         version: 0.27.3
@@ -102,12 +93,6 @@ importers:
       '@chuz/prelude':
         specifier: workspace:*
         version: link:../prelude
-      '@effect/schema':
-        specifier: '*'
-        version: 0.64.14(effect@2.4.14)(fast-check@3.17.0)
-      effect:
-        specifier: '*'
-        version: 2.4.14
     devDependencies:
       '@chuz/typescript-config':
         specifier: workspace:*
@@ -155,9 +140,6 @@ importers:
       '@effect/platform-node':
         specifier: '*'
         version: 0.45.22(@effect/platform@0.48.20)(effect@2.4.14)
-      '@effect/schema':
-        specifier: '*'
-        version: 0.64.14(effect@2.4.14)(fast-check@3.17.0)
       '@radix-ui/react-checkbox':
         specifier: ^1.0.4
         version: 1.0.4(@types/react-dom@18.2.22)(@types/react@18.2.72)(react-dom@18.2.0)(react@18.2.0)
@@ -188,15 +170,9 @@ importers:
       compression:
         specifier: ^1.7.4
         version: 1.7.4
-      effect:
-        specifier: '*'
-        version: 2.4.14
       express:
         specifier: ^4.18.3
         version: 4.19.2
-      fast-check:
-        specifier: ^3.16.0
-        version: 3.17.0
       googleapis:
         specifier: ^134.0.0
         version: 134.0.0

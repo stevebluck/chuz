@@ -13,9 +13,5 @@
   },
   "devDependencies": {
     "@chuz/typescript-config": "workspace:*"
-  },
-  "peerDependencies": {
-    "@effect/schema": "*",
-    "effect": "*"
   }
 }
