@@ -48,20 +48,12 @@ export namespace User {
   export namespace Registration {
     export const schema = S.suspend(() =>
       S.struct({
-        credentials: Credential.schema,
+        credential: Credential.schema,
         firstName: S.option(User.FirstName.schema),
         lastName: S.option(User.LastName.schema),
         optInMarketing: User.OptInMarketing.schema,
       }),
     );
-
-    export const fromProviderCredential = (credential: Credential.Provider) =>
-      make({
-        credentials: credential,
-        firstName: credential.firstName,
-        lastName: credential.lastName,
-        optInMarketing: User.OptInMarketing.unsafeFrom(true),
-      });
 
     export const make = Data.case<Registration>();
   }

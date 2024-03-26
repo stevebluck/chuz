@@ -1,14 +1,4 @@
-import {
-  Credential,
-  Email,
-  Id,
-  Identified,
-  Password,
-  Session,
-  Token,
-  User,
-  AuthenticateCredential,
-} from "@chuz/domain";
+import { Credential, Email, Id, Identified, Password, Session, Token, User, PlainCredential } from "@chuz/domain";
 import { Effect } from "effect";
 
 export interface Users {
@@ -20,7 +10,7 @@ export interface Users {
 
   identify(token: Token<Id<User>>): Effect.Effect<Session<User>, Token.NoSuchToken>;
 
-  authenticate(credential: AuthenticateCredential): Effect.Effect<Session<User>, Credential.NotRecognised>;
+  authenticate(credential: PlainCredential): Effect.Effect<Session<User>, Credential.NotRecognised>;
 
   logout(token: Token<Id<User>>): Effect.Effect<void>;
 

@@ -22,13 +22,13 @@ export namespace TestBench {
       const bench = yield* _(TestBench.make);
 
       const password = yield* _(hash(userRegistration.credentials.password));
-      const credentials = new Domain.Credential.EmailPassword.Secure({
+      const credential = new Domain.Credential.EmailPassword.Secure({
         email: userRegistration.credentials.email,
         password,
       });
 
       const registration = Domain.User.Registration.make({
-        credentials,
+        credential,
         firstName: Option.some(userRegistration.firstName),
         lastName: Option.some(userRegistration.lastName),
         optInMarketing: userRegistration.optInMarketing,

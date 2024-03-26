@@ -21,9 +21,7 @@ export class Auth extends Effect.Tag("@app/OAuth")<Auth, Auths>() {
       const google = yield* _(GoogleAuth);
 
       return Auth.of({
-        exchangeCodeForSession: Auth.ProviderCode.match({
-          google: ({ code }) => google.exchangeCodeForSession(code),
-        }),
+        exchangeCodeForSession: Auth.ProviderCode.match({ google: ({ code }) => google.exchangeCodeForSession(code) }),
         generateAuthUrl: Auth.ProviderState.match({ google: ({ state }) => google.generateAuthUrl(state) }),
       });
     }),

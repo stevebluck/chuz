@@ -24,7 +24,7 @@ export const action = Remix.action(
     Effect.flatMap(({ email, password, ...registration }) =>
       PasswordHasher.hash(password).pipe(
         Effect.map((hashed) => ({
-          credentials: new Credential.EmailPassword.Secure({ email, password: hashed }),
+          credential: new Credential.EmailPassword.Secure({ email, password: hashed }),
           firstName: registration.firstName,
           lastName: registration.lastName,
           optInMarketing: registration.optInMarketing,

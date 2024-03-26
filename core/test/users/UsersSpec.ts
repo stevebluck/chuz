@@ -106,7 +106,13 @@ export namespace UsersSpec {
         Effect.gen(function* (_) {
           const { users } = yield* _(TestBench);
 
-          const registration = User.Registration.fromProviderCredential(credential);
+          const registration = User.Registration.make({
+            credential,
+            firstName: Option.none<User.FirstName>(),
+            lastName: Option.none<User.LastName>(),
+            optInMarketing: User.OptInMarketing.unsafeFrom(false),
+          });
+
           yield* _(users.register(registration));
 
           const session0 = yield* _(users.authenticate(credential));
@@ -127,7 +133,7 @@ export namespace UsersSpec {
           const session0 = yield* _(registerUser(users, registration));
 
           const credential = new Credential.Provider({
-            id: "test",
+            id: Credential.ProviderId.unsafeFrom("googleId"),
             email: registration.credentials.email,
             ...registration,
           });
@@ -409,14 +415,14 @@ export namespace UsersSpec {
   const registerUser = (users: Users, register: Arbs.Users.Register) =>
     Effect.gen(function* (_) {
       const hashed = yield* _(hash(register.credentials.password));
-      const credentials = new Credential.EmailPassword.Secure({
+      const credential = new Credential.EmailPassword.Secure({
         email: register.credentials.email,
         password: hashed,
       });
 
       return yield* _(
         users.register({
-          credentials,
+          credential,
           firstName: register.firstName,
           lastName: register.lastName,
           optInMarketing: register.optInMarketing,

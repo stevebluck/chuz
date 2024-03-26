@@ -31,8 +31,9 @@ export class GoogleAuth extends Effect.Tag("@app/auth/GoogleAuth")<GoogleAuth, P
           }).pipe(
             Effect.flatMap(({ tokens }) => getUserInfo(tokens.access_token!)),
             Effect.andThen(GoogleUser.fromUnknown),
-            Effect.map(toCredential),
-            Effect.flatMap(registerOrAuthenticate),
+            Effect.flatMap((user) =>
+              registerOrAuthenticate(new Credential.Provider({ id: user.id, email: user.email }), user),
+            ),
             Effect.catchTags({ ParseError: (e) => new Auth.ExchangeCodeError({ error: e }) }),
           ),
         generateAuthUrl: (state) =>
@@ -52,7 +53,7 @@ export class GoogleAuth extends Effect.Tag("@app/auth/GoogleAuth")<GoogleAuth, P
 }
 
 class GoogleUser extends S.Class<GoogleUser>("GoogleUser")({
-  id: S.string,
+  id: Credential.Provider.fields.id,
   email: Email.schema,
   verified_email: S.boolean,
   name: S.optionFromNullish(S.string, null),
@@ -62,14 +63,6 @@ class GoogleUser extends S.Class<GoogleUser>("GoogleUser")({
 }) {
   static fromUnknown = S.decodeUnknown(GoogleUser);
 }
-
-const toCredential = (user: GoogleUser) =>
-  new Credential.Provider({
-    id: user.id,
-    email: user.email,
-    firstName: user.given_name,
-    lastName: user.family_name,
-  });
 
 const getUserInfo = (token: string) =>
   Effect.tryPromise({
@@ -82,8 +75,16 @@ const getUserInfo = (token: string) =>
 
 const registerOrAuthenticate = (
   credential: Credential.Provider,
+  user: GoogleUser,
 ): Effect.Effect<Session<User>, Email.AlreadyInUse | Credential.NotRecognised, Users> =>
-  Effect.if(Effect.match(Users.findByEmail(credential.email), { onSuccess: () => true, onFailure: () => false }), {
+  Effect.if(Effect.match(Users.findByEmail(user.email), { onSuccess: () => true, onFailure: () => false }), {
     onTrue: Users.authenticate(credential),
-    onFalse: Users.register(User.Registration.fromProviderCredential(credential)),
+    onFalse: Users.register(
+      User.Registration.make({
+        credential,
+        firstName: user.given_name,
+        lastName: user.family_name,
+        optInMarketing: User.OptInMarketing.unsafeFrom(false),
+      }),
+    ),
   });

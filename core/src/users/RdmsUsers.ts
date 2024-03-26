@@ -1,14 +1,4 @@
-import {
-  User,
-  Session,
-  Email,
-  Id,
-  Identified,
-  Token,
-  Credential,
-  Password,
-  AuthenticateCredential,
-} from "@chuz/domain";
+import { User, Session, Email, Id, Identified, Token, Credential, Password, PlainCredential } from "@chuz/domain";
 import { Effect } from "effect";
 import { DB, Database } from "../persistence/Database";
 import { Users } from "./Users";
@@ -26,7 +16,7 @@ export class RdmsUsers implements Users {
     throw new Error("Method not implemented.");
   };
 
-  authenticate = (credential: AuthenticateCredential): Effect.Effect<Session<User>, Credential.NotRecognised> => {
+  authenticate = (credential: PlainCredential): Effect.Effect<Session<User>, Credential.NotRecognised> => {
     throw new Error("Method not implemented.");
   };
 

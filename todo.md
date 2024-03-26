@@ -1,13 +1,15 @@
-# Questons for Matt
-
-1. Remix runs all routes in parallel and does not have middleware (yet). This becomes problematic for refresh tokens. I am thinking of creating shared state in the runtime somehow to manage this. Thoughts?
-
 ## Todo
 
 - [x] Add config
 - [x] Add password hasher
+- [x] Add google oauth
+- [x] Add cookies
+- [x] Add oauth state check
 - [x] Add Add Response union
+- [] Add oauth to register page
 - [] Add returnTo logic for auth
+- [] Add Apple login
+- [] Add 2fa login
 
 ## Features
 
