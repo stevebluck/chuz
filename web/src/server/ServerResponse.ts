@@ -1,8 +1,7 @@
-import { Effect, Predicate, ReadonlyArray, ReadonlyRecord } from "@chuz/prelude";
-import { Context as _Context } from "@chuz/prelude";
 import * as Http from "@effect/platform/HttpServer";
 import { formatError } from "@effect/schema/ArrayFormatter";
 import { ParseError } from "@effect/schema/ParseResult";
+import { Effect, Predicate, ReadonlyArray, ReadonlyRecord } from "effect";
 
 export namespace ServerResponse {
   export const Ok = <A>(data: A | void) => Http.response.json(Predicate.isUndefined(data) ? null : data);

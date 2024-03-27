@@ -3,16 +3,17 @@ import { LoaderIcon } from "lucide-react";
 import { Checkbox } from "src/components/ui/checkbox";
 import { Routes } from "web/Routes";
 import { Button } from "web/components/ui/button";
-import { AppleIcon } from "web/components/ui/icons/AppleIcon";
-import { GoogleIcon } from "web/components/ui/icons/GoogleIcon";
 import { Input } from "web/components/ui/input";
 import { Label } from "web/components/ui/label";
+import { AuthSocialButtons } from "./auth-social-buttons";
 
 export function RegisterForm({ error }: { error: Record<string, string[]> }) {
   const isSubmitting = false;
   return (
     <div className={"grid gap-6"}>
       <Form method="POST" action={Routes.register}>
+        <Input name="_tag" type="hidden" value="Strong" />
+
         {error?.credentials}
         <div className="grid gap-6">
           <div className="grid gap-2">
@@ -73,14 +74,7 @@ export function RegisterForm({ error }: { error: Record<string, string[]> }) {
           <span className="bg-background text-muted-foreground px-2">Or sign up with</span>
         </div>
       </div>
-      <Button variant="outline" type="button" disabled={isSubmitting}>
-        <AppleIcon className="mr-2 h-5 w-5 dark:fill-white" />
-        Apple
-      </Button>
-      <Button variant="outline" type="button" disabled={isSubmitting}>
-        <GoogleIcon className="mr-2 h-4 w-4" />
-        Google
-      </Button>
+      <AuthSocialButtons disabled={isSubmitting} action={Routes.register} />
     </div>
   );
 }

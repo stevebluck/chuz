@@ -1,8 +1,6 @@
 import * as S from "@effect/schema/Schema";
 import { Brand, Option, Predicate } from "effect";
 
-export * from "@effect/schema/Schema";
-
 export const String100: S.Schema<string & Brand.Brand<"String100">, string> = S.Trim.pipe(
   S.minLength(1),
   S.maxLength(100),
@@ -15,11 +13,11 @@ export const String1000: S.Schema<string & Brand.Brand<"String1000">, string> = 
   S.brand("String1000"),
 );
 
-export const Email: S.Schema<string & Brand.Brand<"Email">, string> = S.compose(S.Lowercase, S.Trim).pipe(
+export const EmailAddress: S.Schema<string & Brand.Brand<"EmailAddress">, string> = S.compose(S.Lowercase, S.Trim).pipe(
   S.minLength(5),
   S.includes("@"),
   S.includes("."),
-  S.brand("Email"),
+  S.brand("EmailAddress"),
 );
 
 export const CheckboxInput: S.Schema<boolean, string | undefined> = S.transform(

@@ -2,10 +2,9 @@ import { Form } from "@remix-run/react";
 import { LoaderIcon } from "lucide-react";
 import { Routes } from "web/Routes";
 import { Button } from "web/components/ui/button";
-import { AppleIcon } from "web/components/ui/icons/AppleIcon";
-import { GoogleIcon } from "web/components/ui/icons/GoogleIcon";
 import { Input } from "web/components/ui/input";
 import { Label } from "web/components/ui/label";
+import { AuthSocialButtons } from "./auth-social-buttons";
 
 export function LoginForm() {
   const isSubmitting = false;
@@ -46,18 +45,7 @@ export function LoginForm() {
           <span className="bg-background text-muted-foreground px-2">Or sign in with</span>
         </div>
       </div>
-      <Button variant="outline" type="button" disabled={isSubmitting}>
-        <AppleIcon className="mr-2 h-5 w-5 dark:fill-white" />
-        Apple
-      </Button>
-      <Form method="POST" action={Routes.login} className="flex flex-col">
-        <Input name="_tag" type="hidden" value="Provider" />
-        <Input name="provider" type="hidden" value="google" />
-        <Button variant="outline" disabled={isSubmitting}>
-          <GoogleIcon className="mr-2 h-4 w-4" />
-          Google
-        </Button>
-      </Form>
+      <AuthSocialButtons disabled={isSubmitting} action={Routes.login} />
     </div>
   );
 }

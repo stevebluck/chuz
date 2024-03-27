@@ -1,5 +1,5 @@
 import { Token } from "@chuz/domain";
-import { Clock, Duration, Effect, Number } from "@chuz/prelude";
+import { Clock, Duration, Effect, Number } from "effect";
 import fc from "fast-check";
 import { afterAll, expect } from "vitest";
 import { ReferenceTokens } from "../../src/tokens/ReferenceTokens";

@@ -1,4 +1,4 @@
-import { Either, HashMap, Option } from "@chuz/prelude";
+import { Either, HashMap, Option } from "effect";
 
 export class Table<K, V> {
   static empty<K, V>(): Table<K, V> {

@@ -1,6 +1,6 @@
 import { Credentials, EmailPassword, Password, Token, User, IdentityProvider } from "@chuz/domain";
-import { Effect, Option } from "@chuz/prelude";
-import * as S from "@chuz/prelude/Schema";
+import * as S from "@effect/schema/Schema";
+import { Effect, Option } from "effect";
 import * as fc from "fast-check";
 import { afterAll, describe, expect } from "vitest";
 import { Passwords, Users } from "../../src";

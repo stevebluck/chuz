@@ -1,4 +1,4 @@
-import { Config, Context, Layer } from "@chuz/prelude";
+import { Config, Context, Layer } from "effect";
 
 export namespace LayerUtils {
   export const config =

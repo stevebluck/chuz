@@ -1,4 +1,4 @@
-import { Effect } from "@chuz/prelude";
+import { Effect } from "effect";
 import { Routes } from "src/Routes";
 import { ServerResponse, Session, Users } from "src/server";
 import { Remix } from "src/server/Remix";

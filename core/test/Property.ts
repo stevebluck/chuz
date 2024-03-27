@@ -1,4 +1,4 @@
-import { Effect, Option } from "@chuz/prelude";
+import { Effect, Option } from "effect";
 import { NonEmptyIterable } from "effect/NonEmptyIterable";
 import fc from "fast-check";
 import { test } from "vitest";

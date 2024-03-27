@@ -1,4 +1,3 @@
 {
-  "extends": "@chuz/typescript-config/prelude.json",
-  "include": ["src/**/*", "test/**/*", "Uuid.ts", "Timestamp.ts", "Phantom.ts", "index.ts"]
+  "extends": "@chuz/typescript-config/prelude.json"
 }

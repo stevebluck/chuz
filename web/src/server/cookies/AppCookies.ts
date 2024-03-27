@@ -1,7 +1,7 @@
-import { Context, Effect, Layer, Secret } from "@chuz/prelude";
-import * as S from "@chuz/prelude/Schema";
+import * as S from "@effect/schema/Schema";
+import { Context, Effect, Layer, Secret } from "effect";
 import { LayerUtils } from "../LayerUtils";
-import { Auth } from "../auth/Auth";
+import * as Auth from "../auth/Auth";
 import { Cookie } from "./Cookie";
 
 interface Cookies {
@@ -36,7 +36,7 @@ export class AppCookies extends Effect.Tag("@app/AppCookies")<AppCookies, Cookie
           httpOnly: true,
           secret,
         }),
-        authState: new Cookie("_authstate", Auth.State.schema, {
+        authState: new Cookie("_authstate", Auth.State, {
           path: "/",
           maxAge: "30 minutes",
           secure,

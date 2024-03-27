@@ -1,6 +1,7 @@
-import { Data, Option } from "@chuz/prelude";
-import * as S from "@chuz/prelude/Schema";
-import * as _ from ".";
+import { String100, EmailAddress } from "@chuz/prelude";
+import * as S from "@effect/schema/Schema";
+import { Data, Option } from "effect";
+import * as Domain from ".";
 
 export interface User {
   email: Email;
@@ -9,10 +10,10 @@ export interface User {
   optInMarketing: OptInMarketing;
 }
 
-export type Id = _.Id<User>;
-export type Session = _.Session<User>;
-export type Token = _.Token.Token<Id>;
-export type Identified = _.Identified<User>;
+export type Id = Domain.Id<User>;
+export type Session = Domain.Session<User>;
+export type Token = Domain.Token.Token<Id>;
+export type Identified = Domain.Identified<User>;
 
 export type Email = S.Schema.Type<typeof Email>;
 export type FirstName = S.Schema.Type<typeof FirstName>;
@@ -36,19 +37,19 @@ export const from = S.decode(schema);
 
 export const OptInMarketing = S.boolean.pipe(S.brand("OptInMarketing"));
 
-export const Email = S.Email.pipe(S.brand("UserEmail")).annotations({
+export const Email = EmailAddress.pipe(S.brand("UserEmail")).annotations({
   arbitrary: () => (fc) => fc.emailAddress().map(Email),
 });
 
-export const FirstName = S.String100.pipe(S.brand("FirstName"));
+export const FirstName = String100.pipe(S.brand("FirstName"));
 
-export const LastName = S.String100.pipe(S.brand("LastName"));
+export const LastName = String100.pipe(S.brand("LastName"));
 
 export const Partial = S.suspend(() => schema.pipe(S.omit("email")));
 
 export const Registration = S.suspend(() =>
   S.struct({
-    credentials: _.Credentials.Secure,
+    credentials: Domain.Credentials.Secure,
     firstName: S.option(FirstName),
     lastName: S.option(LastName),
     optInMarketing: OptInMarketing,
@@ -59,4 +60,6 @@ export type UpdateEmailError = NotFound | EmailAlreadyInUse;
 
 export class NotFound extends Data.TaggedError("UserNotFound") {}
 
-export class EmailAlreadyInUse extends S.TaggedError<EmailAlreadyInUse>()("EmailAlreadyInUse", { email: Email }) {}
+export class EmailAlreadyInUse extends S.TaggedError<EmailAlreadyInUse>()("EmailAlreadyInUse", {
+  email: Email,
+}) {}

@@ -1,5 +1,5 @@
-import { Equivalence, Brand, Equal } from "@chuz/prelude";
-import * as S from "@chuz/prelude/Schema";
+import * as S from "@effect/schema/Schema";
+import { Equivalence, Brand, Equal } from "effect";
 import { Id, Identified, User } from ".";
 
 export type Plaintext = string & Brand.Brand<"PlaintextPassword">;

@@ -1,5 +1,5 @@
 import { Phantom } from "@chuz/prelude";
-import { Data, Equal } from "@chuz/prelude";
+import { Data, Equal } from "effect";
 
 export type Token<A> = Phantom<A, string>;
 

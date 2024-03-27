@@ -1,8 +1,7 @@
-import { Data, Effect, ReadonlyRecord } from "@chuz/prelude";
-import { Context as _Context } from "@chuz/prelude";
-import * as S from "@chuz/prelude/Schema";
 import * as Http from "@effect/platform/HttpServer";
 import { ParseError } from "@effect/schema/ParseResult";
+import * as S from "@effect/schema/Schema";
+import { Data, Effect, ReadonlyRecord } from "effect";
 
 export namespace ServerRequest {
   export const searchParams = <A, Out extends Record<string, string | undefined>>(

@@ -1,5 +1,5 @@
-import { Data, Effect, Equivalence, Uuid } from "@chuz/prelude";
-import { Phantom } from "@chuz/prelude/Phantom";
+import { Phantom, Uuid } from "@chuz/prelude";
+import { Data, Effect, Equivalence } from "effect";
 
 export type Id<A> = Phantom<A, string>;
 export const Id = <A>(value: string): Id<A> => Phantom.make<Id<A>>()(value);

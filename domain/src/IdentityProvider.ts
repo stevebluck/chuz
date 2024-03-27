@@ -1,4 +1,4 @@
-import * as S from "@chuz/prelude/Schema";
+import * as S from "@effect/schema/Schema";
 import { Equal, Equivalence } from "effect";
 import { User } from ".";
 

@@ -1,4 +1,4 @@
-import { Effect, Option } from "@chuz/prelude";
+import { Effect, Option } from "effect";
 import { Kysely, PostgresDialect, SelectQueryBuilder } from "kysely";
 import { DB } from "kysely-codegen";
 import { Pool } from "pg";

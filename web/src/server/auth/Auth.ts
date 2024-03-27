@@ -1,61 +1,38 @@
 import { Credentials, User } from "@chuz/domain";
 import { Uuid } from "@chuz/prelude";
-import { Data, Effect, Equal, Equivalence, Layer, Match } from "@chuz/prelude";
-import * as S from "@chuz/prelude/Schema";
-import { Users } from "..";
-import { GoogleSocialAuth } from "./GoogleSocialAuth";
+import * as S from "@effect/schema/Schema";
+import { Data, Effect, Equal, Equivalence } from "effect";
+import { Users } from "../Users";
 
-interface Auths {
+export interface SocialAuths {
   exchangeCodeForSession: (
-    provider: Auth.ProviderCode,
-  ) => Effect.Effect<User.Session, Auth.ExchangeCodeError | User.EmailAlreadyInUse | Credentials.NotRecognised, Users>;
-  generateAuthUrl: (provider: Auth.ProviderState) => Effect.Effect<string, Auth.GenerateUrlError>;
+    provider: ProviderCode,
+  ) => Effect.Effect<User.Session, ExchangeCodeError | User.EmailAlreadyInUse | Credentials.NotRecognised, Users>;
+  generateAuthUrl: (provider: ProviderState) => Effect.Effect<string, GenerateUrlError>;
 }
 
-const providers = Layer.mergeAll(GoogleSocialAuth.layer);
+export type Code = S.Schema.Type<typeof Code>;
+export type ProviderName = S.Schema.Type<typeof ProviderName>;
+export type State = S.Schema.Type<typeof State>;
 
-export class Auth extends Effect.Tag("@app/Auth")<Auth, Auths>() {
-  static layer = Layer.effect(
-    Auth,
-    Effect.gen(function* (_) {
-      const google = yield* _(GoogleSocialAuth);
+export type ProviderCode = { _tag: ProviderName; code: Code; state: State };
+export type ProviderState = { _tag: ProviderName; state: State };
 
-      return Auth.of({
-        exchangeCodeForSession: Auth.ProviderCode.match({ google: ({ code }) => google.exchangeCodeForSession(code) }),
-        generateAuthUrl: Auth.ProviderState.match({ google: ({ state }) => google.generateAuthUrl(state) }),
-      });
-    }),
-  ).pipe(Layer.provide(providers));
-}
+export const Code = S.string.pipe(S.brand("AuthCode"));
 
-export namespace Auth {
-  export type Code = S.Schema.Type<typeof Code>;
-  export type ProviderName = S.Schema.Type<typeof ProviderName>;
-  export type State = S.Schema.Type<typeof State.schema>;
-  export type ProviderCode = { _tag: ProviderName; code: Code };
-  export type ProviderState = { _tag: ProviderName; state: State };
+export const State = S.NonEmpty.pipe(S.brand("AuthState"));
+export const makeState = (intent: "login" | "register") =>
+  Uuid.make.pipe(
+    Effect.map((uuid) => [intent, uuid].join("+")),
+    Effect.map(S.decodeSync(State)),
+  );
 
-  export const Code = S.string.pipe(S.brand("AuthCode"));
+export const intentFromState = (state: State) => Effect.sync(() => state.split("+")[0] as "login" | "register");
 
-  export namespace State {
-    export const schema = S.UUID.pipe(S.brand("AuthState"));
-    export const make = Uuid.make.pipe(Effect.map(S.decodeSync(schema)));
-    export class DoesNotMatch extends Data.TaggedError("StateDoesNotMatch") {}
-    export const equals: Equivalence.Equivalence<S.Schema.Type<typeof schema>> = Equal.equals;
-  }
+export const stateEquals: Equivalence.Equivalence<S.Schema.Type<typeof State>> = Equal.equals;
 
-  export const ProviderName = S.literal("google");
+export const ProviderName = S.literal("google");
 
-  export namespace ProviderCode {
-    export const { google } = Data.taggedEnum<ProviderCode>();
-    export const match = Match.typeTags<ProviderCode>();
-  }
-
-  export namespace ProviderState {
-    export const match = Match.typeTags<ProviderState>();
-  }
-
-  export class ExchangeCodeError extends Data.TaggedError("ExchangeCodeError")<{ error: unknown }> {}
-
-  export class GenerateUrlError extends Data.TaggedError("GenerateUrlError")<{ error: unknown }> {}
-}
+export class StateDoesNotMatch extends Data.TaggedError("StateDoesNotMatch") {}
+export class ExchangeCodeError extends Data.TaggedError("ExchangeCodeError")<{ error: unknown }> {}
+export class GenerateUrlError extends Data.TaggedError("GenerateUrlError")<{ error: unknown }> {}

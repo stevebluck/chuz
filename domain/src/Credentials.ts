@@ -1,5 +1,5 @@
-import { Data, Match } from "@chuz/prelude";
-import * as S from "@chuz/prelude/Schema";
+import * as S from "@effect/schema/Schema";
+import { Data, Match } from "effect";
 import * as EmailPassword from "./EmailPassword";
 import { IdentityProvider } from "./IdentityProvider";
 

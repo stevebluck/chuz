@@ -1,6 +1,6 @@
-import { Effect, Option } from "@chuz/prelude";
 import { LinksFunction } from "@remix-run/node";
 import { Links, Meta, Outlet, Scripts, ScrollRestoration, useLoaderData } from "@remix-run/react";
+import { Effect, Option } from "effect";
 import { ServerResponse, Session } from "./server";
 import { Remix } from "./server/Remix";
 import { cn } from "./styles/classnames";

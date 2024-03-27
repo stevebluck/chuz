@@ -1,40 +1,71 @@
 import { EmailPassword, Password, User } from "@chuz/domain";
-import { Effect } from "@chuz/prelude";
-import * as S from "@chuz/prelude/Schema";
+import { fromCheckboxInput, optionalTextInput } from "@chuz/prelude";
+import * as S from "@effect/schema/Schema";
+import { Effect, Match } from "effect";
 import { Routes } from "src/Routes";
 import { AuthContent } from "src/auth/auth-content";
 import { RegisterForm } from "src/auth/register-form";
 import { useActionData } from "src/hooks/useActionData";
 import { Session, Users, ServerResponse } from "src/server";
-import { PasswordHasher } from "src/server/Passwords";
+import { Hash } from "src/server/Passwords";
 import { Remix } from "src/server/Remix";
 import { ServerRequest } from "src/server/ServerRequest";
+import * as Auth from "src/server/auth/Auth";
+import { SocialAuth } from "src/server/auth/SocialAuth";
+import { AppCookies } from "src/server/cookies/AppCookies";
 
-const RegisterFormFields = S.struct({
-  email: User.Email,
-  password: Password.Strong,
-  firstName: S.optionalTextInput(User.FirstName),
-  lastName: S.optionalTextInput(User.LastName),
-  optInMarketing: S.fromCheckboxInput(User.OptInMarketing),
-});
+type RegisterFormFields = S.Schema.Type<typeof RegisterFormFields>;
+const RegisterFormFields = S.union(
+  S.struct({
+    _tag: S.literal("Strong"),
+    email: User.Email,
+    password: Password.Strong,
+    firstName: optionalTextInput(User.FirstName),
+    lastName: optionalTextInput(User.LastName),
+    optInMarketing: fromCheckboxInput(User.OptInMarketing),
+  }),
+  S.struct({
+    _tag: S.literal("Provider"),
+    provider: S.literal("google"),
+  }),
+);
 
 export const action = Remix.action(
-  ServerRequest.formData(RegisterFormFields).pipe(
-    Effect.bind("hashed", ({ password }) => PasswordHasher.hash(password)),
-    Effect.flatMap(({ email, hashed, firstName, lastName, optInMarketing }) =>
-      Users.register({
-        credentials: new EmailPassword.Secure({ email, password: hashed }),
-        firstName,
-        lastName,
-        optInMarketing,
+  Effect.flatMap(AppCookies.authState, (stateCookie) =>
+    Session.guest.pipe(
+      Effect.zipRight(ServerRequest.formData(RegisterFormFields)),
+      Effect.flatMap(
+        Match.typeTags<RegisterFormFields>()({
+          Provider: ({ provider }) =>
+            Effect.flatMap(Auth.makeState("register"), (state) =>
+              SocialAuth.generateAuthUrl({ _tag: provider, state }).pipe(
+                Effect.flatMap(ServerResponse.Redirect),
+                Effect.flatMap(stateCookie.save(state)),
+              ),
+            ),
+          Strong: ({ email, firstName, lastName, optInMarketing, password }) =>
+            Hash.hash(password).pipe(
+              Effect.flatMap((hashed) =>
+                Users.register({
+                  credentials: new EmailPassword.Secure({ email, password: hashed }),
+                  firstName,
+                  lastName,
+                  optInMarketing,
+                }),
+              ),
+              Effect.flatMap(Session.mint),
+              Effect.zipRight(ServerResponse.Redirect(Routes.myAccount)),
+            ),
+        }),
+      ),
+      Effect.catchTags({
+        AlreadyAuthenticated: () => ServerResponse.Redirect(Routes.myAccount),
+        CookieError: (e) => ServerResponse.ServerError(e.message),
+        GenerateUrlError: () => ServerResponse.ServerError("Identity provider issue"),
+        ParseError: ServerResponse.FormError,
+        EmailAlreadyInUse: ServerResponse.BadRequest,
       }),
     ),
-    Effect.flatMap(Session.mint),
-    Effect.zipRight(ServerResponse.Redirect(Routes.myAccount)),
-    Effect.catchTags({
-      ParseError: ServerResponse.FormError,
-      EmailAlreadyInUse: ServerResponse.BadRequest,
-    }),
   ),
 );
 

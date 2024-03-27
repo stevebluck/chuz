@@ -1,4 +1,4 @@
-import { Effect } from "@chuz/prelude";
+import { Effect } from "effect";
 import { Routes } from "src/Routes";
 import { Button } from "src/components/ui/button";
 import { Session, ServerResponse } from "src/server";

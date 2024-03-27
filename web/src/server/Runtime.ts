@@ -1,32 +1,34 @@
 import { Token, User } from "@chuz/domain";
-import { Config, Effect, Layer, LogLevel, Logger, Match, Ref, Secret } from "@chuz/prelude";
 import { DevTools } from "@effect/experimental";
 import { BodyError } from "@effect/platform/Http/Body";
 import { ServerRequest } from "@effect/platform/Http/ServerRequest";
 import * as Http from "@effect/platform/HttpServer";
+import { Config, Effect, Layer, LogLevel, Logger, Match, Ref, Secret } from "effect";
 import { ServerResponse } from ".";
 import { PostgresConfig } from "./Database";
-import { PasswordHasher, PasswordHasherConfig } from "./Passwords";
+import * as Passwords from "./Passwords";
 import { RequestSession, Session } from "./Sessions";
 import { Users } from "./Users";
-import { Auth } from "./auth/Auth";
-import { GoogleSocialAuthConfig } from "./auth/GoogleSocialAuth";
+import { GoogleAuthConfig } from "./auth/GoogleAuth";
+import { SocialAuth } from "./auth/SocialAuth";
 import { AppCookies, AppCookiesConfig } from "./cookies/AppCookies";
 
 const IsDebug = Config.withDefault(Config.boolean("DEBUG"), false);
 
 const IsProduction = Config.map(Config.string("NODE_ENV"), (env) => env === "production");
 
-const GoogleSocialAuthConfigLive = GoogleSocialAuthConfig.layer({
+const AppUrl = Config.withDefault(Config.string("APP_URL"), "http://localhost:5173");
+
+const GoogleAuthConfigLive = GoogleAuthConfig.layer({
   clientId: Config.string("GOOGLE_CLIENT_ID"),
   clientSecret: Config.string("GOOGLE_CLIENT_SECRET"),
-  redirectUri: Config.string("AUTH_CALLBACK_URL").pipe(Config.withDefault("http://localhost:5173/login?_tag=google")),
+  redirectUrl: AppUrl,
 });
 
 const PostgresConfigLive = PostgresConfig.layer({ connectionString: Config.string("DATABASE_URL") });
 
-const PasswordHasherConfigLive = PasswordHasherConfig.layer({ N: Config.succeed(16384) });
-const PasswordHasherConfigDev = PasswordHasherConfig.layer({ N: Config.succeed(4) });
+const PasswordHasherConfigLive = Passwords.HashConfig.layer({ N: Config.succeed(16384) });
+const PasswordHasherConfigDev = Passwords.HashConfig.layer({ N: Config.succeed(4) });
 
 const AppCookiesConfigLive = AppCookiesConfig.layer({
   secure: IsProduction,
@@ -41,20 +43,15 @@ const LogLevelLive = Layer.unwrapEffect(
   }),
 );
 
-const Configs = Layer.mergeAll(
-  AppCookiesConfigLive,
-  GoogleSocialAuthConfigLive,
-  PasswordHasherConfigLive,
-  LogLevelLive,
-);
+const Configs = Layer.mergeAll(AppCookiesConfigLive, GoogleAuthConfigLive, PasswordHasherConfigLive, LogLevelLive);
 
-const Dev = Layer.mergeAll(Users.dev, Auth.layer, AppCookies.layer, PasswordHasher.layer).pipe(
+const Dev = Layer.mergeAll(Users.dev, SocialAuth.layer, AppCookies.layer, Passwords.Hash.layer).pipe(
   Layer.provide(Configs),
   Layer.provide(PasswordHasherConfigDev),
   Layer.provide(DevTools.layer()),
 );
 
-const Live = Layer.mergeAll(Users.live, Auth.layer, AppCookies.layer, PasswordHasher.layer).pipe(
+const Live = Layer.mergeAll(Users.live, SocialAuth.layer, AppCookies.layer, Passwords.Hash.layer).pipe(
   Layer.provide(Configs),
   Layer.provide(PostgresConfigLive),
 );
