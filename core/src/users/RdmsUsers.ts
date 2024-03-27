@@ -1,4 +1,4 @@
-import { User, Email, Id, Identified, Token, Credentials, Password } from "@chuz/domain";
+import { User, Id, Identified, Token, Credentials, Password } from "@chuz/domain";
 import { Effect } from "@chuz/prelude";
 import { DB, Database } from "../persistence/Database";
 import { Users } from "./Users";
@@ -12,7 +12,7 @@ export class RdmsUsers implements Users {
     throw new Error("Method not implemented.");
   };
 
-  register = (registration: User.Registration): Effect.Effect<User.Session, Email.AlreadyInUse> => {
+  register = (registration: User.Registration): Effect.Effect<User.Session, User.EmailAlreadyInUse> => {
     throw new Error("Method not implemented.");
   };
 
@@ -30,7 +30,7 @@ export class RdmsUsers implements Users {
     return this.db.findOneOrElse("findById", query, new User.NotFound()).pipe(Effect.flatMap(DbUser.toUser));
   };
 
-  findByEmail = (email: Email.Email): Effect.Effect<User.Identified, User.NotFound> => {
+  findByEmail = (email: User.Email): Effect.Effect<User.Identified, User.NotFound> => {
     const query = this.db.query.selectFrom("users").where("id", "=", email).selectAll();
 
     return this.db.findOneOrElse("findByEmail", query, new User.NotFound()).pipe(Effect.flatMap(DbUser.toUser));
@@ -40,7 +40,7 @@ export class RdmsUsers implements Users {
     throw new Error("Method not implemented.");
   }
 
-  updateEmail(id: User.Id, email: Email.Email): Effect.Effect<User.Identified, User.UpdateEmailError> {
+  updateEmail(id: User.Id, email: User.Email): Effect.Effect<User.Identified, User.UpdateEmailError> {
     throw new Error("Method not implemented.");
   }
 
@@ -53,13 +53,13 @@ export class RdmsUsers implements Users {
   }
 
   requestPasswordReset(
-    email: Email.Email,
-  ): Effect.Effect<Token.Token<[Email.Email, User.Id]>, Credentials.NotRecognised> {
+    email: User.Email,
+  ): Effect.Effect<Token.Token<[User.Email, User.Id]>, Credentials.NotRecognised> {
     throw new Error("Method not implemented.");
   }
 
   resetPassword(
-    token: Token.Token<[Email.Email, User.Id]>,
+    token: Token.Token<[User.Email, User.Id]>,
     password: Password.Hashed,
   ): Effect.Effect<User.Identified, Token.NoSuchToken> {
     throw new Error("Method not implemented.");

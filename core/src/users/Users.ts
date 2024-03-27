@@ -1,34 +1,34 @@
-import { Credentials, Email, Password, Token, User } from "@chuz/domain";
-import { Identified, Id, Session } from "@chuz/domain/src/User";
+import { Credentials, Password, Token } from "@chuz/domain";
+import * as User from "@chuz/domain/User";
 import { Effect } from "@chuz/prelude";
 
 export interface Users {
-  register(registration: User.Registration): Effect.Effect<Session, Email.AlreadyInUse>;
+  register(registration: User.Registration): Effect.Effect<User.Session, User.EmailAlreadyInUse>;
 
-  findById(id: Id): Effect.Effect<Identified, User.NotFound>;
+  findById(id: User.Id): Effect.Effect<User.Identified, User.NotFound>;
 
-  findByEmail(email: Email.Email): Effect.Effect<Identified, User.NotFound>;
+  findByEmail(email: User.Email): Effect.Effect<User.Identified, User.NotFound>;
 
-  identify(token: Token.Token<Id>): Effect.Effect<Session, Token.NoSuchToken>;
+  identify(token: Token.Token<User.Id>): Effect.Effect<User.Session, Token.NoSuchToken>;
 
-  authenticate(credential: Credentials.Plain): Effect.Effect<Session, Credentials.NotRecognised>;
+  authenticate(credential: Credentials.Plain): Effect.Effect<User.Session, Credentials.NotRecognised>;
 
-  logout(token: Token.Token<Id>): Effect.Effect<void>;
+  logout(token: Token.Token<User.Id>): Effect.Effect<void>;
 
-  update(id: Id, partial: User.Partial): Effect.Effect<Identified, User.NotFound>;
+  update(id: User.Id, partial: User.Partial): Effect.Effect<User.Identified, User.NotFound>;
 
-  updateEmail(id: Id, email: Email.Email): Effect.Effect<Identified, User.UpdateEmailError>;
+  updateEmail(id: User.Id, email: User.Email): Effect.Effect<User.Identified, User.UpdateEmailError>;
 
   updatePassword(
-    token: Token.Token<Id>,
+    token: Token.Token<User.Id>,
     currentPassword: Password.Plaintext,
     updatedPasword: Password.Hashed,
   ): Effect.Effect<void, Credentials.NotRecognised | User.NotFound>;
 
-  requestPasswordReset(email: Email.Email): Effect.Effect<Token.Token<[Email.Email, Id]>, Credentials.NotRecognised>;
+  requestPasswordReset(email: User.Email): Effect.Effect<Token.Token<[User.Email, User.Id]>, Credentials.NotRecognised>;
 
   resetPassword(
-    token: Token.Token<[Email.Email, Id]>,
+    token: Token.Token<[User.Email, User.Id]>,
     password: Password.Hashed,
-  ): Effect.Effect<Identified, Token.NoSuchToken>;
+  ): Effect.Effect<User.Identified, Token.NoSuchToken>;
 }

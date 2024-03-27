@@ -1,5 +1,6 @@
-import { Credentials, Email, Password, Token, User } from "@chuz/domain";
+import { Credentials, EmailPassword, Password, Token, User, IdentityProvider } from "@chuz/domain";
 import { Effect, Option } from "@chuz/prelude";
+import * as S from "@chuz/prelude/Schema";
 import * as fc from "fast-check";
 import { afterAll, describe, expect } from "vitest";
 import { Passwords, Users } from "../../src";
@@ -18,7 +19,7 @@ export namespace UsersSpec {
       (register) =>
         Effect.gen(function* (_) {
           const { users } = yield* _(TestBench);
-          const registerUserWithEmail = (email: Email.Email) =>
+          const registerUserWithEmail = (email: User.Email) =>
             registerUser(users, { ...register, credentials: { ...register.credentials, email } });
 
           const session = yield* _(registerUserWithEmail(register.credentials.email));
@@ -32,16 +33,16 @@ export namespace UsersSpec {
             }),
           );
 
-          const uppercase = Email.toUpperCase(register.credentials.email);
-          const lowercase = Email.toLowerCase(register.credentials.email);
+          const uppercase = makeEmail(register.credentials.email.toUpperCase());
+          const lowercase = makeEmail(register.credentials.email.toLocaleLowerCase());
 
           const error0 = yield* _(registerUserWithEmail(register.credentials.email).pipe(Effect.flip));
           const error1 = yield* _(registerUserWithEmail(lowercase).pipe(Effect.flip));
           const error2 = yield* _(registerUserWithEmail(uppercase).pipe(Effect.flip));
 
-          expect(error0).toEqual(new Email.AlreadyInUse({ email: register.credentials.email }));
-          expect(error1).toEqual(new Email.AlreadyInUse({ email: lowercase }));
-          expect(error2).toEqual(new Email.AlreadyInUse({ email: uppercase }));
+          expect(error0).toEqual(new User.EmailAlreadyInUse({ email: register.credentials.email }));
+          expect(error1).toEqual(new User.EmailAlreadyInUse({ email: lowercase }));
+          expect(error2).toEqual(new User.EmailAlreadyInUse({ email: uppercase }));
         }),
       config,
     );
@@ -85,7 +86,7 @@ export namespace UsersSpec {
           const authed = yield* _(users.authenticate(plain.credentials));
           const authed1 = yield* _(users.authenticate(plain.lowercase));
           const authed2 = yield* _(users.authenticate(plain.uppercase));
-          const badCredentials = new Credentials.EmailPassword.Plain({
+          const badCredentials = new EmailPassword.Plain({
             email: plain.credentials.email,
             password: Password.Plaintext(`bad-${plain.credentials.password}`),
           });
@@ -132,10 +133,10 @@ export namespace UsersSpec {
           const { users } = yield* _(TestBench);
           const session0 = yield* _(registerUser(users, registration));
 
-          const credential = new Credentials.IdentityProvider({
-            id: Credentials.IdentityProvider.fields.id("googleId"),
+          const credential = new IdentityProvider({
+            id: IdentityProvider.fields.id("googleId"),
+            provider: "google",
             email: registration.credentials.email,
-            ...registration,
           });
 
           const emailAlreadyInUseError = yield* _(users.authenticate(credential), Effect.flip);
@@ -143,7 +144,7 @@ export namespace UsersSpec {
           const foundUserById = yield* _(users.findById(session0.user.id));
 
           expect(foundUserById).toEqual(session0.user);
-          expect(emailAlreadyInUseError).toEqual(new Email.AlreadyInUse({ email: registration.credentials.email }));
+          expect(emailAlreadyInUseError).toEqual(new User.EmailAlreadyInUse({ email: registration.credentials.email }));
         }),
       config,
     );
@@ -157,8 +158,12 @@ export namespace UsersSpec {
           const session = yield* _(registerUser(users, registration));
           const foundUserById = yield* _(users.findById(session.user.id));
           const foundUserByEmail = yield* _(users.findByEmail(registration.credentials.email));
-          const foundUserByEmail1 = yield* _(users.findByEmail(Email.toLowerCase(registration.credentials.email)));
-          const foundUserByEmail2 = yield* _(users.findByEmail(Email.toUpperCase(registration.credentials.email)));
+          const foundUserByEmail1 = yield* _(
+            users.findByEmail(makeEmail(registration.credentials.email.toLocaleLowerCase())),
+          );
+          const foundUserByEmail2 = yield* _(
+            users.findByEmail(makeEmail(registration.credentials.email.toUpperCase())),
+          );
 
           expect(foundUserById).toEqual(session.user);
           expect(foundUserByEmail).toEqual(session.user);
@@ -188,7 +193,7 @@ export namespace UsersSpec {
       describe("Email", () => {
         asyncProperty(
           "users can update their email to a unique email",
-          fc.tuple(Arbs.Users.Register, Arbs.EmailArb),
+          fc.tuple(Arbs.Users.Register, Arbs.Email),
           ([registration, newEmail]) =>
             Effect.gen(function* (_) {
               const { users } = yield* _(TestBench);
@@ -206,9 +211,7 @@ export namespace UsersSpec {
               expect(credentialsNotRecognisedError).toEqual(new Credentials.NotRecognised());
 
               const authed2 = yield* _(
-                users.authenticate(
-                  new Credentials.EmailPassword.Plain({ email: newEmail, password: plain.credentials.password }),
-                ),
+                users.authenticate(new EmailPassword.Plain({ email: newEmail, password: plain.credentials.password })),
               );
               expect(authed2.user.id).toEqual(session.user.id);
             }),
@@ -225,16 +228,16 @@ export namespace UsersSpec {
 
               const user2 = yield* _(registerUser(users, register2));
 
-              const lowercase = Email.toLowerCase(user1.user.value.email);
-              const uppercase = Email.toUpperCase(user1.user.value.email);
+              const lowercase = makeEmail(user1.user.value.email.toLocaleLowerCase());
+              const uppercase = makeEmail(user1.user.value.email.toUpperCase());
 
               const error0 = yield* _(users.updateEmail(user2.user.id, user1.user.value.email).pipe(Effect.flip));
               const error1 = yield* _(users.updateEmail(user2.user.id, lowercase).pipe(Effect.flip));
               const error2 = yield* _(users.updateEmail(user2.user.id, uppercase).pipe(Effect.flip));
 
-              expect(error0).toEqual(new Email.AlreadyInUse({ email: user1.user.value.email }));
-              expect(error1).toEqual(new Email.AlreadyInUse({ email: lowercase }));
-              expect(error2).toEqual(new Email.AlreadyInUse({ email: uppercase }));
+              expect(error0).toEqual(new User.EmailAlreadyInUse({ email: user1.user.value.email }));
+              expect(error1).toEqual(new User.EmailAlreadyInUse({ email: lowercase }));
+              expect(error2).toEqual(new User.EmailAlreadyInUse({ email: uppercase }));
             }),
           config,
         );
@@ -261,7 +264,7 @@ export namespace UsersSpec {
 
               const authed2 = yield* _(
                 users.authenticate(
-                  new Credentials.EmailPassword.Plain({
+                  new EmailPassword.Plain({
                     email: register.credentials.email,
                     password: Password.Plaintext(newPassword),
                   }),
@@ -343,7 +346,7 @@ export namespace UsersSpec {
             const error = yield* _(users.authenticate(plain.credentials).pipe(Effect.flip));
             const session1 = yield* _(
               users.authenticate(
-                new Credentials.EmailPassword.Plain({
+                new EmailPassword.Plain({
                   email: plain.credentials.email,
                   password: Password.Plaintext(newPassword),
                 }),
@@ -399,7 +402,7 @@ export namespace UsersSpec {
 
       asyncProperty(
         "password reset request fails for unknown email address",
-        Arbs.EmailArb,
+        Arbs.Email,
         (email) =>
           Effect.gen(function* (_) {
             const { users } = yield* _(TestBench);
@@ -413,7 +416,7 @@ export namespace UsersSpec {
   const registerUser = (users: Users, register: Arbs.Users.Register) =>
     Effect.gen(function* (_) {
       const hashed = yield* _(hash(register.credentials.password));
-      const credential = new Credentials.EmailPassword.Secure({
+      const credential = new EmailPassword.Secure({
         email: register.credentials.email,
         password: hashed,
       });
@@ -428,22 +431,23 @@ export namespace UsersSpec {
       );
     });
 
-  const makePlainCredentials = (credentials: Credentials.EmailPassword.Strong) => {
+  const makePlainCredentials = (credentials: EmailPassword.Strong) => {
     return {
-      credentials: new Credentials.EmailPassword.Plain({
+      credentials: new EmailPassword.Plain({
         email: credentials.email,
         password: Password.Plaintext(credentials.password),
       }),
-      lowercase: new Credentials.EmailPassword.Plain({
-        email: Email.toLowerCase(credentials.email),
+      lowercase: new EmailPassword.Plain({
+        email: makeEmail(credentials.email.toLowerCase()),
         password: Password.Plaintext(credentials.password),
       }),
-      uppercase: new Credentials.EmailPassword.Plain({
-        email: Email.toUpperCase(credentials.email),
+      uppercase: new EmailPassword.Plain({
+        email: makeEmail(credentials.email.toUpperCase()),
         password: Password.Plaintext(credentials.password),
       }),
     };
   };
 }
 
+const makeEmail = S.decodeSync(User.Email);
 const hash = Passwords.hasher({ N: 2 });

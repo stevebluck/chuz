@@ -1,4 +1,4 @@
-import { Credentials, Email, Password, User } from "@chuz/domain";
+import { EmailPassword, Password, User as _User, IdentityProvider } from "@chuz/domain";
 import { Option } from "@chuz/prelude";
 import * as Arbitrary from "@effect/schema/Arbitrary";
 import * as fc from "fast-check";
@@ -9,38 +9,26 @@ export namespace Arbs {
     export const Strong = Arbitrary.make(Password.Strong)(fc);
   }
 
-  export const EmailArb = fc.emailAddress().map<Email.Email>(Email.unsafeFrom);
+  export const Email = Arbitrary.make(_User.Email)(fc);
 
   export namespace Users {
-    export const FirstName = Arbitrary.make(User.FirstName)(fc);
-    export const LastName = Arbitrary.make(User.LastName)(fc);
-    export const OptInMarketing = Arbitrary.make(User.OptInMarketing)(fc);
-
-    export const StrongCredentials: fc.Arbitrary<Credentials.EmailPassword.Strong> = fc.record({
-      _tag: fc.constant("Strong"),
-      email: EmailArb,
-      password: Passwords.Strong,
-    });
+    export const FirstName = Arbitrary.make(_User.FirstName)(fc);
+    export const LastName = Arbitrary.make(_User.LastName)(fc);
+    export const OptInMarketing = Arbitrary.make(_User.OptInMarketing)(fc);
+    const StrongEmailPassword = Arbitrary.make(EmailPassword.Strong)(fc);
 
     export type Register = typeof Register extends fc.Arbitrary<infer A> ? A : never;
     export const Register = fc.record({
-      credentials: StrongCredentials,
+      credentials: StrongEmailPassword,
       firstName: FirstName.map(Option.fromNullable),
       lastName: LastName.map(Option.fromNullable),
       optInMarketing: OptInMarketing,
     });
 
-    export const UserArb = Arbitrary.make(User.schema)(fc);
+    export const User = Arbitrary.make(_User.schema)(fc);
 
-    export const ProviderCredential = Arbitrary.make(Credentials.IdentityProvider)(fc);
+    export const ProviderCredential = Arbitrary.make(IdentityProvider)(fc);
 
-    export const PartialUser: fc.Arbitrary<User.Partial> = fc.record(
-      {
-        firstName: FirstName.map((firstName) => Option.some(firstName)),
-        lastName: LastName.map((lastName) => Option.some(lastName)),
-        optInMarketing: OptInMarketing,
-      },
-      { requiredKeys: [] },
-    );
+    export const PartialUser = Arbitrary.make(_User.Partial)(fc);
   }
 }

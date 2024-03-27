@@ -1,4 +1,4 @@
-import { Credentials, Email, User } from "@chuz/domain";
+import { Credentials, User } from "@chuz/domain";
 import { Effect } from "@chuz/prelude";
 import { Users } from "..";
 import { Auth } from "./Auth";
@@ -6,6 +6,6 @@ import { Auth } from "./Auth";
 export interface ProviderAuth {
   exchangeCodeForSession: (
     code: Auth.Code,
-  ) => Effect.Effect<User.Session, Auth.ExchangeCodeError | Email.AlreadyInUse | Credentials.NotRecognised, Users>;
+  ) => Effect.Effect<User.Session, Auth.ExchangeCodeError | User.EmailAlreadyInUse | Credentials.NotRecognised, Users>;
   generateAuthUrl: (state: Auth.State) => Effect.Effect<string, Auth.GenerateUrlError>;
 }

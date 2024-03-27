@@ -1,4 +1,4 @@
-import { Credentials, Email, User } from "@chuz/domain";
+import { Credentials, User } from "@chuz/domain";
 import { Uuid } from "@chuz/prelude";
 import { Data, Effect, Equal, Equivalence, Layer, Match } from "@chuz/prelude";
 import * as S from "@chuz/prelude/Schema";
@@ -8,7 +8,7 @@ import { GoogleAuth } from "./GoogleAuth";
 interface Auths {
   exchangeCodeForSession: (
     provider: Auth.ProviderCode,
-  ) => Effect.Effect<User.Session, Auth.ExchangeCodeError | Email.AlreadyInUse | Credentials.NotRecognised, Users>;
+  ) => Effect.Effect<User.Session, Auth.ExchangeCodeError | User.EmailAlreadyInUse | Credentials.NotRecognised, Users>;
   generateAuthUrl: (provider: Auth.ProviderState) => Effect.Effect<string, Auth.GenerateUrlError>;
 }
 

@@ -1,4 +1,4 @@
-import { Credentials } from "@chuz/domain";
+import { EmailPassword } from "@chuz/domain";
 import { Effect, Match } from "@chuz/prelude";
 import * as S from "@chuz/prelude/Schema";
 import { Routes } from "src/Routes";
@@ -19,7 +19,7 @@ const SearchParams = S.struct({
 
 type LoginFormFields = S.Schema.Type<typeof LoginFormFields>;
 const LoginFormFields = S.union(
-  Credentials.EmailPassword.Plain,
+  EmailPassword.Plain,
   S.struct({ _tag: S.literal("Provider"), provider: S.literal("google") }),
 );
 

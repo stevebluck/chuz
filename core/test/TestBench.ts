@@ -1,4 +1,4 @@
-import { Credentials, Email, Identified, Password, Session, User } from "@chuz/domain";
+import { EmailPassword, Identified, Password, Session, User } from "@chuz/domain";
 import { Clock, Effect, Option } from "@chuz/prelude";
 import * as Core from "core/index";
 
@@ -22,7 +22,7 @@ export namespace TestBench {
       const bench = yield* _(TestBench.make);
 
       const password = yield* _(hash(userRegistration.credentials.password));
-      const credential = new Credentials.EmailPassword.Secure({
+      const credential = new EmailPassword.Secure({
         email: userRegistration.credentials.email,
         password,
       });
@@ -45,8 +45,8 @@ const userRegistration = {
   firstName: User.FirstName("Toby"),
   lastName: User.LastName("Lerone"),
   optInMarketing: User.OptInMarketing(true),
-  credentials: new Credentials.EmailPassword.Strong({
-    email: Email.unsafeFrom("lonestar@an.com"),
+  credentials: new EmailPassword.Strong({
+    email: User.Email("lonestar@an.com"),
     password: Password.Strong("password"),
   }),
 };

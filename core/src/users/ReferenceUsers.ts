@@ -1,5 +1,15 @@
-import { Credentials, Email, Id, Identified, Password, Session, Token, User } from "@chuz/domain";
-import { Duration, Effect, Either, Option, Ref, identity } from "@chuz/prelude";
+import {
+  Credentials,
+  IdentityProvider,
+  EmailPassword,
+  Id,
+  Identified,
+  Password,
+  Session,
+  Token,
+  User,
+} from "@chuz/domain";
+import { Duration, Effect, Either, Equal, Option, Ref, identity } from "@chuz/prelude";
 import { AutoIncrement } from "core/persistence/AutoIncrement";
 import { Table } from "core/persistence/Table";
 import { Tokens } from "core/tokens/Tokens";
@@ -14,7 +24,7 @@ export class ReferenceUsers implements Users {
     userTokens: Tokens<User.Id>,
     passwordResetTokens: Tokens<Password.Reset<User.User>>,
     match: Passwords.Match,
-  ) =>
+  ): Effect.Effect<Users> =>
     Effect.gen(function* (_) {
       const state = yield* _(Ref.make(new State(Table.empty(), Table.empty(), Table.empty(), AutoIncrement.empty())));
       return new ReferenceUsers(state, userTokens, passwordResetTokens, match);
@@ -27,7 +37,7 @@ export class ReferenceUsers implements Users {
     private readonly match: Passwords.Match,
   ) {}
 
-  register = (registration: User.Registration): Effect.Effect<User.Session, Email.AlreadyInUse> => {
+  register = (registration: User.Registration): Effect.Effect<User.Session, User.EmailAlreadyInUse> => {
     return Ref.modify(this.state, (s) => s.register(registration)).pipe(
       Effect.flatMap(identity),
       Effect.flatMap((user) =>
@@ -74,7 +84,7 @@ export class ReferenceUsers implements Users {
           Effect.flatMap((state) => state.findCredentialsByEmail(credential.email)),
           Effect.filterOrFail(Credentials.isProvider, () => new Credentials.NotRecognised()),
           Effect.filterOrFail(
-            (foundCredential) => Credentials.IdentityProvider.equals(foundCredential, credential),
+            (provider) => IdentityProvider.equals(provider, credential),
             () => new Credentials.NotRecognised(),
           ),
           Effect.flatMap(({ email }) => this.findByEmail(email)),
@@ -91,7 +101,7 @@ export class ReferenceUsers implements Users {
     );
   };
 
-  findByEmail = (email: Email.Email): Effect.Effect<Identified<User.User>, User.NotFound> => {
+  findByEmail = (email: User.Email): Effect.Effect<Identified<User.User>, User.NotFound> => {
     return Ref.get(this.state).pipe(
       Effect.flatMap((s) => s.findByEmail(email)),
       Effect.mapError(() => new User.NotFound()),
@@ -102,7 +112,7 @@ export class ReferenceUsers implements Users {
     return Ref.modify(this.state, (s) => s.update(id, draft)).pipe(Effect.flatMap(identity));
   };
 
-  updateEmail = (id: User.Id, email: Email.Email): Effect.Effect<User.Identified, User.UpdateEmailError> => {
+  updateEmail = (id: User.Id, email: User.Email): Effect.Effect<User.Identified, User.UpdateEmailError> => {
     return Ref.modify(this.state, (s) => s.updateEmail(id, email)).pipe(Effect.flatMap(identity));
   };
 
@@ -141,8 +151,8 @@ export class ReferenceUsers implements Users {
   };
 
   requestPasswordReset = (
-    email: Email.Email,
-  ): Effect.Effect<Token.Token<[Email.Email, User.Id]>, Credentials.NotRecognised> =>
+    email: User.Email,
+  ): Effect.Effect<Token.Token<[User.Email, User.Id]>, Credentials.NotRecognised> =>
     this.findByEmail(email).pipe(
       Effect.mapError(() => new Credentials.NotRecognised()),
       Effect.flatMap((user) =>
@@ -151,7 +161,7 @@ export class ReferenceUsers implements Users {
     );
 
   resetPassword = (
-    token: Token.Token<[Email.Email, User.Id]>,
+    token: Token.Token<[User.Email, User.Id]>,
     password: Password.Hashed,
   ): Effect.Effect<User.Identified, Token.NoSuchToken> =>
     this.passwordResetTokens.lookup(token).pipe(
@@ -170,15 +180,15 @@ export class ReferenceUsers implements Users {
 
 class State {
   constructor(
-    private readonly byEmail: Table<Email.Email, Credentials.Secure>,
+    private readonly byEmail: Table<User.Email, Credentials.Secure>,
     private readonly byCredentials: Table<Credentials.Secure, User.Id>,
     private readonly byId: Table<User.Id, User.Identified>,
     private readonly ids: AutoIncrement<User.User>,
   ) {}
 
-  register = (input: User.Registration): [Either.Either<User.Identified, Email.AlreadyInUse>, State] => {
+  register = (input: User.Registration): [Either.Either<User.Identified, User.EmailAlreadyInUse>, State] => {
     if (this.byEmail.contains(input.credentials.email)) {
-      return [Either.left(new Email.AlreadyInUse({ email: input.credentials.email })), this];
+      return [Either.left(new User.EmailAlreadyInUse({ email: input.credentials.email })), this];
     }
 
     const [id, ids] = this.ids.next();
@@ -203,11 +213,11 @@ class State {
     return this.byId.find(id);
   };
 
-  findByEmail = (email: Email.Email): Option.Option<User.Identified> => {
+  findByEmail = (email: User.Email): Option.Option<User.Identified> => {
     return this.byEmail.find(email).pipe(Option.flatMap(this.byCredentials.find), Option.flatMap(this.byId.find));
   };
 
-  findCredentialsByEmail = (email: Email.Email): Option.Option<Credentials.Secure> => {
+  findCredentialsByEmail = (email: User.Email): Option.Option<Credentials.Secure> => {
     return this.byEmail.find(email);
   };
 
@@ -230,7 +240,7 @@ class State {
     return [r, new State(this.byEmail, this.byCredentials, byId, this.ids)];
   };
 
-  updateEmail = (id: User.Id, email: Email.Email): [Either.Either<User.Identified, User.UpdateEmailError>, State] => {
+  updateEmail = (id: User.Id, email: User.Email): [Either.Either<User.Identified, User.UpdateEmailError>, State] => {
     const error = (e: User.UpdateEmailError): [Either.Either<User.Identified, User.UpdateEmailError>, State] => [
       Either.left(e),
       this,
@@ -244,15 +254,18 @@ class State {
         onNone: () => error(new User.NotFound()),
         onSome: ({ user, credential }) => {
           // Noop if the email already matches user email
-          if (Email.equals(user.value.email, email)) {
+          if (Equal.equals(user.value.email, email)) {
             return [Either.right(user), this];
             // Error if the new email is already in use
           } else if (this.byEmail.contains(email)) {
-            return error(new Email.AlreadyInUse({ email }));
+            return error(new User.EmailAlreadyInUse({ email }));
           } else {
+            // TODO: user can't update email if they are using a provider credential
+            // TODO: add Credential.Email and User.Email
+            // TODO: add test
             const updatedCredentials = Credentials.isEmailPassword(credential)
-              ? new Credentials.EmailPassword.Secure({ email, password: credential.password })
-              : new Credentials.IdentityProvider({ id: credential.id, email });
+              ? new EmailPassword.Secure({ email, password: credential.password })
+              : new IdentityProvider({ id: credential.id, email, provider: credential.provider });
 
             const byEmail = this.byEmail.deleteAt(user.value.email).upsertAt(email, updatedCredentials);
             const byCredentials = this.byCredentials.deleteAt(credential).upsertAt(updatedCredentials, id);
@@ -270,12 +283,12 @@ class State {
 
   updatePassword = (
     id: User.Id,
-    email: Email.Email,
+    email: User.Email,
     currentPassword: Password.Hashed,
     updatedPassword: Password.Hashed,
   ): State => {
-    const currentCredentials = new Credentials.EmailPassword.Secure({ email, password: currentPassword });
-    const updatedCredentials = new Credentials.EmailPassword.Secure({ email, password: updatedPassword });
+    const currentCredentials = new EmailPassword.Secure({ email, password: currentPassword });
+    const updatedCredentials = new EmailPassword.Secure({ email, password: updatedPassword });
 
     const byCredentials = this.byCredentials.deleteAt(currentCredentials).upsertAt(updatedCredentials, id);
     const byEmail = this.byEmail.upsertAt(email, updatedCredentials);
@@ -284,10 +297,10 @@ class State {
   };
 
   resetPassword = (
-    email: Email.Email,
+    email: User.Email,
     password: Password.Hashed,
   ): [Either.Either<User.Identified, Credentials.NotRecognised>, State] => {
-    const resetCredentials = new Credentials.EmailPassword.Secure({ email, password });
+    const resetCredentials = new EmailPassword.Secure({ email, password });
 
     return this.byEmail.find(email).pipe(
       Option.flatMap((credential) =>

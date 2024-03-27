@@ -1,22 +1,21 @@
-import { Credentials, Email, Password, User } from "@chuz/domain";
+import { EmailPassword, Password, User } from "@chuz/domain";
 import { Effect } from "@chuz/prelude";
 import * as S from "@chuz/prelude/Schema";
 import { Routes } from "src/Routes";
 import { AuthContent } from "src/auth/auth-content";
 import { RegisterForm } from "src/auth/register-form";
 import { useActionData } from "src/hooks/useActionData";
-import { fromCheckboxInput, optionFromEmptyString } from "src/schemas/form";
 import { Session, Users, ServerResponse } from "src/server";
 import { PasswordHasher } from "src/server/Passwords";
 import { Remix } from "src/server/Remix";
 import { ServerRequest } from "src/server/ServerRequest";
 
 const RegisterFormFields = S.struct({
-  email: Email.schema,
+  email: User.Email,
   password: Password.Strong,
-  firstName: optionFromEmptyString(User.FirstName),
-  lastName: optionFromEmptyString(User.LastName),
-  optInMarketing: fromCheckboxInput(User.OptInMarketing),
+  firstName: S.optionalTextInput(User.FirstName),
+  lastName: S.optionalTextInput(User.LastName),
+  optInMarketing: S.fromCheckboxInput(User.OptInMarketing),
 });
 
 export const action = Remix.action(
@@ -24,7 +23,7 @@ export const action = Remix.action(
     Effect.bind("hashed", ({ password }) => PasswordHasher.hash(password)),
     Effect.flatMap(({ email, hashed, firstName, lastName, optInMarketing }) =>
       Users.register({
-        credentials: new Credentials.EmailPassword.Secure({ email, password: hashed }),
+        credentials: new EmailPassword.Secure({ email, password: hashed }),
         firstName,
         lastName,
         optInMarketing,

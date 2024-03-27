@@ -3,6 +3,7 @@
   "display": "Default",
   "compilerOptions": {
     "isolatedModules": true,
+    "noUnusedLocals": true,
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "strict": true,

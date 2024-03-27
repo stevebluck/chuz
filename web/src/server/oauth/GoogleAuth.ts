@@ -1,4 +1,4 @@
-import { Credentials, User, Email } from "@chuz/domain";
+import { Credentials, User, IdentityProvider } from "@chuz/domain";
 import { Context, Effect, Layer } from "@chuz/prelude";
 import * as S from "@chuz/prelude/Schema";
 import { google } from "googleapis";
@@ -30,9 +30,11 @@ export class GoogleAuth extends Effect.Tag("@app/auth/GoogleAuth")<GoogleAuth, P
             catch: (e) => new Auth.ExchangeCodeError({ error: e }),
           }).pipe(
             Effect.flatMap(({ tokens }) => getUserInfo(tokens.access_token!)),
-            Effect.andThen(GoogleUser.fromUnknown),
             Effect.flatMap((user) =>
-              registerOrAuthenticate(new Credentials.IdentityProvider({ id: user.id, email: user.email }), user),
+              registerOrAuthenticate(
+                new IdentityProvider({ id: user.id, email: user.email, provider: "google" }),
+                user,
+              ),
             ),
             Effect.catchTags({ ParseError: (e) => new Auth.ExchangeCodeError({ error: e }) }),
           ),
@@ -53,8 +55,8 @@ export class GoogleAuth extends Effect.Tag("@app/auth/GoogleAuth")<GoogleAuth, P
 }
 
 class GoogleUser extends S.Class<GoogleUser>("GoogleUser")({
-  id: Credentials.IdentityProvider.fields.id,
-  email: Email.schema,
+  id: IdentityProvider.fields.id,
+  email: User.Email,
   verified_email: S.boolean,
   name: S.optionFromNullish(S.string, null),
   given_name: S.optionFromNullish(User.FirstName, null),
@@ -71,18 +73,20 @@ const getUserInfo = (token: string) =>
         (res) => res.json() as Promise<unknown>,
       ),
     catch: (e) => new Auth.ExchangeCodeError({ error: e }),
-  });
+  }).pipe(GoogleUser.fromUnknown);
 
 const registerOrAuthenticate = (
-  credential: Credentials.IdentityProvider,
+  credential: IdentityProvider,
   user: GoogleUser,
-): Effect.Effect<User.Session, Email.AlreadyInUse | Credentials.NotRecognised, Users> =>
-  Effect.if(Effect.match(Users.findByEmail(user.email), { onSuccess: () => true, onFailure: () => false }), {
-    onTrue: Users.authenticate(credential),
-    onFalse: Users.register({
-      credentials: credential,
-      firstName: user.given_name,
-      lastName: user.family_name,
-      optInMarketing: User.OptInMarketing(false),
-    }),
-  });
+): Effect.Effect<User.Session, User.EmailAlreadyInUse | Credentials.NotRecognised, Users> =>
+  Users.findByEmail(user.email).pipe(
+    Effect.zipRight(Users.authenticate(credential)),
+    Effect.catchAll(() =>
+      Users.register({
+        credentials: credential,
+        firstName: user.given_name,
+        lastName: user.family_name,
+        optInMarketing: User.OptInMarketing(false),
+      }),
+    ),
+  );
