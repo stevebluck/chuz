@@ -1,7 +1,7 @@
 import { Context, Effect, Layer, Secret } from "@chuz/prelude";
 import * as S from "@chuz/prelude/Schema";
 import { LayerUtils } from "../LayerUtils";
-import { Auth } from "../oauth/Auth";
+import { Auth } from "../auth/Auth";
 import { Cookie } from "./Cookie";
 
 interface Cookies {

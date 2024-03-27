@@ -3,7 +3,7 @@ import { Effect } from "@chuz/prelude";
 import { Users } from "..";
 import { Auth } from "./Auth";
 
-export interface ProviderAuth {
+export interface SocialAuth {
   exchangeCodeForSession: (
     code: Auth.Code,
   ) => Effect.Effect<User.Session, Auth.ExchangeCodeError | User.EmailAlreadyInUse | Credentials.NotRecognised, Users>;

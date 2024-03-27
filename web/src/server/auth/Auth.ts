@@ -3,7 +3,7 @@ import { Uuid } from "@chuz/prelude";
 import { Data, Effect, Equal, Equivalence, Layer, Match } from "@chuz/prelude";
 import * as S from "@chuz/prelude/Schema";
 import { Users } from "..";
-import { GoogleAuth } from "./GoogleAuth";
+import { GoogleSocialAuth } from "./GoogleSocialAuth";
 
 interface Auths {
   exchangeCodeForSession: (
@@ -12,13 +12,13 @@ interface Auths {
   generateAuthUrl: (provider: Auth.ProviderState) => Effect.Effect<string, Auth.GenerateUrlError>;
 }
 
-const providers = Layer.mergeAll(GoogleAuth.layer);
+const providers = Layer.mergeAll(GoogleSocialAuth.layer);
 
-export class Auth extends Effect.Tag("@app/OAuth")<Auth, Auths>() {
+export class Auth extends Effect.Tag("@app/Auth")<Auth, Auths>() {
   static layer = Layer.effect(
     Auth,
     Effect.gen(function* (_) {
-      const google = yield* _(GoogleAuth);
+      const google = yield* _(GoogleSocialAuth);
 
       return Auth.of({
         exchangeCodeForSession: Auth.ProviderCode.match({ google: ({ code }) => google.exchangeCodeForSession(code) }),

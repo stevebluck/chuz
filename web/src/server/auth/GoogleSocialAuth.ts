@@ -5,7 +5,7 @@ import { google } from "googleapis";
 import { Users } from "..";
 import { LayerUtils } from "../LayerUtils";
 import { Auth } from "./Auth";
-import { ProviderAuth } from "./ProviderAuth";
+import { SocialAuth } from "./SocialAuth";
 
 interface Config {
   redirectUri: string;
@@ -13,17 +13,20 @@ interface Config {
   clientSecret: string;
 }
 
-export class GoogleAuthConfig extends Context.Tag("@app/OAuth/GoogleAuthConfig")<GoogleAuthConfig, Config>() {
+export class GoogleSocialAuthConfig extends Context.Tag("@app/auth/GoogleSocialAuthConfig")<
+  GoogleSocialAuthConfig,
+  Config
+>() {
   static layer = LayerUtils.config(this);
 }
 
-export class GoogleAuth extends Effect.Tag("@app/auth/GoogleAuth")<GoogleAuth, ProviderAuth>() {
+export class GoogleSocialAuth extends Effect.Tag("@app/auth/GoogleSocialAuth")<GoogleSocialAuth, SocialAuth>() {
   static layer = Layer.effect(
-    GoogleAuth,
-    Effect.map(GoogleAuthConfig, (config) => {
+    GoogleSocialAuth,
+    Effect.map(GoogleSocialAuthConfig, (config) => {
       const client = new google.auth.OAuth2(config.clientId, config.clientSecret, config.redirectUri);
 
-      return GoogleAuth.of({
+      return GoogleSocialAuth.of({
         exchangeCodeForSession: (code) =>
           Effect.tryPromise({
             try: () => client.getToken(code),

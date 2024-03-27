@@ -31,6 +31,13 @@
 - user can unlink a social account if they have at least one other credential
 
 ```ts
+type UserCredentialItems = Data.TaggedEnum<{
+  Social: { Social: NonEmptyArray<Social> };
+  EmailPassword: { Email: Email; Social: Array<Social> };
+}>;
+
+type GetCredentialItems = (id: User.Id) => IO<UserCredentials>;
+
 type SetEmailPasswordCredential = (
   id: User.Id,
   credential: Credential.EmailPassword,

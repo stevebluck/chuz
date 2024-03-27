@@ -8,8 +8,8 @@ import { useActionData } from "src/hooks/useActionData";
 import { Users, Session, ServerResponse } from "src/server";
 import { Remix } from "src/server/Remix";
 import { ServerRequest } from "src/server/ServerRequest";
+import { Auth } from "src/server/auth/Auth";
 import { AppCookies } from "src/server/cookies/AppCookies";
-import { Auth } from "src/server/oauth/Auth";
 
 const SearchParams = S.struct({
   _tag: S.literal("google"),
