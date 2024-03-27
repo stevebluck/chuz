@@ -1,7 +1,7 @@
 import { Credentials, User } from "@chuz/domain";
 import { Uuid } from "@chuz/prelude";
 import * as S from "@effect/schema/Schema";
-import { Data, Effect, Equal, Equivalence } from "effect";
+import { Data, Effect, Equal, Equivalence, ReadonlyArray, String } from "effect";
 import { Users } from "../Users";
 
 export interface SocialAuths {
@@ -24,10 +24,14 @@ export const State = S.NonEmpty.pipe(S.brand("AuthState"));
 export const makeState = (intent: "login" | "register") =>
   Uuid.make.pipe(
     Effect.map((uuid) => [intent, uuid].join("+")),
-    Effect.map(S.decodeSync(State)),
+    Effect.map(State),
   );
 
-export const intentFromState = (state: State) => Effect.sync(() => state.split("+")[0] as "login" | "register");
+export const intentFromState = (state: State) =>
+  Effect.sync(() => String.split(state, "+")).pipe(
+    Effect.flatMap(ReadonlyArray.head),
+    Effect.mapError(() => new StateDoesNotMatch()),
+  );
 
 export const stateEquals: Equivalence.Equivalence<S.Schema.Type<typeof State>> = Equal.equals;
 

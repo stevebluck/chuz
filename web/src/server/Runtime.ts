@@ -27,8 +27,8 @@ const GoogleAuthConfigLive = GoogleAuthConfig.layer({
 
 const PostgresConfigLive = PostgresConfig.layer({ connectionString: Config.string("DATABASE_URL") });
 
-const PasswordHasherConfigLive = Passwords.HashConfig.layer({ N: Config.succeed(16384) });
-const PasswordHasherConfigDev = Passwords.HashConfig.layer({ N: Config.succeed(4) });
+const PasswordHasherConfigLive = Passwords.HasherConfig.layer({ N: Config.succeed(16384) });
+const PasswordHasherConfigDev = Passwords.HasherConfig.layer({ N: Config.succeed(4) });
 
 const AppCookiesConfigLive = AppCookiesConfig.layer({
   secure: IsProduction,
@@ -45,13 +45,13 @@ const LogLevelLive = Layer.unwrapEffect(
 
 const Configs = Layer.mergeAll(AppCookiesConfigLive, GoogleAuthConfigLive, PasswordHasherConfigLive, LogLevelLive);
 
-const Dev = Layer.mergeAll(Users.dev, SocialAuth.layer, AppCookies.layer, Passwords.Hash.layer).pipe(
+const Dev = Layer.mergeAll(Users.dev, SocialAuth.layer, AppCookies.layer, Passwords.Hasher.layer).pipe(
   Layer.provide(Configs),
   Layer.provide(PasswordHasherConfigDev),
   Layer.provide(DevTools.layer()),
 );
 
-const Live = Layer.mergeAll(Users.live, SocialAuth.layer, AppCookies.layer, Passwords.Hash.layer).pipe(
+const Live = Layer.mergeAll(Users.live, SocialAuth.layer, AppCookies.layer, Passwords.Hasher.layer).pipe(
   Layer.provide(Configs),
   Layer.provide(PostgresConfigLive),
 );
@@ -107,7 +107,7 @@ export const middleware = <E, R>(
     );
   }).pipe(
     Effect.catchTags({
-      CookieError: (e) => ServerResponse.ServerError(`Something went wrong with setting a cookie: ${e.reason}`),
+      CookieError: (e) => ServerResponse.ServerError(e.message),
     }),
     Effect.catchTags({ BodyError: (e) => Effect.die(e) }),
     Effect.tapErrorCause(Effect.logError),

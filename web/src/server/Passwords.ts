@@ -3,14 +3,14 @@ import { ScryptOptions } from "crypto";
 import { Context, Effect, Layer } from "effect";
 import { LayerUtils } from "./LayerUtils";
 
-export class HashConfig extends Context.Tag("@app/Passwords/HashConfig")<HashConfig, ScryptOptions>() {
+export class HasherConfig extends Context.Tag("@app/Passwords/HasherConfig")<HasherConfig, ScryptOptions>() {
   static layer = LayerUtils.config(this);
 }
 
-export class Hash extends Effect.Tag("@app/Passwords/Hash")<Hash, { hash: Core.Passwords.Hash }>() {
+export class Hasher extends Effect.Tag("@app/Passwords/Hasher")<Hasher, { hash: Core.Passwords.Hash }>() {
   static layer = Layer.effect(
-    Hash,
-    HashConfig.pipe(
+    Hasher,
+    HasherConfig.pipe(
       Effect.map((config) => Core.Passwords.hasher(config)),
       Effect.map((hash) => ({ hash })),
     ),

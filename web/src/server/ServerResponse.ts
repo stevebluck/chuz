@@ -12,7 +12,8 @@ export namespace ServerResponse {
 
   export const Unauthorized = Http.response.json(null, { status: 401 });
 
-  export const ServerError = (error: string) => Http.response.json({ error }, { status: 500 });
+  export const ServerError = (message?: string) =>
+    Http.response.json({ message: message || "Unexpected server error" }, { status: 500 });
 
   export const FormError = (error: ParseError) => {
     const res =

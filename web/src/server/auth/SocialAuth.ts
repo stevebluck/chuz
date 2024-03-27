@@ -10,17 +10,13 @@ export class SocialAuth extends Effect.Tag("@app/Social")<SocialAuth, SocialAuth
     Effect.gen(function* (_) {
       const google = yield* _(GoogleAuth);
 
-      const matchProviderCode = Match.typeTags<ProviderCode>()({
-        google: google.exchangeCodeForSession,
-      });
-
-      const matchProviderState = Match.typeTags<ProviderState>()({
-        google: google.generateAuthUrl,
-      });
-
       return SocialAuth.of({
-        exchangeCodeForSession: (provider) => matchProviderCode(provider).pipe(Effect.tapErrorCause(Effect.logError)),
-        generateAuthUrl: (state) => matchProviderState(state).pipe(Effect.tapErrorCause(Effect.logError)),
+        exchangeCodeForSession: Match.typeTags<ProviderCode>()({
+          google: google.exchangeCodeForSession,
+        }),
+        generateAuthUrl: Match.typeTags<ProviderState>()({
+          google: google.generateAuthUrl,
+        }),
       });
     }),
   ).pipe(Layer.provide(providers));

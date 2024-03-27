@@ -2,7 +2,7 @@ import * as Core from "@chuz/core";
 import { Identified, Password } from "@chuz/domain";
 import { Clock, Effect, Layer } from "effect";
 import { Database } from "./Database";
-import { HashConfig } from "./Passwords";
+import { HasherConfig } from "./Passwords";
 
 export class Users extends Effect.Tag("@app/Users")<Users, Core.Users>() {
   static dev = Layer.effect(
@@ -11,7 +11,7 @@ export class Users extends Effect.Tag("@app/Users")<Users, Core.Users>() {
       const clock = Clock.make();
       const userTokens = yield* _(Core.ReferenceTokens.create(clock, Identified.equals));
       const passwordResetTokens = yield* _(Core.ReferenceTokens.create(clock, Password.resetEquals));
-      const passwordsConfig = yield* _(HashConfig);
+      const passwordsConfig = yield* _(HasherConfig);
 
       return yield* _(
         Core.ReferenceUsers.make(userTokens, passwordResetTokens, Core.Passwords.matcher(passwordsConfig)),

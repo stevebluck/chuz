@@ -28,8 +28,8 @@ export const CheckboxInput: S.Schema<boolean, string | undefined> = S.transform(
 );
 
 export const OptionStringFromEmptyString: S.Schema<Option.Option<string>, string> = S.transform(
-  S.string,
-  S.option(S.string),
+  S.Trim,
+  S.option(S.Trim),
   (a) => (a.length > 0 ? { _tag: "Some" as const, value: a } : { _tag: "None" as const }),
   (a) => (a._tag === "Some" ? a.value : ""),
 );

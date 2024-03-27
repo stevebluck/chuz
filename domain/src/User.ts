@@ -39,6 +39,7 @@ export const OptInMarketing = S.boolean.pipe(S.brand("OptInMarketing"));
 
 export const Email = EmailAddress.pipe(S.brand("UserEmail")).annotations({
   arbitrary: () => (fc) => fc.emailAddress().map(Email),
+  message: () => "Please enter a valid email address",
 });
 
 export const FirstName = String100.pipe(S.brand("FirstName"));

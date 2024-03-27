@@ -7,7 +7,7 @@ import { AuthContent } from "src/auth/auth-content";
 import { RegisterForm } from "src/auth/register-form";
 import { useActionData } from "src/hooks/useActionData";
 import { Session, Users, ServerResponse } from "src/server";
-import { Hash } from "src/server/Passwords";
+import * as Passwords from "src/server/Passwords";
 import { Remix } from "src/server/Remix";
 import { ServerRequest } from "src/server/ServerRequest";
 import * as Auth from "src/server/auth/Auth";
@@ -26,7 +26,7 @@ const RegisterFormFields = S.union(
   }),
   S.struct({
     _tag: S.literal("Provider"),
-    provider: S.literal("google"),
+    provider: Auth.ProviderName,
   }),
 );
 
@@ -44,7 +44,7 @@ export const action = Remix.action(
               ),
             ),
           Strong: ({ email, firstName, lastName, optInMarketing, password }) =>
-            Hash.hash(password).pipe(
+            Passwords.Hasher.hash(password).pipe(
               Effect.flatMap((hashed) =>
                 Users.register({
                   credentials: new EmailPassword.Secure({ email, password: hashed }),
@@ -60,10 +60,10 @@ export const action = Remix.action(
       ),
       Effect.catchTags({
         AlreadyAuthenticated: () => ServerResponse.Redirect(Routes.myAccount),
-        CookieError: (e) => ServerResponse.ServerError(e.message),
-        GenerateUrlError: () => ServerResponse.ServerError("Identity provider issue"),
         ParseError: ServerResponse.FormError,
         EmailAlreadyInUse: ServerResponse.BadRequest,
+        CookieError: () => ServerResponse.ServerError(),
+        GenerateUrlError: () => ServerResponse.ServerError(),
       }),
     ),
   ),

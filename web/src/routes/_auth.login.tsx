@@ -17,7 +17,7 @@ const LoginFormFields = S.union(
   EmailPassword.Plain,
   S.struct({
     _tag: S.literal("Provider"),
-    provider: S.literal("google"),
+    provider: Auth.ProviderName,
   }),
 );
 
@@ -43,8 +43,8 @@ export const action = Remix.action(
       ),
       Effect.catchTags({
         AlreadyAuthenticated: () => ServerResponse.Redirect(Routes.myAccount),
-        CookieError: (e) => ServerResponse.ServerError(e.message),
-        GenerateUrlError: () => ServerResponse.ServerError("Identity provider issue"),
+        CookieError: () => ServerResponse.ServerError(),
+        GenerateUrlError: () => ServerResponse.ServerError(),
         ParseError: ServerResponse.FormError,
         CredentialsNotRecognised: ServerResponse.BadRequest,
       }),
