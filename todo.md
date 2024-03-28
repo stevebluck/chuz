@@ -8,10 +8,10 @@
 - [x] Add Add Response union
 - [x] Add oauth to register page
 - [] Add OAuth cancelled message
-- [] Add metrics for errors and other things?
 - [] Add returnTo logic for auth
 - [] Add Apple login
 - [] Add 2fa login
+- [] Add metrics for errors and other things?
 
 // TODO: handle when the user cancels:
 // ?\_tag=google&error=access_denied&state=register%2Bd7c2f4f3-e91b-4376-b4e0-ec236688fd5a

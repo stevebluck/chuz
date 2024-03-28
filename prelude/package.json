@@ -13,9 +13,5 @@
     "@types/node": "^20.11.30",
     "fast-check": "^3.16.0",
     "typescript": "^5.4.2"
-  },
-  "dependencies": {
-    "effect": "*",
-    "@effect/schema": "*"
   }
 }
