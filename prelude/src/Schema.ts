@@ -1,6 +1,8 @@
 import * as S from "@effect/schema/Schema";
 import { Brand, Option, Predicate } from "effect";
 
+export * from "@effect/schema/Schema";
+
 export const String100: S.Schema<string & Brand.Brand<"String100">, string> = S.Trim.pipe(
   S.minLength(1),
   S.maxLength(100),

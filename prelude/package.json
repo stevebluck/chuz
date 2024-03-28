@@ -4,6 +4,7 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "type": "module",
+  "sideEffects": false,
   "scripts": {
     "update:latest": "pnpm update --latest",
     "typecheck": "tsc --noEmit"

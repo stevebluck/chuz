@@ -1,5 +1,5 @@
 import { EmailPassword, Password, User } from "@chuz/domain";
-import { fromCheckboxInput, optionalTextInput } from "@chuz/prelude";
+import { fromCheckboxInput, optionalTextInput } from "@chuz/prelude/Schema";
 import * as S from "@effect/schema/Schema";
 import { Effect, Match } from "effect";
 import { Routes } from "src/Routes";

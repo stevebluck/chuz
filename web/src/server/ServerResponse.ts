@@ -1,14 +1,14 @@
 import * as Http from "@effect/platform/HttpServer";
 import { formatError } from "@effect/schema/ArrayFormatter";
 import { ParseError } from "@effect/schema/ParseResult";
-import { Effect, Predicate, ReadonlyArray, ReadonlyRecord } from "effect";
+import { Predicate, ReadonlyArray, ReadonlyRecord } from "effect";
 
 export namespace ServerResponse {
   export const Ok = <A>(data: A | void) => Http.response.json(Predicate.isUndefined(data) ? null : data);
   export const Unit = () => Http.response.json(null);
 
   export const Redirect = (location: string) =>
-    Http.response.json(null, { status: 302 }).pipe(Effect.flatMap(Http.response.setHeader("Location", location)));
+    Http.response.empty({ status: 302, headers: Http.headers.fromInput({ location }) });
 
   export const Unauthorized = Http.response.json(null, { status: 401 });
 

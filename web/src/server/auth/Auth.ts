@@ -1,5 +1,5 @@
 import { Credentials, User } from "@chuz/domain";
-import { Uuid } from "@chuz/prelude";
+import { makeUuid } from "@chuz/prelude";
 import * as S from "@effect/schema/Schema";
 import { Data, Effect, Equal, Equivalence, ReadonlyArray, String } from "effect";
 import { Users } from "../Users";
@@ -22,7 +22,7 @@ export const Code = S.string.pipe(S.brand("AuthCode"));
 
 export const State = S.NonEmpty.pipe(S.brand("AuthState"));
 export const makeState = (intent: "login" | "register") =>
-  Uuid.make.pipe(
+  makeUuid.pipe(
     Effect.map((uuid) => [intent, uuid].join("+")),
     Effect.map(State),
   );

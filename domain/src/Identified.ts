@@ -1,4 +1,4 @@
-import { Phantom, Uuid } from "@chuz/prelude";
+import { Phantom, makeUuid } from "@chuz/prelude";
 import { Data, Effect, Equivalence } from "effect";
 
 export type Id<A> = Phantom<A, string>;
@@ -10,5 +10,5 @@ export class Identified<A> extends Data.Class<{
 }> {
   static equals = Equivalence.make<Id<any>>((self, that) => self.value === that.value);
 
-  static makeRandomId = <A>(): Effect.Effect<Id<A>> => Effect.map(Uuid.make, (uuid) => Id<A>(uuid));
+  static makeRandomId = <A>(): Effect.Effect<Id<A>> => Effect.map(makeUuid, (uuid) => Id<A>(uuid));
 }

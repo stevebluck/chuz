@@ -51,3 +51,25 @@ export const Remix = await make({
   requestLayer: RequestLayer,
   middleware,
 });
+
+// const Login = Http.router
+//   .schemaSearchParams(S.struct({ a: S.string }))
+//   .pipe(Effect.flatMap((a) => Http.response.json({})));
+
+// const LoginRoute = Http.router.makeRoute("GET", "/login", Login);
+
+// const app =
+//   (route: Http.router.Route<unknown, unknown>) => (request: Request, params: Record<string, string | undefined>) =>
+//     route.handler.pipe(
+//       Effect.provideService(Http.router.RouteContext, {
+//         [RouteContextTypeId]: RouteContextTypeId,
+//         route: LoginRoute,
+//         params,
+//         searchParams: {},
+//       }),
+//       Effect.provideService(Http.request.ServerRequest, Http.request.fromWeb(request)),
+//     );
+
+// Http.router.RouteContext.pipe(Effect.map((a) => a.route.handler));
+
+// // const a = Effect.runPromise(test);

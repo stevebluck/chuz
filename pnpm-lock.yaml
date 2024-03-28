@@ -178,9 +178,6 @@ importers:
       morgan:
         specifier: ^1.10.0
         version: 1.10.0
-      next-themes:
-        specifier: ^0.3.0
-        version: 0.3.0(react-dom@18.2.0)(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -227,6 +224,9 @@ importers:
       autoprefixer:
         specifier: ^10.4.18
         version: 10.4.19(postcss@8.4.38)
+      babel-plugin-annotate-pure-calls:
+        specifier: ^0.4.0
+        version: 0.4.0(@babel/core@7.24.3)
       cross-env:
         specifier: ^7.0.3
         version: 7.0.3
@@ -242,6 +242,9 @@ importers:
       vite-env-only:
         specifier: ^2.2.0
         version: 2.2.0
+      vite-plugin-babel:
+        specifier: ^1.2.0
+        version: 1.2.0(@babel/core@7.24.3)(vite@5.2.6)
       vite-plugin-cjs-interop:
         specifier: ^2.1.0
         version: 2.1.0
@@ -2743,6 +2746,14 @@ packages:
     dependencies:
       possible-typed-array-names: 1.0.0
 
+  /babel-plugin-annotate-pure-calls@0.4.0(@babel/core@7.24.3):
+    resolution: {integrity: sha512-oi4M/PWUJOU9ZyRGoPTfPMqdyMp06jbJAomd3RcyYuzUtBOddv98BqLm96Lucpi2QFoQHkdGQt0ACvw7VzVEQA==}
+    peerDependencies:
+      '@babel/core': ^6.0.0-0 || 7.x
+    dependencies:
+      '@babel/core': 7.24.3
+    dev: true
+
   /bail@2.0.2:
     resolution: {integrity: sha512-0xO6mYd7JB2YesxDKplafRpsiOzPt9V02ddPCLbY1xYGPOX24NTyN50qnUxgCPcSoYMhKpAuBTjQoRZCAkUDRw==}
     dev: true
@@ -5163,16 +5174,6 @@ packages:
     resolution: {integrity: sha512-+EUsqGPLsM+j/zdChZjsnX51g4XrHFOIXwfnCVPGlQk/k5giakcKsuxCObBRu6DSm9opw/O6slWbJdghQM4bBg==}
     engines: {node: '>= 0.6'}
 
-  /next-themes@0.3.0(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-/QHIrsYpd6Kfk7xakK4svpDI5mmXP0gfvCoJdGpZQ2TOrQZmsW0QxjaiLn8wbIKjtm4BTSqLoix4lxYYOnLJ/w==}
-    peerDependencies:
-      react: ^16.8 || ^17 || ^18
-      react-dom: ^16.8 || ^17 || ^18
-    dependencies:
-      react: 18.2.0
-      react-dom: 18.2.0(react@18.2.0)
-    dev: false
-
   /node-addon-api@7.1.0:
     resolution: {integrity: sha512-mNcltoe1R8o7STTegSOHdnJNN7s5EUvhoS7ShnTHDyOSd+8H+UdWODq6qSv67PjC8Zc5JRT8+oLAMCr0SIXw7g==}
     engines: {node: ^16 || ^18 || >= 20}
@@ -7038,6 +7039,16 @@ packages:
       - sugarss
       - supports-color
       - terser
+    dev: true
+
+  /vite-plugin-babel@1.2.0(@babel/core@7.24.3)(vite@5.2.6):
+    resolution: {integrity: sha512-ltAnq535Ubf9sDbVCkztAdkwx5aQbNrwPFs+iZTJ5FaAhTdxjqmLGpxsAaRfJWEKBJ/kFf9KwMoTdArm0IRUUw==}
+    peerDependencies:
+      '@babel/core': ^7.0.0
+      vite: ^2.7.0 || ^3.0.0 || ^4.0.0 || ^5.0.0
+    dependencies:
+      '@babel/core': 7.24.3
+      vite: 5.2.6(@types/node@20.11.30)(terser@5.29.2)
     dev: true
 
   /vite-plugin-cjs-interop@2.1.0:

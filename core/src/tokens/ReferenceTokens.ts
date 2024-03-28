@@ -1,5 +1,5 @@
 import { Token } from "@chuz/domain";
-import { Uuid, Timestamp } from "@chuz/prelude";
+import { Timestamp, makeUuid } from "@chuz/prelude";
 import { addMilliseconds, isAfter } from "date-fns";
 import { Clock, Effect, Equivalence, Option, Ref } from "effect";
 import { Table } from "../persistence/Table";
@@ -16,7 +16,7 @@ export class ReferenceTokens<A> implements Tokens<A> {
 
   issue = (value: A, timeToLive: Token.TimeToLive): Effect.Effect<Token.Token<A>> => {
     return Effect.gen(this, function* (_) {
-      const uuid = yield* _(Uuid.make);
+      const uuid = yield* _(makeUuid);
       const token = Token.make<A>(uuid);
       const time = yield* _(this.clock.currentTimeMillis);
       const expiresAt = new Timestamp({ value: addMilliseconds(time, timeToLive.duration) });

@@ -1,4 +1,4 @@
-import { String100, EmailAddress } from "@chuz/prelude";
+import { String100, EmailAddress } from "@chuz/prelude/Schema";
 import * as S from "@effect/schema/Schema";
 import { Data, Option } from "effect";
 import * as Domain from ".";
