@@ -2,10 +2,9 @@ import { Effect } from "@chuz/prelude";
 import { S } from "@chuz/prelude";
 import { Outlet } from "@remix-run/react";
 import { Routes } from "src/Routes";
-import { AuthLayout } from "src/auth/auth-layout";
+import { AuthLayout } from "src/auth/AuthLayout";
 import { Http, Session } from "src/server";
 import * as Remix from "src/server/Remix";
-import { ServerRequest } from "src/server/ServerRequest";
 import * as Auth from "src/server/auth/Auth";
 import { SocialAuth } from "src/server/auth/SocialAuth";
 import { AppCookies } from "src/server/cookies/AppCookies";
@@ -20,7 +19,7 @@ export const loader = Remix.loader(
   Session.guest.pipe(
     Effect.flatMap(() => AppCookies.authState),
     Effect.flatMap((stateCookie) =>
-      Effect.all([stateCookie.read, ServerRequest.searchParams(SearchParams)]).pipe(
+      Effect.all([stateCookie.read, Http.request.searchParams(SearchParams)]).pipe(
         Effect.filterOrFail(
           ([state, search]) => Auth.stateEquals(state, search.state),
           () => new Auth.StateDoesNotMatch(),
@@ -30,8 +29,8 @@ export const loader = Remix.loader(
         Effect.flatMap(Session.mint),
         Effect.flatMap(() => Http.response.redirect(Routes.myAccount)),
         Effect.catchTags({
-          CookieNotPresent: () => Http.response.Unit,
-          SearchParamsError: () => Http.response.Unit,
+          CookieNotPresent: () => Http.response.unit,
+          SearchParamsError: () => Http.response.unit,
           EmailAlreadyInUse: Http.response.badRequest,
           CredentialsNotRecognised: Http.response.badRequest,
           ExchangeCodeError: Http.response.serverError,

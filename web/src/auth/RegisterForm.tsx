@@ -5,7 +5,7 @@ import { Routes } from "web/Routes";
 import { Button } from "web/components/ui/button";
 import { Input } from "web/components/ui/input";
 import { Label } from "web/components/ui/label";
-import { AuthSocialButtons } from "./auth-social-buttons";
+import { AuthSocialButtons } from "./SocialButtons";
 
 export function RegisterForm({ error }: { error: Record<string, string[]> }) {
   const isSubmitting = false;

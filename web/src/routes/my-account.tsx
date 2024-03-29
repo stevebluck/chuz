@@ -6,7 +6,7 @@ import * as Remix from "src/server/Remix";
 
 export const loader = Remix.loader(
   Session.authenticated.pipe(
-    Effect.zipRight(Http.response.Unit),
+    Effect.zipRight(Http.response.unit),
     Effect.catchTag("Unauthorised", () => Http.response.redirect(Routes.login)),
   ),
 );

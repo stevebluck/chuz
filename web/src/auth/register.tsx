@@ -2,7 +2,7 @@ import { Link } from "@remix-run/react";
 import { Routes } from "src/Routes";
 import { buttonVariants } from "src/components/ui/button";
 import { cn } from "src/styles/classnames";
-import { RegisterForm } from "./register-form";
+import { RegisterForm } from "./RegisterForm";
 
 export const Register = ({ error }: { error: Record<string, string[]> }) => (
   <div>

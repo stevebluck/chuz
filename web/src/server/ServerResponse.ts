@@ -1,19 +1,20 @@
 import { Effect, PR, Predicate, ReadonlyArray, ReadonlyRecord } from "@chuz/prelude";
 import { ArrayFormatter } from "@chuz/prelude/src/Schema";
 import * as Http from "@effect/platform/HttpServer";
+import { InvalidFormData } from "./ServerRequest";
 
 type ServerResponseEffect = Effect.Effect<Http.response.ServerResponse, Http.body.BodyError>;
 
-export const Unit: ServerResponseEffect = Http.response.json(null);
+export const unit: ServerResponseEffect = Http.response.json(null);
 
-export const Unauthorized: ServerResponseEffect = Http.response.json(null, { status: 401 });
+export const unauthorized: ServerResponseEffect = Http.response.json(null, { status: 401 });
 
 export const ok = <A>(data: A): ServerResponseEffect => Http.response.json(Predicate.isUndefined(data) ? null : data);
 
 export const redirect = (location: string): ServerResponseEffect =>
   Http.response.empty({ status: 302, headers: Http.headers.fromInput({ location }) });
 
-export const validationError = (error: PR.ParseError): ServerResponseEffect =>
+export const validationError = ({ error }: InvalidFormData): ServerResponseEffect =>
   Http.response.json(
     { _tag: "FormError", error: ReadonlyRecord.map(formatParseError(error), (a) => a[0]) },
     { status: 400 },

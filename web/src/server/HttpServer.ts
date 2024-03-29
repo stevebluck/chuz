@@ -1,3 +1,4 @@
+import * as request from "./ServerRequest";
 import * as response from "./ServerResponse";
 
-export { response };
+export { response, request };

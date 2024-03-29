@@ -8,6 +8,8 @@ export const Routes = {
   login: Route("/login"),
   register: Route("/register"),
   authenticate: Route("/authenticate"),
+  forgotPassword: Route("/forgot-password"),
+  resetPassword: (token: string) => Route(`/reset-password?token=${token}`),
   myAccount: Route("/my-account"),
   logout: Route("/logout"),
   setTheme: Route("/action/set-theme"),

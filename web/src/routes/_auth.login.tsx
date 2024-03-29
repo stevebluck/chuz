@@ -2,12 +2,11 @@ import { EmailPassword } from "@chuz/domain";
 import { Effect, Match } from "@chuz/prelude";
 import { S } from "@chuz/prelude";
 import { Routes } from "src/Routes";
-import { AuthContent } from "src/auth/auth-content";
-import { LoginForm } from "src/auth/login-form";
+import { AuthContent } from "src/auth/AuthContent";
+import { LoginForm } from "src/auth/LoginForm";
 import { useActionData } from "src/hooks/useActionData";
 import { Users, Session, Http } from "src/server";
 import * as Remix from "src/server/Remix";
-import { ServerRequest } from "src/server/ServerRequest";
 import * as Auth from "src/server/auth/Auth";
 import { SocialAuth } from "src/server/auth/SocialAuth";
 import { AppCookies } from "src/server/cookies/AppCookies";
@@ -24,7 +23,7 @@ const LoginFormFields = S.union(
 export const action = Remix.action(
   Effect.flatMap(AppCookies.authState, (stateCookie) =>
     Session.guest.pipe(
-      Effect.zipRight(ServerRequest.formData(LoginFormFields)),
+      Effect.zipRight(Http.request.formData(LoginFormFields)),
       Effect.flatMap(
         Match.typeTags<LoginFormFields>()({
           Provider: ({ provider }) =>
@@ -42,10 +41,10 @@ export const action = Remix.action(
         }),
       ),
       Effect.catchTags({
-        AlreadyAuthenticated: () => Http.response.redirect(Routes.myAccount),
+        AlreadyAuthenticated: () => Http.response.unauthorized,
         CookieError: Http.response.serverError,
         GenerateUrlError: Http.response.serverError,
-        ParseError: Http.response.validationError,
+        InvalidFormData: Http.response.validationError,
         CredentialsNotRecognised: Http.response.badRequest,
       }),
     ),

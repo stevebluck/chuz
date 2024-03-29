@@ -1,13 +1,13 @@
 import { EmailPassword, Password, User } from "@chuz/domain";
 import { Effect, Match, S } from "@chuz/prelude";
 import { Routes } from "src/Routes";
-import { AuthContent } from "src/auth/auth-content";
-import { RegisterForm } from "src/auth/register-form";
+import { AuthContent } from "src/auth/AuthContent";
+import { RegisterForm } from "src/auth/RegisterForm";
+import { SocialProvider } from "src/auth/SocialProviders";
 import { useActionData } from "src/hooks/useActionData";
 import { Session, Users, Http } from "src/server";
 import * as Passwords from "src/server/Passwords";
 import * as Remix from "src/server/Remix";
-import { ServerRequest } from "src/server/ServerRequest";
 import * as Auth from "src/server/auth/Auth";
 import { SocialAuth } from "src/server/auth/SocialAuth";
 import { AppCookies } from "src/server/cookies/AppCookies";
@@ -22,16 +22,13 @@ const RegisterFormFields = S.union(
     lastName: S.optionalTextInput(User.LastName),
     optInMarketing: S.fromCheckboxInput(User.OptInMarketing),
   }),
-  S.struct({
-    _tag: S.literal("Provider"),
-    provider: Auth.ProviderName,
-  }),
+  SocialProvider,
 );
 
 export const action = Remix.action(
   Effect.flatMap(AppCookies.authState, (stateCookie) =>
     Session.guest.pipe(
-      Effect.zipRight(ServerRequest.formData(RegisterFormFields)),
+      Effect.zipRight(Http.request.formData(RegisterFormFields)),
       Effect.flatMap(
         Match.typeTags<RegisterFormFields>()({
           Provider: ({ provider }) =>
@@ -57,8 +54,8 @@ export const action = Remix.action(
         }),
       ),
       Effect.catchTags({
-        AlreadyAuthenticated: () => Http.response.redirect(Routes.myAccount),
-        ParseError: Http.response.validationError,
+        AlreadyAuthenticated: () => Http.response.unauthorized,
+        InvalidFormData: Http.response.validationError,
         EmailAlreadyInUse: Http.response.badRequest,
         CookieError: Http.response.serverError,
         GenerateUrlError: Http.response.serverError,

@@ -3,6 +3,7 @@ import { Effect, Layer, ManagedRuntime, Context, Ref, Scope } from "@chuz/prelud
 import { HttpServer } from "@effect/platform";
 import * as NodeFileSystem from "@effect/platform-node/NodeFileSystem";
 import * as FileSystem from "@effect/platform/FileSystem";
+import { BodyError } from "@effect/platform/Http/Body";
 import * as Path from "@effect/platform/Path";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { Params as RemixParams } from "@remix-run/react";
@@ -24,7 +25,7 @@ type RequestEnv = HttpServer.request.ServerRequest | FileSystem.FileSystem | Par
 export interface RemixHandler<E, R>
   extends Effect.Effect<
     HttpServer.response.ServerResponse,
-    E | HttpServer.response.ServerResponse,
+    HttpServer.response.ServerResponse | BodyError,
     R | AppEnv | RequestEnv
   > {}
 

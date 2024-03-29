@@ -1,10 +1,10 @@
-import { Form } from "@remix-run/react";
+import { Form, Link } from "@remix-run/react";
 import { LoaderIcon } from "lucide-react";
 import { Routes } from "web/Routes";
 import { Button } from "web/components/ui/button";
 import { Input } from "web/components/ui/input";
 import { Label } from "web/components/ui/label";
-import { AuthSocialButtons } from "./auth-social-buttons";
+import { AuthSocialButtons } from "./SocialButtons";
 
 export function LoginForm() {
   const isSubmitting = false;
@@ -30,6 +30,9 @@ export function LoginForm() {
           <div className="grid gap-2">
             <Label htmlFor="password">Password</Label>
             <Input id="password" type="password" name="password" autoCorrect="off" disabled={isSubmitting} />
+            <Link to={Routes.forgotPassword} className="ml-auto inline-block text-sm underline">
+              Forgot your password?
+            </Link>
           </div>
           <Button disabled={isSubmitting} type="submit">
             {isSubmitting && <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />}
