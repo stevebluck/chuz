@@ -7,7 +7,7 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit",
+    "check": "tsc --noEmit",
     "codegen": "kysely-codegen",
     "update:latest": "pnpm update --latest"
   },

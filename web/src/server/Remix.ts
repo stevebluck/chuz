@@ -1,75 +1,92 @@
+import { Token, User } from "@chuz/domain";
+import { Effect, Layer, ManagedRuntime, Context, Ref, Scope } from "@chuz/prelude";
+import { HttpServer } from "@effect/platform";
 import * as NodeFileSystem from "@effect/platform-node/NodeFileSystem";
 import * as FileSystem from "@effect/platform/FileSystem";
-import { BodyError } from "@effect/platform/Http/Body";
-import { ServerResponse } from "@effect/platform/Http/ServerResponse";
-import * as Http from "@effect/platform/HttpServer";
 import * as Path from "@effect/platform/Path";
-import { ActionFunctionArgs, LoaderFunctionArgs, TypedResponse } from "@remix-run/node";
-import { Effect, Scope, Layer, ManagedRuntime, ConfigError } from "effect";
-import { NoInfer } from "effect/Types";
-import { AppLayer, RequestLayer, middleware } from "./Runtime";
+import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
+import { Params as RemixParams } from "@remix-run/react";
+import { RequestSession, Session, Users } from ".";
+import { AppLayer } from "./AppLayer";
+import { AppCookies } from "./cookies/AppCookies";
 
-type RequestLayer<R> = R | Http.request.ServerRequest | FileSystem.FileSystem | Path.Path | Scope.Scope;
+const runtime = ManagedRuntime.make(Layer.mergeAll(AppLayer, NodeFileSystem.layer, Path.layer));
 
-type RemixLoader<A> = (args: LoaderFunctionArgs) => Promise<TypedResponse<A>>;
-
-type RemixAction<A> = (args: ActionFunctionArgs) => Promise<TypedResponse<A>>;
-
-interface RemixRuntime<L, R> {
-  loader: <A>(self: Effect.Effect<ServerResponse, BodyError, RequestLayer<L | R>>) => RemixLoader<A>;
-  action: <A>(self: Effect.Effect<ServerResponse, BodyError, RequestLayer<L | R>>) => RemixAction<A>;
+interface Params {
+  readonly _: unique symbol;
 }
+const Params = Context.GenericTag<Params, RemixParams>("@services/Params");
 
-interface RemixSettings<L, R> {
-  layer: Layer.Layer<L, ConfigError.ConfigError>;
-  requestLayer: Layer.Layer<R, never, RequestLayer<NoInfer<L>>>;
-  middleware: (
-    self: Effect.Effect<ServerResponse, BodyError, RequestLayer<L | R>>,
-  ) => Effect.Effect<ServerResponse, never, RequestLayer<L | R>>;
-}
+type AppEnv = Layer.Layer.Success<typeof AppLayer>;
 
-const make = async <L, R>({ layer, requestLayer, middleware }: RemixSettings<L, R>): Promise<RemixRuntime<L, R>> => {
-  const { runtimeEffect } = ManagedRuntime.make(Layer.mergeAll(layer, NodeFileSystem.layer, Path.layer));
-  const handler = runtimeEffect.pipe(Effect.map(Http.app.toWebHandlerRuntime));
+type RequestEnv = HttpServer.request.ServerRequest | FileSystem.FileSystem | Params | Session | Scope.Scope | Path.Path;
 
-  const run = await Effect.runPromise(handler);
+export interface RemixHandler<E, R>
+  extends Effect.Effect<
+    HttpServer.response.ServerResponse,
+    E | HttpServer.response.ServerResponse,
+    R | AppEnv | RequestEnv
+  > {}
 
-  const makeHandler = (self: Effect.Effect<ServerResponse, BodyError, RequestLayer<L | R>>) => {
-    const runnable = Effect.provide(middleware(self), requestLayer);
+const makeServerContext = (args: LoaderFunctionArgs | ActionFunctionArgs) =>
+  Layer.provideMerge(
+    Layer.mergeAll(
+      Layer.effect(
+        Session,
+        AppCookies.token.pipe(
+          Effect.flatMap((token) => token.read),
+          Effect.map((token) => Token.make<User.Id>(token)),
+          Effect.flatMap(Users.identify),
+          Effect.map((session) => RequestSession.Provided({ session })),
+          Effect.orElseSucceed(() => RequestSession.NotProvided()),
+          Effect.flatMap((rs) => Ref.make<RequestSession>(rs)),
+          Effect.map(Session.make),
+        ),
+      ),
+    ),
+    Layer.succeedContext(
+      Context.empty().pipe(
+        Context.add(HttpServer.request.ServerRequest, HttpServer.request.fromWeb(args.request)),
+        Context.add(Params, args.params),
+      ),
+    ),
+  );
 
-    return ({ request }: LoaderFunctionArgs) => run(runnable)(request);
-  };
+const setSessionCookie = (response: HttpServer.response.ServerResponse) =>
+  Effect.gen(function* (_) {
+    const cookie = yield* _(AppCookies.token);
+    const requestSession = yield* _(Session.get);
 
-  return {
-    loader: makeHandler,
-    action: makeHandler,
-  };
-};
+    return yield* _(
+      requestSession,
+      RequestSession.match({
+        Set: ({ session }) => cookie.save(session.token.value)(response),
+        Unset: () => cookie.remove(response),
+        InvalidToken: () => cookie.remove(response),
+        NotProvided: () => Effect.succeed(response),
+        Provided: () => Effect.succeed(response),
+      }),
+    );
+  });
 
-export const Remix = await make({
-  layer: AppLayer,
-  requestLayer: RequestLayer,
-  middleware,
-});
+export const loader =
+  <E, R extends AppEnv | RequestEnv>(effect: RemixHandler<E, R>) =>
+  async (args: LoaderFunctionArgs): Promise<Response> =>
+    effect.pipe(
+      Effect.flatMap(setSessionCookie),
+      Effect.map(HttpServer.response.toWeb),
+      Effect.provide(makeServerContext(args)),
+      Effect.scoped,
+      runtime.runPromise,
+    );
 
-// const Login = Http.router
-//   .schemaSearchParams(S.struct({ a: S.string }))
-//   .pipe(Effect.flatMap((a) => Http.response.json({})));
-
-// const LoginRoute = Http.router.makeRoute("GET", "/login", Login);
-
-// const app =
-//   (route: Http.router.Route<unknown, unknown>) => (request: Request, params: Record<string, string | undefined>) =>
-//     route.handler.pipe(
-//       Effect.provideService(Http.router.RouteContext, {
-//         [RouteContextTypeId]: RouteContextTypeId,
-//         route: LoginRoute,
-//         params,
-//         searchParams: {},
-//       }),
-//       Effect.provideService(Http.request.ServerRequest, Http.request.fromWeb(request)),
-//     );
-
-// Http.router.RouteContext.pipe(Effect.map((a) => a.route.handler));
-
-// // const a = Effect.runPromise(test);
+export const action =
+  <E>(effect: RemixHandler<E, AppEnv | RequestEnv>) =>
+  async (args: ActionFunctionArgs): Promise<Response> =>
+    effect.pipe(
+      Effect.flatMap(setSessionCookie),
+      Effect.map(HttpServer.response.toWeb),
+      Effect.provide(makeServerContext(args)),
+      Effect.scoped,
+      runtime.runPromise,
+    );

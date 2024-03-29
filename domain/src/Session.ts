@@ -1,4 +1,4 @@
-import { Data } from "effect";
+import { Data } from "@chuz/prelude";
 import { Id, Identified, Token } from ".";
 
 export class Session<A> extends Data.Class<{

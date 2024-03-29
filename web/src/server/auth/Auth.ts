@@ -1,7 +1,7 @@
 import { Credentials, User } from "@chuz/domain";
 import { makeUuid } from "@chuz/prelude";
-import * as S from "@effect/schema/Schema";
-import { Data, Effect, Equal, Equivalence, ReadonlyArray, String } from "effect";
+import { Data, Effect, Equal, Equivalence, ReadonlyArray, String } from "@chuz/prelude";
+import { S } from "@chuz/prelude";
 import { Users } from "../Users";
 
 export interface SocialAuths {

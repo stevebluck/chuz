@@ -1,10 +1,10 @@
-import * as S from "@effect/schema/Schema";
+import { Effect } from "@chuz/prelude";
+import { S } from "@chuz/prelude";
 import { Outlet } from "@remix-run/react";
-import { Effect } from "effect";
 import { Routes } from "src/Routes";
 import { AuthLayout } from "src/auth/auth-layout";
 import { ServerResponse, Session } from "src/server";
-import { Remix } from "src/server/Remix";
+import * as Remix from "src/server/Remix";
 import { ServerRequest } from "src/server/ServerRequest";
 import * as Auth from "src/server/auth/Auth";
 import { SocialAuth } from "src/server/auth/SocialAuth";

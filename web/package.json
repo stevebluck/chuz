@@ -8,7 +8,7 @@
     "dev": "node ./server.js",
     "update:latest": "pnpm update --latest",
     "start": "cross-env NODE_ENV=production node ./server.js",
-    "typecheck": "tsc --noEmit"
+    "check": "tsc --noEmit"
   },
   "dependencies": {
     "@chuz/core": "workspace:*",

@@ -5,7 +5,7 @@
   "types": "./src/index.ts",
   "type": "module",
   "scripts": {
-    "typecheck": "tsc --noEmit",
+    "check": "tsc --noEmit",
     "update:latest": "pnpm update --latest"
   },
   "dependencies": {

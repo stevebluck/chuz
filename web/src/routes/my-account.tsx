@@ -1,8 +1,8 @@
-import { Effect } from "effect";
+import { Effect } from "@chuz/prelude";
 import { Routes } from "src/Routes";
 import { Button } from "src/components/ui/button";
 import { Session, ServerResponse } from "src/server";
-import { Remix } from "src/server/Remix";
+import * as Remix from "src/server/Remix";
 
 export const loader = Remix.loader(
   Session.authenticated.pipe(

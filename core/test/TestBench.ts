@@ -1,6 +1,6 @@
 import { EmailPassword, Identified, Password, Session, User } from "@chuz/domain";
+import { Clock, Effect, Option } from "@chuz/prelude";
 import * as Core from "core/index";
-import { Clock, Effect, Option } from "effect";
 
 export type TestBench = Core.Capabilities;
 

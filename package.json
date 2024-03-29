@@ -6,20 +6,13 @@
     "build": "turbo build",
     "codegen": "turbo codegen",
     "update:latest": "turbo update:latest",
-    "typecheck": "turbo typecheck",
+    "check": "turbo check",
     "test": "turbo test",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "prepare": "husky"
   },
   "lint-staged": {
     "**/*": "prettier --write --ignore-unknown"
-  },
-  "dependencies": {
-    "@effect/experimental": "^0.14.2",
-    "@effect/platform": "^0.48.17",
-    "@effect/platform-node": "^0.45.19",
-    "@effect/schema": "^0.64.13",
-    "effect": "^2.4.13"
   },
   "devDependencies": {
     "@trivago/prettier-plugin-sort-imports": "^4.3.0",

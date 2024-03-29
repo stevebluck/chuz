@@ -1,6 +1,6 @@
 import { Password } from "@chuz/domain";
+import { Effect } from "@chuz/prelude";
 import { scryptSync, randomBytes, timingSafeEqual, ScryptOptions } from "crypto";
-import { Effect } from "effect";
 
 export namespace Passwords {
   export type Hash = (password: Password.Strong) => Effect.Effect<Password.Hashed>;

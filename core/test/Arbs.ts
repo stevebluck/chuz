@@ -1,6 +1,5 @@
 import { EmailPassword, Password, User as _User, IdentityProvider } from "@chuz/domain";
-import * as Arbitrary from "@effect/schema/Arbitrary";
-import { Option } from "effect";
+import { Arbitrary, Option } from "@chuz/prelude";
 import * as fc from "fast-check";
 
 export namespace Arbs {

@@ -1,12 +1,14 @@
 import * as Core from "@chuz/core";
 import { Identified, Password } from "@chuz/domain";
-import { Clock, Effect, Layer } from "effect";
+import { Clock, Effect, Layer } from "@chuz/prelude";
 import { Database } from "./Database";
 import { HasherConfig } from "./Passwords";
 
 export class Users extends Effect.Tag("@app/Users")<Users, Core.Users>() {
+  static live = Layer.effect(this, Effect.flatMap(Database, Core.RdmsUsers.make)).pipe(Layer.provide(Database.live));
+
   static dev = Layer.effect(
-    Users,
+    this,
     Effect.gen(function* (_) {
       const clock = Clock.make();
       const userTokens = yield* _(Core.ReferenceTokens.create(clock, Identified.equals));
@@ -18,13 +20,4 @@ export class Users extends Effect.Tag("@app/Users")<Users, Core.Users>() {
       );
     }),
   );
-
-  static live = Layer.effect(
-    Users,
-    Effect.gen(function* (_) {
-      const db = yield* _(Database);
-
-      return yield* _(Core.RdmsUsers.make(db));
-    }),
-  ).pipe(Layer.provide(Database.live));
 }

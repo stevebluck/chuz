@@ -1,6 +1,6 @@
 import { Credentials, User, IdentityProvider } from "@chuz/domain";
-import * as S from "@effect/schema/Schema";
-import { Context, Data, Effect, Layer } from "effect";
+import { Context, Data, Effect, Layer } from "@chuz/prelude";
+import { S } from "@chuz/prelude";
 import { google } from "googleapis";
 import { LayerUtils } from "../LayerUtils";
 import { Users } from "../Users";

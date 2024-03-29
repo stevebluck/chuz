@@ -14,6 +14,8 @@ export default defineConfig({
     babel({
       apply: "build",
       babelConfig: {
+        babelrc: false,
+        configFile: false,
         plugins: ["annotate-pure-calls"],
       },
     }),

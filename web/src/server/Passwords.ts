@@ -1,6 +1,6 @@
+import { Context, Effect, Layer } from "@chuz/prelude";
 import * as Core from "core/index";
 import { ScryptOptions } from "crypto";
-import { Context, Effect, Layer } from "effect";
 import { LayerUtils } from "./LayerUtils";
 
 export class HasherConfig extends Context.Tag("@app/Passwords/HasherConfig")<HasherConfig, ScryptOptions>() {

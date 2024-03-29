@@ -1,14 +1,13 @@
 import { EmailPassword, Password, User } from "@chuz/domain";
-import { fromCheckboxInput, optionalTextInput } from "@chuz/prelude/Schema";
-import * as S from "@effect/schema/Schema";
-import { Effect, Match } from "effect";
+import { Effect, Match } from "@chuz/prelude";
+import { S } from "@chuz/prelude";
 import { Routes } from "src/Routes";
 import { AuthContent } from "src/auth/auth-content";
 import { RegisterForm } from "src/auth/register-form";
 import { useActionData } from "src/hooks/useActionData";
 import { Session, Users, ServerResponse } from "src/server";
 import * as Passwords from "src/server/Passwords";
-import { Remix } from "src/server/Remix";
+import * as Remix from "src/server/Remix";
 import { ServerRequest } from "src/server/ServerRequest";
 import * as Auth from "src/server/auth/Auth";
 import { SocialAuth } from "src/server/auth/SocialAuth";
@@ -20,9 +19,9 @@ const RegisterFormFields = S.union(
     _tag: S.literal("Strong"),
     email: User.Email,
     password: Password.Strong,
-    firstName: optionalTextInput(User.FirstName),
-    lastName: optionalTextInput(User.LastName),
-    optInMarketing: fromCheckboxInput(User.OptInMarketing),
+    firstName: S.optionalTextInput(User.FirstName),
+    lastName: S.optionalTextInput(User.LastName),
+    optInMarketing: S.fromCheckboxInput(User.OptInMarketing),
   }),
   S.struct({
     _tag: S.literal("Provider"),

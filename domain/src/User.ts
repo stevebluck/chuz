@@ -1,6 +1,5 @@
-import { String100, EmailAddress } from "@chuz/prelude/Schema";
-import * as S from "@effect/schema/Schema";
-import { Data, Option } from "effect";
+import { Data, Option } from "@chuz/prelude";
+import { S } from "@chuz/prelude";
 import * as Domain from ".";
 
 export interface User {
@@ -37,14 +36,14 @@ export const from = S.decode(schema);
 
 export const OptInMarketing = S.boolean.pipe(S.brand("OptInMarketing"));
 
-export const Email = EmailAddress.pipe(S.brand("UserEmail")).annotations({
+export const Email = S.EmailAddress.pipe(S.brand("UserEmail")).annotations({
   arbitrary: () => (fc) => fc.emailAddress().map(Email),
   message: () => "Please enter a valid email address",
 });
 
-export const FirstName = String100.pipe(S.brand("FirstName"));
+export const FirstName = S.String100.pipe(S.brand("FirstName"));
 
-export const LastName = String100.pipe(S.brand("LastName"));
+export const LastName = S.String100.pipe(S.brand("LastName"));
 
 export const Partial = S.suspend(() => schema.pipe(S.omit("email")));
 

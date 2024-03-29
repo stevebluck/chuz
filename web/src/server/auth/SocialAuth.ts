@@ -1,4 +1,4 @@
-import { Effect, Layer, Match } from "effect";
+import { Effect, Layer, Match } from "@chuz/prelude";
 import { ProviderCode, ProviderState, SocialAuths } from "./Auth";
 import { GoogleAuth } from "./GoogleAuth";
 

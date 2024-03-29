@@ -7,7 +7,11 @@
   "sideEffects": false,
   "scripts": {
     "update:latest": "pnpm update --latest",
-    "typecheck": "tsc --noEmit"
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@effect/schema": "^0.64.13",
+    "effect": "^2.4.13"
   },
   "devDependencies": {
     "@chuz/typescript-config": "workspace:*",

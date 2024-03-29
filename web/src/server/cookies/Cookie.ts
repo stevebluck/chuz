@@ -1,8 +1,8 @@
+import { Data, Effect, ReadonlyRecord } from "@chuz/prelude";
+import { S } from "@chuz/prelude";
 import { Cookie as HttpCookie } from "@effect/platform/Http/Cookies";
 import * as Http from "@effect/platform/HttpServer";
-import * as S from "@effect/schema/Schema";
 import { createHmac, timingSafeEqual } from "crypto";
-import { Data, Effect, ReadonlyRecord } from "effect";
 
 export class Cookie<A> {
   constructor(
@@ -11,7 +11,6 @@ export class Cookie<A> {
     public readonly options: HttpCookie["options"] & { secret: string },
   ) {}
 
-  // TODO: move to Crypto.ts in prelude?
   private sign = (val: string) => {
     return val + "." + createHmac("sha256", this.options.secret).update(val).digest("base64").replace(/\=+$/, "");
   };

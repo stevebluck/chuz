@@ -1,5 +1,5 @@
 import { User, Id, Identified, Token, Credentials, Password } from "@chuz/domain";
-import { Effect } from "effect";
+import { Effect } from "@chuz/prelude";
 import { DB, Database } from "../persistence/Database";
 import { Users } from "./Users";
 

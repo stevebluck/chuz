@@ -1,5 +1,5 @@
 import { Token } from "@chuz/domain";
-import { Effect } from "effect";
+import { Effect } from "@chuz/prelude";
 
 export interface Tokens<A> {
   issue(value: A, timeToLive: Token.TimeToLive): Effect.Effect<Token.Token<A>>;

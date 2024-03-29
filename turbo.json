@@ -11,7 +11,7 @@
     "test": {
       "dependsOn": []
     },
-    "typecheck": {
+    "check": {
       "cache": false,
       "dependsOn": []
     },

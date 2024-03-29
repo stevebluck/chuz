@@ -1,5 +1,4 @@
-import { Effect, Option } from "effect";
-import { NonEmptyIterable } from "effect/NonEmptyIterable";
+import { Effect, NonEmptyIterable, Option } from "@chuz/prelude";
 import fc from "fast-check";
 import { test } from "vitest";
 
@@ -157,6 +156,6 @@ export namespace Arbitrary {
   export const option = <A>(a: fc.Arbitrary<A>): fc.Arbitrary<Option.Option<A>> =>
     fc.option(a).map(Option.fromNullable);
 
-  export const nonEmptyArray = <A>(a: fc.Arbitrary<A>): fc.Arbitrary<NonEmptyIterable<A>> =>
-    fc.array(a, { minLength: 1 }).map((array) => array as unknown as NonEmptyIterable<A>);
+  export const nonEmptyArray = <A>(a: fc.Arbitrary<A>): fc.Arbitrary<NonEmptyIterable.NonEmptyIterable<A>> =>
+    fc.array(a, { minLength: 1 }).map((array) => array as unknown as NonEmptyIterable.NonEmptyIterable<A>);
 }

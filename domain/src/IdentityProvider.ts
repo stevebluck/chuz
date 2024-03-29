@@ -1,5 +1,5 @@
-import * as S from "@effect/schema/Schema";
-import { Equal, Equivalence } from "effect";
+import { Equal, Equivalence } from "@chuz/prelude";
+import { S } from "@chuz/prelude";
 import { User } from ".";
 
 export class IdentityProvider extends S.TaggedClass<IdentityProvider>()("IdentityProvider", {

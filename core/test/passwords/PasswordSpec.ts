@@ -1,5 +1,5 @@
 import { Password } from "@chuz/domain";
-import { Effect, Either } from "effect";
+import { Effect, Either } from "@chuz/prelude";
 import { describe, expect, test } from "vitest";
 import { Passwords } from "../../src/auth/Passwords";
 import { Arbs } from "../Arbs";
@@ -26,13 +26,13 @@ export namespace PasswordSpec {
       );
 
       test("Strong passwords must have a minimum length of 8 characters", () => {
-        expect(Either.isLeft(Password.strongFrom("1234567"))).toBe(true);
-        expect(Either.isRight(Password.strongFrom("12345678"))).toBe(true);
+        expect(Either.isLeft(Either.try(() => Password.Strong("1234567")))).toBe(true);
+        expect(Either.isRight(Either.try(() => Password.Strong("12345678")))).toBe(true);
       });
 
       test("Strong passwords must have a maximum length of 64 characters", () => {
-        expect(Either.isLeft(Password.strongFrom(Array(65).fill("a").join("")))).toBe(true);
-        expect(Either.isRight(Password.strongFrom(Array(64).fill("a").join("")))).toBe(true);
+        expect(Either.isLeft(Either.try(() => Password.Strong(Array(65).fill("a").join(""))))).toBe(true);
+        expect(Either.isRight(Either.try(() => Password.Strong(Array(64).fill("a").join(""))))).toBe(true);
       });
     });
   };

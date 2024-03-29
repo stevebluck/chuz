@@ -1,7 +1,7 @@
-import { Effect } from "effect";
+import { Effect } from "@chuz/prelude";
 import { Routes } from "src/Routes";
 import { ServerResponse, Session, Users } from "src/server";
-import { Remix } from "src/server/Remix";
+import * as Remix from "src/server/Remix";
 
 export const action = Remix.action(
   Session.authenticated.pipe(

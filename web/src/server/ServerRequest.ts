@@ -1,7 +1,7 @@
+import { Data, Effect, ReadonlyRecord } from "@chuz/prelude";
+import { PR } from "@chuz/prelude";
+import { S } from "@chuz/prelude";
 import * as Http from "@effect/platform/HttpServer";
-import { ParseError } from "@effect/schema/ParseResult";
-import * as S from "@effect/schema/Schema";
-import { Data, Effect, ReadonlyRecord } from "effect";
 
 export namespace ServerRequest {
   export const searchParams = <A, Out extends Record<string, string | undefined>>(
@@ -19,5 +19,5 @@ export namespace ServerRequest {
       .schemaBodyForm(schema, { errors: "all" })
       .pipe(Effect.catchTags({ MultipartError: Effect.die, RequestError: Effect.die }));
 
-  class SearchParamsError extends Data.TaggedError("SearchParamsError")<{ error: ParseError }> {}
+  class SearchParamsError extends Data.TaggedError("SearchParamsError")<{ error: PR.ParseError }> {}
 }

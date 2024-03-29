@@ -1,6 +1,6 @@
 import { Credentials, Password, Token } from "@chuz/domain";
 import * as User from "@chuz/domain/User";
-import { Effect } from "effect";
+import { Effect } from "@chuz/prelude";
 
 export interface Users {
   register(registration: User.Registration): Effect.Effect<User.Session, User.EmailAlreadyInUse>;

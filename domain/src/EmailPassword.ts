@@ -1,4 +1,4 @@
-import * as S from "@effect/schema/Schema";
+import { S } from "@chuz/prelude";
 import { User } from ".";
 import * as Password from "./Password";
 
