@@ -228,7 +228,7 @@ importers:
         specifier: ^5.29.1
         version: 5.29.2
       vite:
-        specifier: ^5.1.6
+        specifier: ^5.2.6
         version: 5.2.6(@types/node@20.11.30)(terser@5.29.2)
       vite-env-only:
         specifier: ^2.2.0
@@ -239,6 +239,9 @@ importers:
       vite-plugin-cjs-interop:
         specifier: ^2.1.0
         version: 2.1.0
+      vite-plugin-entry-shaking:
+        specifier: ^0.3.3
+        version: 0.3.3(vite@5.2.6)
       vite-tsconfig-paths:
         specifier: ^4.3.1
         version: 4.3.2(typescript@5.4.3)(vite@5.2.6)
@@ -7050,6 +7053,17 @@ packages:
       estree-walker: 3.0.3
       magic-string: 0.30.8
       minimatch: 9.0.3
+    dev: true
+
+  /vite-plugin-entry-shaking@0.3.3(vite@5.2.6):
+    resolution: {integrity: sha512-Jlpf24kTClakAxQ5En5xo4a0LqU+LYnYEOiWo1HwXbiLhYuIkYUeJWasBzrFXPgEhzn3EsGoZ00TLlov6NzxaA==}
+    engines: {node: ^14.18.0 || >=16.0.0}
+    peerDependencies:
+      vite: '>=2.0.0'
+    dependencies:
+      es-module-lexer: 1.5.0
+      magic-string: 0.30.8
+      vite: 5.2.6(@types/node@20.11.30)(terser@5.29.2)
     dev: true
 
   /vite-tsconfig-paths@4.3.2(typescript@5.4.3)(vite@5.2.6):

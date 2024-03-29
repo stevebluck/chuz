@@ -37,7 +37,6 @@ export class GoogleAuth extends Effect.Tag("@app/auth/GoogleAuth")<GoogleAuth, A
               ),
             ),
             Effect.catchTags({
-              StateDoesNotMatch: () => new Auth.ExchangeCodeError({ error: "State does not match" }),
               UnknownException: (e) => new Auth.ExchangeCodeError({ error: e }),
               GetUserInfoError: (e) => new Auth.ExchangeCodeError({ error: e }),
               ParseError: (e) => new Auth.ExchangeCodeError({ error: e }),

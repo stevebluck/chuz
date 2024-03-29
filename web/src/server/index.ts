@@ -1,3 +1,3 @@
 export * from "./Users";
 export * from "./Sessions";
-export * from "./HttpServer";
+export * as Http from "./HttpServer";

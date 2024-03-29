@@ -5,7 +5,7 @@ import { Routes } from "src/Routes";
 import { AuthContent } from "src/auth/auth-content";
 import { LoginForm } from "src/auth/login-form";
 import { useActionData } from "src/hooks/useActionData";
-import { Users, Session, ServerResponse } from "src/server";
+import { Users, Session, Http } from "src/server";
 import * as Remix from "src/server/Remix";
 import { ServerRequest } from "src/server/ServerRequest";
 import * as Auth from "src/server/auth/Auth";
@@ -30,23 +30,23 @@ export const action = Remix.action(
           Provider: ({ provider }) =>
             Effect.flatMap(Auth.makeState("login"), (state) =>
               SocialAuth.generateAuthUrl({ _tag: provider, state }).pipe(
-                Effect.flatMap(ServerResponse.Redirect),
+                Effect.flatMap(Http.response.redirect),
                 Effect.flatMap(stateCookie.save(state)),
               ),
             ),
           Plain: (credential) =>
             Users.authenticate(credential).pipe(
               Effect.flatMap(Session.mint),
-              Effect.flatMap(() => ServerResponse.Redirect(Routes.myAccount)),
+              Effect.flatMap(() => Http.response.redirect(Routes.myAccount)),
             ),
         }),
       ),
       Effect.catchTags({
-        AlreadyAuthenticated: () => ServerResponse.Redirect(Routes.myAccount),
-        CookieError: () => ServerResponse.ServerError(),
-        GenerateUrlError: () => ServerResponse.ServerError(),
-        ParseError: ServerResponse.FormError,
-        CredentialsNotRecognised: ServerResponse.BadRequest,
+        AlreadyAuthenticated: () => Http.response.redirect(Routes.myAccount),
+        CookieError: Http.response.serverError,
+        GenerateUrlError: Http.response.serverError,
+        ParseError: Http.response.validationError,
+        CredentialsNotRecognised: Http.response.badRequest,
       }),
     ),
   ),

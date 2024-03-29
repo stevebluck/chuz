@@ -3,7 +3,7 @@ import { S } from "@chuz/prelude";
 import { Outlet } from "@remix-run/react";
 import { Routes } from "src/Routes";
 import { AuthLayout } from "src/auth/auth-layout";
-import { ServerResponse, Session } from "src/server";
+import { Http, Session } from "src/server";
 import * as Remix from "src/server/Remix";
 import { ServerRequest } from "src/server/ServerRequest";
 import * as Auth from "src/server/auth/Auth";
@@ -28,19 +28,19 @@ export const loader = Remix.loader(
         Effect.map(([, search]) => search),
         Effect.flatMap(SocialAuth.exchangeCodeForSession),
         Effect.flatMap(Session.mint),
-        Effect.flatMap(() => ServerResponse.Redirect(Routes.myAccount)),
+        Effect.flatMap(() => Http.response.redirect(Routes.myAccount)),
         Effect.catchTags({
-          CookieNotPresent: ServerResponse.Unit,
-          SearchParamsError: ServerResponse.Unit,
-          EmailAlreadyInUse: ServerResponse.BadRequest,
-          CredentialsNotRecognised: ServerResponse.BadRequest,
-          ExchangeCodeError: () => ServerResponse.ServerError(),
-          StateDoesNotMatch: () => ServerResponse.ServerError(),
+          CookieNotPresent: () => Http.response.Unit,
+          SearchParamsError: () => Http.response.Unit,
+          EmailAlreadyInUse: Http.response.badRequest,
+          CredentialsNotRecognised: Http.response.badRequest,
+          ExchangeCodeError: Http.response.serverError,
+          StateDoesNotMatch: Http.response.serverError,
         }),
         Effect.flatMap(stateCookie.remove),
       ),
     ),
-    Effect.catchTag("AlreadyAuthenticated", () => ServerResponse.Redirect(Routes.myAccount)),
+    Effect.catchTag("AlreadyAuthenticated", () => Http.response.redirect(Routes.myAccount)),
   ),
 );
 

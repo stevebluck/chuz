@@ -1,11 +1,10 @@
 import { EmailPassword, Password, User } from "@chuz/domain";
-import { Effect, Match } from "@chuz/prelude";
-import { S } from "@chuz/prelude";
+import { Effect, Match, S } from "@chuz/prelude";
 import { Routes } from "src/Routes";
 import { AuthContent } from "src/auth/auth-content";
 import { RegisterForm } from "src/auth/register-form";
 import { useActionData } from "src/hooks/useActionData";
-import { Session, Users, ServerResponse } from "src/server";
+import { Session, Users, Http } from "src/server";
 import * as Passwords from "src/server/Passwords";
 import * as Remix from "src/server/Remix";
 import { ServerRequest } from "src/server/ServerRequest";
@@ -38,7 +37,7 @@ export const action = Remix.action(
           Provider: ({ provider }) =>
             Effect.flatMap(Auth.makeState("register"), (state) =>
               SocialAuth.generateAuthUrl({ _tag: provider, state }).pipe(
-                Effect.flatMap(ServerResponse.Redirect),
+                Effect.flatMap(Http.response.redirect),
                 Effect.flatMap(stateCookie.save(state)),
               ),
             ),
@@ -53,16 +52,16 @@ export const action = Remix.action(
                 }),
               ),
               Effect.flatMap(Session.mint),
-              Effect.zipRight(ServerResponse.Redirect(Routes.myAccount)),
+              Effect.zipRight(Http.response.redirect(Routes.myAccount)),
             ),
         }),
       ),
       Effect.catchTags({
-        AlreadyAuthenticated: () => ServerResponse.Redirect(Routes.myAccount),
-        ParseError: ServerResponse.FormError,
-        EmailAlreadyInUse: ServerResponse.BadRequest,
-        CookieError: () => ServerResponse.ServerError(),
-        GenerateUrlError: () => ServerResponse.ServerError(),
+        AlreadyAuthenticated: () => Http.response.redirect(Routes.myAccount),
+        ParseError: Http.response.validationError,
+        EmailAlreadyInUse: Http.response.badRequest,
+        CookieError: Http.response.serverError,
+        GenerateUrlError: Http.response.serverError,
       }),
     ),
   ),

@@ -2,7 +2,7 @@ import { Effect, Option } from "@chuz/prelude";
 import { LinksFunction } from "@remix-run/node";
 import { Links, Meta, Outlet, Scripts, ScrollRestoration, useLoaderData } from "@remix-run/react";
 import { Toaster } from "./components/ui/sonner";
-import { ServerResponse, Session } from "./server";
+import { Http, Session } from "./server";
 import * as Remix from "./server/Remix";
 import { cn } from "./styles/classnames";
 import "./styles/style.css";
@@ -30,7 +30,7 @@ export const loader = Remix.loader(
   Session.authenticated.pipe(
     Effect.map((session) => ({ name: Option.getOrElse(session.user.value.firstName, () => "Mr NoName") })),
     Effect.catchAll(() => Effect.succeed({ name: "Guest" })),
-    Effect.flatMap(ServerResponse.Ok),
+    Effect.flatMap(Http.response.ok),
   ),
 );
 
