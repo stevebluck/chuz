@@ -1,7 +1,7 @@
 import { Activity, ArrowUpRight, CreditCard, DollarSign, Users } from "lucide-react";
 import { Routes } from "src/Routes";
 import { Link } from "src/components/Link";
-import { Avatar, AvatarFallback, AvatarImage } from "src/components/ui/avatar";
+import { Avatar, AvatarFallback } from "src/components/ui/avatar";
 import { Badge } from "src/components/ui/badge";
 import { Button } from "src/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "src/components/ui/card";
@@ -170,7 +170,7 @@ export default function Dashboard() {
             </div>
             <div className="flex items-center gap-4">
               <Avatar className="hidden h-9 w-9 sm:flex">
-                <AvatarImage src="/avatars/02.png" alt="Avatar" />
+                {/* <AvatarImage src="/avatars/02.png" alt="Avatar" /> */}
                 <AvatarFallback>JL</AvatarFallback>
               </Avatar>
               <div className="grid gap-1">
@@ -181,7 +181,7 @@ export default function Dashboard() {
             </div>
             <div className="flex items-center gap-4">
               <Avatar className="hidden h-9 w-9 sm:flex">
-                <AvatarImage src="/avatars/03.png" alt="Avatar" />
+                {/* <AvatarImage src="/avatars/03.png" alt="Avatar" /> */}
                 <AvatarFallback>IN</AvatarFallback>
               </Avatar>
               <div className="grid gap-1">
@@ -192,7 +192,7 @@ export default function Dashboard() {
             </div>
             <div className="flex items-center gap-4">
               <Avatar className="hidden h-9 w-9 sm:flex">
-                <AvatarImage src="/avatars/04.png" alt="Avatar" />
+                {/* <AvatarImage src="/avatars/04.png" alt="Avatar" /> */}
                 <AvatarFallback>WK</AvatarFallback>
               </Avatar>
               <div className="grid gap-1">
@@ -203,7 +203,7 @@ export default function Dashboard() {
             </div>
             <div className="flex items-center gap-4">
               <Avatar className="hidden h-9 w-9 sm:flex">
-                <AvatarImage src="/avatars/05.png" alt="Avatar" />
+                {/* <AvatarImage src="/avatars/05.png" alt="Avatar" /> */}
                 <AvatarFallback>SD</AvatarFallback>
               </Avatar>
               <div className="grid gap-1">
