@@ -36,14 +36,14 @@ export const action = Remix.action(
           Plain: (credential) =>
             Users.authenticate(credential).pipe(
               Effect.flatMap(Session.mint),
-              Effect.flatMap(() => Http.response.redirect(Routes.myAccount)),
+              Effect.flatMap(() => Http.response.redirectToAccount),
             ),
         }),
       ),
       Effect.catchTags({
-        AlreadyAuthenticated: () => Http.response.unauthorized,
-        CookieError: Http.response.serverError,
-        GenerateUrlError: Http.response.serverError,
+        AlreadyAuthenticated: () => Http.response.redirectToAccount,
+        CookieError: () => Http.response.exception,
+        GenerateUrlError: () => Http.response.exception,
         InvalidFormData: Http.response.validationError,
         CredentialsNotRecognised: Http.response.badRequest,
       }),

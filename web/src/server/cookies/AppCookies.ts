@@ -7,6 +7,7 @@ import { Cookie } from "./Cookie";
 interface Cookies {
   token: Cookie<string>;
   authState: Cookie<Auth.State>;
+  returnTo: Cookie<string>;
 }
 
 interface Config {
@@ -39,6 +40,13 @@ export class AppCookies extends Effect.Tag("@app/AppCookies")<AppCookies, Cookie
         authState: new Cookie("_authstate", Auth.State, {
           path: "/",
           maxAge: "30 minutes",
+          secure,
+          httpOnly: true,
+          secret,
+        }),
+        returnTo: new Cookie("_returnTo", S.string, {
+          path: "/",
+          maxAge: "30 minute",
           secure,
           httpOnly: true,
           secret,

@@ -1,4 +1,4 @@
-import { Data, Effect, ReadonlyRecord } from "@chuz/prelude";
+import { Console, Data, Effect } from "@chuz/prelude";
 import { S } from "@chuz/prelude";
 import { Cookie as HttpCookie } from "@effect/platform/Http/Cookies";
 import * as Http from "@effect/platform/HttpServer";
@@ -12,40 +12,46 @@ export class Cookie<A> {
   ) {}
 
   private sign = (val: string) => {
-    return val + "." + createHmac("sha256", this.options.secret).update(val).digest("base64").replace(/\=+$/, "");
+    return Effect.sync(() => val + "." + createHmac("sha256", this.options.secret).update(val).digest("base64"));
   };
 
-  private unsign = (input: string) => {
-    const tentativeValue = input.slice(0, input.lastIndexOf(".")),
-      expectedInput = this.sign(tentativeValue),
-      expectedBuffer = Buffer.from(expectedInput),
-      inputBuffer = Buffer.from(input);
-    return expectedBuffer.length === inputBuffer.length && timingSafeEqual(expectedBuffer, inputBuffer)
-      ? Effect.succeed(tentativeValue)
-      : Effect.fail(new UnsignError());
-  };
+  private unsign = (input: string) =>
+    Effect.gen(this, function* (_) {
+      const tentativeValue = input.slice(0, input.lastIndexOf(".")),
+        expectedInput = yield* _(this.sign(tentativeValue)),
+        expectedBuffer = Buffer.from(expectedInput),
+        inputBuffer = Buffer.from(input);
+
+      return yield* _(
+        expectedBuffer.length === inputBuffer.length && timingSafeEqual(expectedBuffer, inputBuffer)
+          ? Effect.succeed(tentativeValue)
+          : Effect.fail(new UnsignError()),
+      );
+    });
 
   remove = (res: Http.response.ServerResponse) =>
-    Http.request.ServerRequest.pipe(
-      Effect.map((res) => res.cookies),
-      Effect.flatMap(ReadonlyRecord.get(this.name)),
-      Effect.flatMap(() => Http.response.unsafeSetCookie(this.name, "", { maxAge: 0 })(res)),
+    this.read.pipe(
+      Effect.tap((a) => Console.log("removeing cookie", a)),
+      Effect.flatMap(() => Http.response.unsafeSetCookie(this.name, "", { ...this.options, maxAge: 0 })(res)),
+      Effect.tap((a) => Console.log("cookie set", a.cookies.cookies)),
+      Effect.tapError((a) => Console.log("unable to remove cookie", a)),
       Effect.orElseSucceed(() => res),
     );
 
   save = (value: A) => (res: Http.response.ServerResponse) =>
     Effect.succeed(value).pipe(
       Effect.flatMap(S.encode(this.schema)),
-      Effect.map(this.sign),
+      Effect.flatMap(this.sign),
       Effect.flatMap((str) => Http.response.setCookie(this.name, str, this.options)(res)),
       Effect.catchTag("ParseError", (e) => Effect.die(e)),
     );
 
   read = Effect.suspend(() =>
     Http.request.ServerRequest.pipe(
-      Effect.map((res) => res.cookies),
-      Effect.flatMap(ReadonlyRecord.get(this.name)),
-      Effect.flatMap(this.unsign),
+      Effect.map((req) => req.cookies),
+      Effect.flatMap((cookies) => Effect.fromNullable(cookies[this.name])),
+      Effect.tap((value) => Console.log("cookie value", value)),
+      Effect.flatMap((a) => this.unsign(a)),
       Effect.flatMap(S.decode(this.schema)),
       Effect.mapError(() => new CookieNotPresent()),
     ),

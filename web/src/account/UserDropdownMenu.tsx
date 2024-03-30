@@ -27,13 +27,13 @@ export const UserDropdownMenu = () => (
         <Link to={Routes.settings}>Settings</Link>
       </DropdownMenuItem>
       <DropdownMenuSeparator />
-      <DropdownMenuItem>
-        <Form method="POST" action={Routes.logout} className="flex flex-col flex-1">
+      <Form method="POST" action={Routes.logout} className="flex flex-col flex-1">
+        <DropdownMenuItem asChild>
           <button type="submit" className="text-left cursor-default">
             Logout
           </button>
-        </Form>
-      </DropdownMenuItem>
+        </DropdownMenuItem>
+      </Form>
     </DropdownMenuContent>
   </DropdownMenu>
 );

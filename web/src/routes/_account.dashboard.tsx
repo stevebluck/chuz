@@ -1,4 +1,3 @@
-import { Effect } from "@chuz/prelude";
 import { Activity, ArrowUpRight, CreditCard, DollarSign, Users } from "lucide-react";
 import { Routes } from "src/Routes";
 import { Link } from "src/components/Link";
@@ -7,17 +6,8 @@ import { Badge } from "src/components/ui/badge";
 import { Button } from "src/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "src/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "src/components/ui/table";
-import { Session, Http } from "src/server";
-import * as Remix from "src/server/Remix";
 
-export const loader = Remix.loader(
-  Session.authenticated.pipe(
-    Effect.zipRight(Http.response.unit),
-    Effect.catchTag("Unauthorised", () => Http.response.redirect(Routes.login)),
-  ),
-);
-
-export default function MyAccount() {
+export default function Dashboard() {
   return (
     <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
@@ -169,7 +159,7 @@ export default function MyAccount() {
           <CardContent className="grid gap-8">
             <div className="flex items-center gap-4">
               <Avatar className="hidden h-9 w-9 sm:flex">
-                <AvatarImage src="/avatars/01.png" alt="Avatar" />
+                {/* <AvatarImage src="/avatars/01.png" alt="Avatar" /> */}
                 <AvatarFallback>OM</AvatarFallback>
               </Avatar>
               <div className="grid gap-1">

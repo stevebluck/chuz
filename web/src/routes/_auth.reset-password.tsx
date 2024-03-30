@@ -24,7 +24,7 @@ export const action = Remix.action(
       }),
     ),
     Effect.flatMap(({ token, password }) => Users.resetPassword(token, password)),
-    Effect.zipRight(Http.response.unit),
+    Effect.zipRight(Http.response.ok()),
     Effect.catchTags({
       SearchParamsError: Http.response.badRequest,
       NoSuchToken: Http.response.badRequest,

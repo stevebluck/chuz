@@ -1,15 +1,40 @@
 import { Effect, PR, Predicate, ReadonlyArray, ReadonlyRecord } from "@chuz/prelude";
 import { ArrayFormatter } from "@chuz/prelude/src/Schema";
 import * as Http from "@effect/platform/HttpServer";
+import { Routes } from "src/Routes";
 import { InvalidFormData } from "./ServerRequest";
+import { AppCookies } from "./cookies/AppCookies";
 
-type ServerResponseEffect = Effect.Effect<Http.response.ServerResponse, Http.body.BodyError>;
+type ServerResponseEffect = Effect.Effect<
+  Http.response.ServerResponse,
+  Http.body.BodyError,
+  AppCookies | Http.request.ServerRequest
+>;
 
-export const unit: ServerResponseEffect = Http.response.json(null);
+export const empty = (options?: Http.response.Options.WithContent) => Http.response.empty(options);
 
-export const unauthorized: ServerResponseEffect = Http.response.json(null, { status: 401 });
+export const unauthorized: ServerResponseEffect = Effect.gen(function* (_) {
+  const request = yield* _(Http.request.ServerRequest);
+  const returnToCookie = yield* _(AppCookies.returnTo);
+  const url = new URL(request.url);
 
-export const ok = <A>(data: A): ServerResponseEffect => Http.response.json(Predicate.isUndefined(data) ? null : data);
+  return yield* _(
+    redirect(Routes.login),
+    Effect.flatMap(returnToCookie.save(url.pathname)),
+    Effect.catchTags({ CookieError: () => redirect(Routes.login) }),
+  );
+});
+
+export const redirectToAccount = AppCookies.returnTo.pipe(
+  Effect.flatMap((returnToCookie) => returnToCookie.read),
+  Effect.flatMap((url) => redirect(url)),
+  Effect.catchTags({ CookieNotPresent: () => redirect(Routes.dashboard) }),
+);
+
+export const exception = Http.response.empty({ status: 500 });
+
+export const ok = (data?: unknown) =>
+  Predicate.isUndefined(data) ? Http.response.empty({ status: 200 }) : Http.response.json(data);
 
 export const redirect = (location: string): ServerResponseEffect =>
   Http.response.empty({ status: 302, headers: Http.headers.fromInput({ location }) });
@@ -22,10 +47,6 @@ export const validationError = ({ error }: InvalidFormData): ServerResponseEffec
 
 export const badRequest = <E extends { _tag: string }>(error: E): ServerResponseEffect =>
   Http.response.json(error, { status: 400 });
-
-// TODO: add metric counter
-export const serverError = (error: unknown): ServerResponseEffect =>
-  Http.response.empty({ status: 500 }).pipe(Effect.tap(() => Effect.logError(error)));
 
 const formatParseError = (error: PR.ParseError): Record<string, string[]> => {
   return ReadonlyRecord.map(

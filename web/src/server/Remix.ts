@@ -7,8 +7,9 @@ import { BodyError } from "@effect/platform/Http/Body";
 import * as Path from "@effect/platform/Path";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { Params as RemixParams } from "@remix-run/react";
-import { RequestSession, Session, Users } from ".";
 import { AppLayer } from "./AppLayer";
+import { RequestSession, Session } from "./Sessions";
+import { Users } from "./Users";
 import { AppCookies } from "./cookies/AppCookies";
 
 const runtime = ManagedRuntime.make(Layer.mergeAll(AppLayer, NodeFileSystem.layer, Path.layer));

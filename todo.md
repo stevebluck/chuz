@@ -7,8 +7,9 @@
 - [x] Add oauth state check
 - [x] Add Add Response union
 - [x] Add oauth to register page
+- [x] Add password reset
+- [x] Add returnTo logic for auth
 - [] Add OAuth cancelled message
-- [] Add returnTo logic for auth
 - [] Add Apple login
 - [] Add 2fa login
 - [] Add metrics for errors and other things?

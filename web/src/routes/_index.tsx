@@ -13,7 +13,18 @@ export default function Index() {
       <header>
         <ThemeToggle />
       </header>
-      <Link to={Routes.login}>Login</Link>
+
+      <ul>
+        <li>
+          <Link to={Routes.login}>Login</Link>
+        </li>
+        <li>
+          <Link to={Routes.dashboard}>Dashboard</Link>
+        </li>
+        <li>
+          <Link to={Routes.settings}>Settings</Link>
+        </li>
+      </ul>
       <Outlet />
     </div>
   );

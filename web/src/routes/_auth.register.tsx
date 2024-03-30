@@ -38,27 +38,27 @@ export const action = Remix.action(
                 Effect.flatMap(stateCookie.save(state)),
               ),
             ),
-          Strong: ({ email, firstName, lastName, optInMarketing, password }) =>
-            Passwords.Hasher.hash(password).pipe(
+          Strong: (registration) =>
+            Passwords.Hasher.hash(registration.password).pipe(
               Effect.flatMap((hashed) =>
                 Users.register({
-                  credentials: new EmailPassword.Secure({ email, password: hashed }),
-                  firstName,
-                  lastName,
-                  optInMarketing,
+                  credentials: new EmailPassword.Secure({ email: registration.email, password: hashed }),
+                  firstName: registration.firstName,
+                  lastName: registration.lastName,
+                  optInMarketing: registration.optInMarketing,
                 }),
               ),
-              Effect.flatMap(Session.mint),
-              Effect.zipRight(Http.response.redirect(Routes.myAccount)),
+              Effect.tap(Session.mint),
+              Effect.flatMap(() => Http.response.redirectToAccount),
             ),
         }),
       ),
       Effect.catchTags({
-        AlreadyAuthenticated: () => Http.response.unauthorized,
+        AlreadyAuthenticated: () => Http.response.redirectToAccount,
         InvalidFormData: Http.response.validationError,
         EmailAlreadyInUse: Http.response.badRequest,
-        CookieError: Http.response.serverError,
-        GenerateUrlError: Http.response.serverError,
+        CookieError: () => Http.response.exception,
+        GenerateUrlError: () => Http.response.exception,
       }),
     ),
   ),
