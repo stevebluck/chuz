@@ -1,5 +1,5 @@
-import { Link } from "@remix-run/react";
 import { Route } from "src/Routes";
+import { Link } from "src/components/Link";
 import { buttonVariants } from "src/components/ui/button";
 import { cn } from "src/styles/classnames";
 

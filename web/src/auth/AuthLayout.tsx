@@ -1,5 +1,5 @@
-import { Link } from "@remix-run/react";
 import { Routes } from "src/Routes";
+import { Link } from "src/components/Link";
 import { Logo } from "src/components/Logo";
 
 interface AuthLayoutProps {

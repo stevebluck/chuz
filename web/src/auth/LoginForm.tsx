@@ -1,5 +1,6 @@
-import { Form, Link } from "@remix-run/react";
+import { Form } from "@remix-run/react";
 import { LoaderIcon } from "lucide-react";
+import { Link } from "src/components/Link";
 import { Routes } from "web/Routes";
 import { Button } from "web/components/ui/button";
 import { Input } from "web/components/ui/input";

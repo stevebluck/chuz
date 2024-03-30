@@ -1,6 +1,6 @@
 import { Effect, Option } from "@chuz/prelude";
 import { LinksFunction } from "@remix-run/node";
-import { Links, Meta, Outlet, Scripts, ScrollRestoration, useLoaderData } from "@remix-run/react";
+import { Links, Meta, Outlet, Scripts, ScrollRestoration } from "@remix-run/react";
 import { Toaster } from "./components/ui/sonner";
 import { Http, Session } from "./server";
 import * as Remix from "./server/Remix";
@@ -35,8 +35,6 @@ export const loader = Remix.loader(
 );
 
 export default () => {
-  const data = useLoaderData<{ name: string }>();
-
   return (
     <html lang="en" className={cn("h-full")}>
       <head>
@@ -46,7 +44,6 @@ export default () => {
         <Links />
       </head>
       <body className="bg-background h-full font-sans antialiased">
-        <div>Hello {data.name}!</div>
         <Outlet />
         <ScrollRestoration />
         <Scripts />

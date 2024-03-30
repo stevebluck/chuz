@@ -12,7 +12,6 @@
       "dependsOn": []
     },
     "check": {
-      "cache": false,
       "dependsOn": []
     },
     "update:latest": {

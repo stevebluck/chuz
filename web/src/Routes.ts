@@ -10,7 +10,11 @@ export const Routes = {
   authenticate: Route("/authenticate"),
   forgotPassword: Route("/forgot-password"),
   resetPassword: (token: string) => Route(`/reset-password?token=${token}`),
-  myAccount: Route("/my-account"),
   logout: Route("/logout"),
-  setTheme: Route("/action/set-theme"),
+  myAccount: Route("/my-account"),
+  settings: Route("/settings"),
+  account: Route("/settings/account"),
+  notifications: Route("/settings/notifications"),
+  authentication: Route("/settings/authentication"),
+  todo: Route("/my-account"),
 };

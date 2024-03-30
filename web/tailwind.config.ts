@@ -1,22 +1,23 @@
 import type { Config } from "tailwindcss";
+import animate from "tailwindcss-animate";
 
 export default {
   content: ["./src/**/*.{js,jsx,ts,tsx}"],
-  plugins: [],
+  plugins: [animate],
   darkMode: ["class"],
   prefix: "",
   theme: {
     fontFamily: {
       sans: ["Inter", "sans-serif"],
     },
-    fontSize: {
-      xs: ["14px", "22px"],
-      sm: ["16px", "24px"],
-      base: ["18px", "26px"],
-      lg: ["20px", "28px"],
-      xl: ["24px", "32px"],
-      "2xl": ["26px", "36px"],
-    },
+    // fontSize: {
+    //   xs: ["14px", "22px"],
+    //   sm: ["16px", "24px"],
+    //   base: ["18px", "26px"],
+    //   lg: ["20px", "28px"],
+    //   xl: ["24px", "32px"],
+    //   "2xl": ["26px", "36px"],
+    // },
     container: {
       center: true,
       padding: "2rem",
