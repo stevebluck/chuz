@@ -19,7 +19,7 @@ export const action = Remix.action(
       Effect.all({
         password: Effect.flatMap(Http.request.formData(FormFields), ({ password }) => Hasher.hash(password)),
         token: Effect.map(Http.request.searchParams(SearchParams), ({ token }) =>
-          Token.make<[User.Email, User.Id]>(token),
+          Token.make<[S.EmailAddress, User.Id]>(token),
         ),
       }),
     ),

@@ -1,3 +1,4 @@
+import { Credentials } from "@chuz/domain";
 import { Effect } from "@chuz/prelude";
 import { S } from "@chuz/prelude";
 import { Outlet } from "@remix-run/react";
@@ -9,7 +10,7 @@ import { SocialAuth } from "src/server/auth/SocialAuth";
 import { AppCookies } from "src/server/cookies/AppCookies";
 
 const SearchParams = S.struct({
-  _tag: Auth.ProviderName,
+  _tag: Credentials.SocialCredentialProvider,
   code: Auth.Code,
   state: Auth.State,
 });

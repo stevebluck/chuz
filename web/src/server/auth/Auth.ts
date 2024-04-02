@@ -11,13 +11,13 @@ export interface SocialAuths {
   generateAuthUrl: (provider: ProviderState) => Effect.Effect<string, GenerateUrlError>;
 }
 
-export type ProviderName = S.Schema.Type<typeof ProviderName>;
 export type Code = string & Brand.Brand<"AuthCode">;
 export type State = string & Brand.Brand<"AuthState">;
 export type Intent = "login" | "register";
 
-export type ProviderCode = { _tag: ProviderName; code: Code; state: State };
-export type ProviderState = { _tag: ProviderName; state: State };
+export type ProviderCode = { _tag: Credentials.SocialCredentialProvider; code: Code; state: State };
+
+export type ProviderState = { _tag: Credentials.SocialCredentialProvider; state: State };
 
 export const Code = S.string.pipe(S.brand("AuthCode"));
 
@@ -38,8 +38,6 @@ export const intentFromState = (state: State): Effect.Effect<Intent> =>
   );
 
 export const stateEquals: Equivalence.Equivalence<S.Schema.Type<typeof State>> = Equal.equals;
-
-export const ProviderName = S.literal("google");
 
 export class StateDoesNotMatch extends Data.TaggedError("StateDoesNotMatch") {}
 export class ExchangeCodeError extends Data.TaggedError("ExchangeCodeError")<{ error: unknown }> {}

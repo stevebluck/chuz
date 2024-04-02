@@ -4,6 +4,7 @@ import { S } from "@chuz/prelude";
 import { Routes } from "src/Routes";
 import { AuthContent } from "src/auth/AuthContent";
 import { LoginForm } from "src/auth/LoginForm";
+import { SocialProvider } from "src/auth/SocialProviders";
 import { useActionData } from "src/hooks/useActionData";
 import { Users, Session, Http } from "src/server";
 import * as Remix from "src/server/Remix";
@@ -12,13 +13,7 @@ import { SocialAuth } from "src/server/auth/SocialAuth";
 import { AppCookies } from "src/server/cookies/AppCookies";
 
 type LoginFormFields = S.Schema.Type<typeof LoginFormFields>;
-const LoginFormFields = S.union(
-  EmailPassword.Plain,
-  S.struct({
-    _tag: S.literal("Provider"),
-    provider: Auth.ProviderName,
-  }),
-);
+const LoginFormFields = S.union(EmailPassword.Plain, SocialProvider);
 
 export const action = Remix.action(
   Effect.flatMap(AppCookies.authState, (stateCookie) =>

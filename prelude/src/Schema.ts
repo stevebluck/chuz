@@ -17,12 +17,12 @@ export const String1000: S.Schema<string & Brand.Brand<"String1000">, string> = 
   S.brand("String1000"),
 );
 
-export const EmailAddress: S.Schema<string & Brand.Brand<"EmailAddress">, string> = S.compose(S.Lowercase, S.Trim).pipe(
-  S.minLength(5),
-  S.includes("@"),
-  S.includes("."),
-  S.brand("EmailAddress"),
-);
+export type EmailAddress = S.Schema.Type<typeof EmailAddress>;
+export const EmailAddress: S.Schema<string & Brand.Brand<"EmailAddress">, string> = S.compose(S.Lowercase, S.Trim)
+  .pipe(S.minLength(5), S.includes("@"), S.includes("."), S.brand("EmailAddress"))
+  .annotations({
+    arbitrary: () => (fc) => fc.emailAddress().map(S.decodeSync(EmailAddress)),
+  });
 
 export const CheckboxInput: S.Schema<boolean, string | undefined> = S.transform(
   S.orUndefined(S.NonEmpty),

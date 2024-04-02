@@ -1,5 +1,5 @@
 import { EmailPassword, Identified, Password, Session, User } from "@chuz/domain";
-import { Clock, Effect, Option } from "@chuz/prelude";
+import { Clock, Effect, Option, S } from "@chuz/prelude";
 import * as Core from "core/index";
 
 export type TestBench = Core.Capabilities;
@@ -46,7 +46,7 @@ const userRegistration = {
   lastName: User.LastName("Lerone"),
   optInMarketing: User.OptInMarketing(true),
   credentials: new EmailPassword.Strong({
-    email: User.Email("lonestar@an.com"),
+    email: S.decodeSync(S.EmailAddress)("lonestar@an.com"),
     password: Password.Strong("password"),
   }),
 };

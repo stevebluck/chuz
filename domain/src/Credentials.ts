@@ -1,20 +1,37 @@
-import { Data, Match } from "@chuz/prelude";
+import { Data, Equal, Equivalence, Match } from "@chuz/prelude";
 import { S } from "@chuz/prelude";
 import * as EmailPassword from "./EmailPassword";
-import { IdentityProvider } from "./IdentityProvider";
 
-export type Plain = EmailPassword.Plain | IdentityProvider;
+export type PlainCredential = EmailPassword.Plain | SocialCredential;
 
-export type Secure = EmailPassword.Secure | IdentityProvider;
+export type SecureCredential = EmailPassword.Secure | SocialCredential;
 
-export const Plain = S.union(EmailPassword.Plain, IdentityProvider);
+export type SocialCredentialProvider = S.Schema.Type<typeof SocialCredentialProvider>;
 
-export const Secure = S.union(EmailPassword.Secure, IdentityProvider);
+export type SocialCredentialId = S.Schema.Type<typeof SocialCredentialId>;
 
-export const matchPlain = Match.typeTags<Plain>();
+export class SocialCredential extends S.TaggedClass<SocialCredential>()("SocialCredential", {
+  id: S.NonEmpty.pipe(S.brand("SocialCredentialId")),
+  provider: S.literal("google", "apple"),
+  email: S.EmailAddress,
+}) {
+  static equals: Equivalence.Equivalence<SocialCredential> = Equal.equals;
+}
+
+export const SocialCredentialId = SocialCredential.fields.id;
+
+export const SocialCredentialProvider = SocialCredential.fields.provider;
+
+export const PlainCredential = S.union(EmailPassword.Plain, SocialCredential);
+
+export const SecureCredential = S.union(EmailPassword.Secure, SocialCredential);
+
+export const matchPlain = Match.typeTags<PlainCredential>();
+
+export const matchSecure = Match.typeTags<SecureCredential>();
 
 export const isEmailPassword = S.is(EmailPassword.Secure);
 
-export const isProvider = S.is(IdentityProvider);
+export const isSocialIdentity = S.is(SocialCredential);
 
 export class NotRecognised extends Data.TaggedError("CredentialsNotRecognised") {}

@@ -1,4 +1,4 @@
-import { Console, Data, Effect } from "@chuz/prelude";
+import { Data, Effect } from "@chuz/prelude";
 import { S } from "@chuz/prelude";
 import { Cookie as HttpCookie } from "@effect/platform/Http/Cookies";
 import * as Http from "@effect/platform/HttpServer";
@@ -31,10 +31,7 @@ export class Cookie<A> {
 
   remove = (res: Http.response.ServerResponse) =>
     this.read.pipe(
-      Effect.tap((a) => Console.log("removeing cookie", a)),
       Effect.flatMap(() => Http.response.unsafeSetCookie(this.name, "", { ...this.options, maxAge: 0 })(res)),
-      Effect.tap((a) => Console.log("cookie set", a.cookies.cookies)),
-      Effect.tapError((a) => Console.log("unable to remove cookie", a)),
       Effect.orElseSucceed(() => res),
     );
 
@@ -50,7 +47,6 @@ export class Cookie<A> {
     Http.request.ServerRequest.pipe(
       Effect.map((req) => req.cookies),
       Effect.flatMap((cookies) => Effect.fromNullable(cookies[this.name])),
-      Effect.tap((value) => Console.log("cookie value", value)),
       Effect.flatMap((a) => this.unsign(a)),
       Effect.flatMap(S.decode(this.schema)),
       Effect.mapError(() => new CookieNotPresent()),

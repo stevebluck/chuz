@@ -5,13 +5,14 @@
 - [x] Add google oauth
 - [x] Add cookies
 - [x] Add oauth state check
-- [x] Add Add Response union
 - [x] Add oauth to register page
+- [x] Add response type
 - [x] Add password reset
 - [x] Add returnTo logic for auth
 - [] Add OAuth cancelled message
 - [] Add Apple login
 - [] Add 2fa login
+- [] Add social auth linking
 - [] Add metrics for errors and other things?
 
 // TODO: handle when the user cancels:
@@ -37,12 +38,12 @@
 - user can unlink a social account if they have at least one other credential
 
 ```ts
-type UserCredentialItems = Data.TaggedEnum<{
+type UserCredential = Data.TaggedEnum<{
   Social: { Social: NonEmptyArray<Social> };
   EmailPassword: { Email: Email; Social: Array<Social> };
 }>;
 
-type GetCredentialItems = (id: User.Id) => IO<UserCredentials>;
+type FindCredentials = (id: User.Id) => IO<UserCredentials>;
 
 type SetEmailPasswordCredential = (
   id: User.Id,
@@ -51,12 +52,9 @@ type SetEmailPasswordCredential = (
 
 type UnsetEmailPasswordCredential = (id: User.Id) => IO<void, EmailPassword.NotSet | Credential.NoFallbackSet>;
 
-type LinkSocialCredential = (
-  token: User.Token,
-  credential: Credential.Social,
-) => IO<Credential.Id, Credential.AlreadyInUse>;
+type LinkCredential = (token: User.Token, credential: Credential.Social) => IO<Credential.Id, Credential.AlreadyInUse>;
 
-type UnlinkSocialCredential = (
+type UnlinkCredential = (
   token: User.Token,
   id: Credential.Id,
 ) => IO<Credential.Id, Credential.NotFound | Credential.NoFallbackSet>;

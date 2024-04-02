@@ -1,9 +1,9 @@
-import { Credentials, EmailPassword, Password, Token, User, IdentityProvider } from "@chuz/domain";
+import { Credentials, EmailPassword, Password, Token, User } from "@chuz/domain";
 import { Effect, Option } from "@chuz/prelude";
 import { S } from "@chuz/prelude";
+import { Passwords, Users } from "core/index";
 import * as fc from "fast-check";
 import { afterAll, describe, expect } from "vitest";
-import { Passwords, Users } from "../../src";
 import { Arbs } from "../Arbs";
 import { asyncProperty } from "../Property";
 import { SpecConfig, defaultSpecConfig } from "../SpecConfig";
@@ -19,7 +19,7 @@ export namespace UsersSpec {
       (register) =>
         Effect.gen(function* (_) {
           const { users } = yield* _(TestBench);
-          const registerUserWithEmail = (email: User.Email) =>
+          const registerUserWithEmail = (email: S.EmailAddress) =>
             registerUser(users, { ...register, credentials: { ...register.credentials, email } });
 
           const session = yield* _(registerUserWithEmail(register.credentials.email));
@@ -84,6 +84,7 @@ export namespace UsersSpec {
           const plain = makePlainCredentials(registration.credentials);
 
           const authed = yield* _(users.authenticate(plain.credentials));
+
           const authed1 = yield* _(users.authenticate(plain.lowercase));
           const authed2 = yield* _(users.authenticate(plain.uppercase));
           const badCredentials = new EmailPassword.Plain({
@@ -101,31 +102,6 @@ export namespace UsersSpec {
     );
 
     asyncProperty(
-      "users can authenticate via a third party identity provider",
-      Arbs.Users.ProviderCredential,
-      (credential) =>
-        Effect.gen(function* (_) {
-          const { users } = yield* _(TestBench);
-
-          const registration: User.Registration = {
-            credentials: credential,
-            firstName: Option.none(),
-            lastName: Option.none(),
-            optInMarketing: User.OptInMarketing(false),
-          };
-
-          yield* _(users.register(registration));
-
-          const session0 = yield* _(users.authenticate(credential));
-          const foundUserByEmail = yield* _(users.findByEmail(credential.email));
-
-          expect(session0.user.value.email).toEqual(credential.email);
-          expect(foundUserByEmail).toEqual(session0.user);
-        }),
-      config,
-    );
-
-    asyncProperty(
       "users can't authenticate via a third party identity provider after already registering with the same email",
       Arbs.Users.Register,
       (registration) =>
@@ -133,8 +109,8 @@ export namespace UsersSpec {
           const { users } = yield* _(TestBench);
           const session0 = yield* _(registerUser(users, registration));
 
-          const credential = new IdentityProvider({
-            id: IdentityProvider.fields.id("googleId"),
+          const credential = new Credentials.SocialCredential({
+            id: Credentials.SocialCredentialId("googleId"),
             provider: "google",
             email: registration.credentials.email,
           });
@@ -412,6 +388,122 @@ export namespace UsersSpec {
         config,
       );
     });
+
+    describe("Identities", () => {
+      asyncProperty(
+        "users can add many social identities",
+        fc.tuple(Arbs.Users.Register, Arbs.Credentials.SocialCredential, Arbs.Credentials.SocialCredential),
+        ([registration, socialCredential0, socialCredential1]) =>
+          Effect.gen(function* (_) {
+            const { users } = yield* _(TestBench);
+            const session = yield* _(registerUser(users, registration));
+            yield* _(users.addIdentity(session.user.id, socialCredential0));
+            yield* _(users.addIdentity(session.user.id, socialCredential1));
+
+            const identities = yield* _(users.findIdentitiesById(session.user.id));
+
+            expect(identities.length).toBe(3);
+            expect(identities).toContainEqual(User.identity.EmailPassword({ email: registration.credentials.email }));
+            expect(identities).toContainEqual(
+              User.identity.SocialProvider({ email: socialCredential0.email, provider: socialCredential0.provider }),
+            );
+            expect(identities).toContainEqual(
+              User.identity.SocialProvider({ email: socialCredential1.email, provider: socialCredential1.provider }),
+            );
+          }),
+        config,
+      );
+
+      asyncProperty(
+        "users can only have a single EmailPassword identity",
+        fc.tuple(Arbs.Users.Register, Arbs.Passwords.Strong),
+        ([registration, password]) =>
+          Effect.gen(function* (_) {
+            const { users } = yield* _(TestBench);
+            const session = yield* _(registerUser(users, registration));
+
+            const plain = makePlainCredentials(registration.credentials);
+            const hashedPassword = yield* _(hash(password));
+            const newCredentials = new EmailPassword.Secure({
+              email: plain.credentials.email,
+              password: hashedPassword,
+            });
+
+            const credentialInUseError = yield* _(users.addIdentity(session.user.id, newCredentials), Effect.flip);
+
+            expect(credentialInUseError).toEqual(new User.CredentialInUse());
+          }),
+        config,
+      );
+
+      asyncProperty(
+        "users can add another identity and authenticate with it",
+        fc.tuple(Arbs.Users.Register, Arbs.Credentials.SocialCredential),
+        ([registration, socialCredential]) =>
+          Effect.gen(function* (_) {
+            const { users } = yield* _(TestBench);
+            const session0 = yield* _(registerUser(users, registration));
+            const plain = makePlainCredentials(registration.credentials);
+
+            yield* _(users.addIdentity(session0.user.id, socialCredential));
+
+            const session1 = yield* _(users.authenticate(plain.credentials));
+            const session2 = yield* _(users.authenticate(socialCredential));
+
+            expect(session1.user).toEqual(session2.user);
+          }),
+        config,
+      );
+
+      asyncProperty(
+        "users can remove a social identity if they have more than one identity",
+        fc.tuple(Arbs.Users.Register, Arbs.Credentials.SocialCredential),
+        ([registration, socialCredential]) =>
+          Effect.gen(function* (_) {
+            const { users } = yield* _(TestBench);
+            const session = yield* _(registerUser(users, registration));
+
+            const twoIdentities = yield* _(users.addIdentity(session.user.id, socialCredential));
+
+            const socialIdentity = User.identity.fromCredential(socialCredential);
+            const emailIdentity = User.identity.EmailPassword({ email: registration.credentials.email });
+
+            const oneIdentity = yield* _(users.removeIdentity(session.user.id, socialIdentity));
+            const lastCredentialsError = yield* _(users.removeIdentity(session.user.id, emailIdentity), Effect.flip);
+
+            expect(twoIdentities.length).toEqual(2);
+            expect(oneIdentity).not.toContainEqual(socialIdentity);
+
+            expect(oneIdentity[0]).toEqual(emailIdentity);
+
+            expect(lastCredentialsError).toEqual(new User.LastCredentialError());
+          }),
+        config,
+      );
+
+      asyncProperty(
+        "users can remove an email identity if they have more than one identity",
+        fc.tuple(Arbs.Users.Register, Arbs.Credentials.SocialCredential),
+        ([registration, socialCredential]) =>
+          Effect.gen(function* (_) {
+            const { users } = yield* _(TestBench);
+            const session = yield* _(registerUser(users, registration));
+
+            yield* _(users.addIdentity(session.user.id, socialCredential));
+
+            const emailIdentity = User.identity.EmailPassword({ email: registration.credentials.email });
+            const socialIdentity = User.identity.fromCredential(socialCredential);
+
+            const oneIdentity = yield* _(users.removeIdentity(session.user.id, emailIdentity));
+            const lastCredentialsError = yield* _(users.removeIdentity(session.user.id, socialIdentity), Effect.flip);
+
+            expect(oneIdentity).toContainEqual(User.identity.fromCredential(socialCredential));
+            expect(oneIdentity).not.toContainEqual(emailIdentity);
+            expect(lastCredentialsError).toEqual(new User.LastCredentialError());
+          }),
+        config,
+      );
+    });
   };
   const registerUser = (users: Users, register: Arbs.Users.Register) =>
     Effect.gen(function* (_) {
@@ -449,5 +541,5 @@ export namespace UsersSpec {
   };
 }
 
-const makeEmail = S.decodeSync(User.Email);
+const makeEmail = S.decodeSync(S.EmailAddress);
 const hash = Passwords.hasher({ N: 2 });

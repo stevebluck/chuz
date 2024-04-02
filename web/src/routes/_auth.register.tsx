@@ -16,7 +16,7 @@ type RegisterFormFields = S.Schema.Type<typeof RegisterFormFields>;
 const RegisterFormFields = S.union(
   S.struct({
     _tag: S.literal("Strong"),
-    email: User.Email,
+    email: S.EmailAddress,
     password: Password.Strong,
     firstName: S.optionalTextInput(User.FirstName),
     lastName: S.optionalTextInput(User.LastName),

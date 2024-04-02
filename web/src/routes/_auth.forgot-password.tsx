@@ -1,4 +1,3 @@
-import { User } from "@chuz/domain";
 import { Effect } from "@chuz/prelude";
 import { S } from "@chuz/prelude";
 import { Routes } from "src/Routes";
@@ -9,7 +8,7 @@ import { Session, Http, Users } from "src/server";
 import * as Remix from "src/server/Remix";
 
 type FormFields = S.Schema.Type<typeof FormFields>;
-const FormFields = S.struct({ email: User.Email });
+const FormFields = S.struct({ email: S.EmailAddress });
 
 export const action = Remix.action(
   Session.guest.pipe(
