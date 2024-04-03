@@ -1,4 +1,4 @@
-import { Data, Equivalence, Option } from "@chuz/prelude";
+import { Data, Option } from "@chuz/prelude";
 import { S } from "@chuz/prelude";
 import * as Domain from ".";
 import * as identity from "./UserIdentity";
@@ -35,8 +35,6 @@ export const schema = S.suspend(() =>
 export const make = Data.case<User>();
 
 export const from = S.decode(schema);
-
-export const equals = Equivalence.make<User>((self, that) => self.email === that.email);
 
 export const OptInMarketing = S.boolean.pipe(S.brand("OptInMarketing"));
 

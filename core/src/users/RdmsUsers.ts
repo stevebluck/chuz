@@ -81,7 +81,10 @@ export class RdmsUsers implements Users {
   removeIdentity(
     id: User.Id,
     credential: User.identity.Identity,
-  ): Effect.Effect<User.identity.Identity, User.NotFound | User.LastCredentialError> {
+  ): Effect.Effect<
+    ReadonlyArray.NonEmptyReadonlyArray<User.identity.Identity>,
+    User.NotFound | User.LastCredentialError
+  > {
     throw new Error("Method not implemented.");
   }
 }

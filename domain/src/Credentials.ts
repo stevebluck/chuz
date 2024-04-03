@@ -30,8 +30,12 @@ export const matchPlain = Match.typeTags<PlainCredential>();
 
 export const matchSecure = Match.typeTags<SecureCredential>();
 
-export const isEmailPassword = S.is(EmailPassword.Secure);
+export const isEmailPassword = (credential: SecureCredential): credential is EmailPassword.Secure =>
+  S.is(EmailPassword.Secure)(credential);
 
-export const isSocialIdentity = S.is(SocialCredential);
+export const isSocialIdentity = (credential: SecureCredential): credential is EmailPassword.Secure =>
+  S.is(SocialCredential)(credential);
+
+export const equals: Equivalence.Equivalence<SecureCredential> = Equal.equals;
 
 export class NotRecognised extends Data.TaggedError("CredentialsNotRecognised") {}

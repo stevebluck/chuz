@@ -1,8 +1,7 @@
 import { Credentials, EmailPassword, Id, Identified, Password, Session, Token, User } from "@chuz/domain";
-import { Duration, Effect, Either, Equal, Option, ReadonlyArray, Ref, S, identity } from "@chuz/prelude";
+import { Duration, Effect, Either, HashMap, Option, ReadonlyArray, Ref, S, identity } from "@chuz/prelude";
 import { Passwords } from "core/auth/Passwords";
 import { AutoIncrement } from "core/persistence/AutoIncrement";
-import { Table } from "core/persistence/Table";
 import { Tokens } from "core/tokens/Tokens";
 import { Users } from "core/users/Users";
 
@@ -16,7 +15,7 @@ export class ReferenceUsers implements Users {
     match: Passwords.Match,
   ): Effect.Effect<Users> =>
     Effect.gen(function* (_) {
-      const state = yield* _(Ref.make(new State(Table.empty(), Table.empty(), AutoIncrement.empty())));
+      const state = yield* _(Ref.make(new State(HashMap.empty(), HashMap.empty(), AutoIncrement.empty())));
       return new ReferenceUsers(state, userTokens, passwordResetTokens, match);
     });
 
@@ -200,10 +199,31 @@ export class ReferenceUsers implements Users {
 
 class State {
   constructor(
-    private readonly byCredential: Table<Credentials.SecureCredential, User.Id>,
-    private readonly byId: Table<User.Id, User.Identified>,
+    private readonly byCredential: HashMap.HashMap<Credentials.SecureCredential, User.Id>,
+    private readonly byId: HashMap.HashMap<User.Id, User.Identified>,
     private readonly ids: AutoIncrement<User.User>,
   ) {}
+
+  findById = (id: User.Id): Option.Option<User.Identified> => {
+    return this.byId.pipe(
+      HashMap.findFirst((_, userId) => Identified.equals(id, userId)),
+      Option.map(([_, user]) => user),
+    );
+  };
+
+  findByEmail = (email: S.EmailAddress): Option.Option<User.Identified> => {
+    return this.byId.pipe(
+      HashMap.findFirst((user) => user.value.email === email),
+      Option.map(([_, user]) => user),
+    );
+  };
+
+  findByCredential = (credential: Credentials.SecureCredential): Option.Option<User.Identified> => {
+    return this.byCredential.pipe(
+      HashMap.findFirst((_, cred) => Credentials.equals(cred, credential)),
+      Option.flatMap(([_, id]) => this.findById(id)),
+    );
+  };
 
   register = (input: User.Registration): [Either.Either<User.Identified, User.EmailAlreadyInUse>, State] => {
     if (Option.isSome(this.findByEmail(input.credentials.email))) {
@@ -221,45 +241,34 @@ class State {
       }),
     });
 
-    const byId = this.byId.upsertAt(id, user);
-    const credentials = this.byCredential.upsertAt(input.credentials, id);
+    const byId = HashMap.set(this.byId, id, user);
+    const credentials = HashMap.set(this.byCredential, input.credentials, id);
 
     return [Either.right(user), new State(credentials, byId, ids)];
-  };
-
-  findById = (id: User.Id): Option.Option<User.Identified> => {
-    return this.byId.find(id);
-  };
-
-  findByEmail = (email: S.EmailAddress): Option.Option<User.Identified> => {
-    return ReadonlyArray.head(this.byId.filterValues((v) => v.value.email === email));
-  };
-
-  findByCredential = (credential: Credentials.SecureCredential): Option.Option<User.Identified> => {
-    return this.byCredential.find(credential).pipe(Option.flatMap((id) => this.byId.find(id)));
   };
 
   findCredentialsByEmail = (
     email: S.EmailAddress,
   ): Option.Option<ReadonlyArray.NonEmptyArray<Credentials.SecureCredential>> => {
     return this.findByEmail(email).pipe(
-      Option.map((user) => this.byCredential.filter((cred) => Equal.equals(cred.email, user.value.email))),
+      Option.map((user) => HashMap.filter(this.byCredential, (_, cred) => cred.email === user.value.email)),
+      Option.map(HashMap.keys),
+      Option.map(ReadonlyArray.fromIterable),
       Option.flatMap((a) => (ReadonlyArray.isNonEmptyArray(a) ? Option.some(a) : Option.none())),
     );
   };
 
   findEmailCredential = (email: S.EmailAddress): Option.Option<EmailPassword.Secure> => {
     return this.findCredentialsByEmail(email).pipe(
-      Option.flatMap(
-        ReadonlyArray.findFirst((cred): cred is EmailPassword.Secure => Credentials.isEmailPassword(cred)),
-      ),
+      Option.flatMap(ReadonlyArray.findFirst(Credentials.isEmailPassword)),
     );
   };
 
   findCredentialsById = (id: User.Id): Option.Option<ReadonlyArray.NonEmptyArray<Credentials.SecureCredential>> => {
     return this.findById(id).pipe(
-      Option.map((user) => this.byCredential.filterEntries((_, b) => Equal.equals(b, user.id))),
-      Option.map(ReadonlyArray.map(([cred]) => cred)),
+      Option.map((user) => this.byCredential.pipe(HashMap.filter((userId) => Identified.equals(userId, user.id)))),
+      Option.map(HashMap.keys),
+      Option.map(ReadonlyArray.fromIterable),
       Option.flatMap((a) => (ReadonlyArray.isNonEmptyArray(a) ? Option.some(a) : Option.none())),
     );
   };
@@ -272,15 +281,19 @@ class State {
       return [Either.left(new User.CredentialInUse()), this];
     }
 
-    const found = this.findByCredential(credential);
+    const result: [Either.Either<Credentials.SecureCredential, User.CredentialInUse>, State] = this.findByCredential(
+      credential,
+    ).pipe(
+      Option.match({
+        onSome: () => [Either.right(credential), this],
+        onNone: () => [
+          Either.right(credential),
+          new State(HashMap.set(this.byCredential, credential, id), this.byId, this.ids),
+        ],
+      }),
+    );
 
-    if (Option.isSome(found)) {
-      return [Either.left(new User.CredentialInUse()), this];
-    }
-
-    const byCredential = this.byCredential.upsertAt(credential, id);
-
-    return [Either.right(credential), new State(byCredential, this.byId, this.ids)];
+    return result;
   };
 
   removeCredential = (
@@ -305,16 +318,17 @@ class State {
     }).pipe(
       Option.match({
         onNone: () => [Either.right(identity), this],
-        onSome: (that) => {
-          const byCredential = this.byCredential.deleteAt(that);
-          return [Either.right(identity), new State(byCredential, this.byId, this.ids)];
-        },
+        onSome: (that) => [
+          Either.right(identity),
+          new State(HashMap.remove(this.byCredential, that), this.byId, this.ids),
+        ],
       }),
     );
   };
 
   update = (id: User.Id, draft: User.Partial): [Either.Either<User.Identified, User.NotFound>, State] => {
-    const [r, byId] = this.byId.modifyAt(
+    const byId = HashMap.modify(
+      this.byId,
       id,
       (user) =>
         new Identified({
@@ -326,8 +340,9 @@ class State {
             optInMarketing: draft.optInMarketing ?? user.value.optInMarketing,
           },
         }),
-      new User.NotFound(),
     );
+
+    const r = HashMap.get(this.byId, id).pipe(Either.fromOption(() => new User.NotFound()));
 
     return [r, new State(this.byCredential, byId, this.ids)];
   };
@@ -341,20 +356,23 @@ class State {
       this,
     ];
 
-    const emailExists = this.byCredential.filter((a) => a.email === email && a._tag === "Secure").length > 0;
+    const emailExists = HashMap.findFirst(
+      this.byCredential,
+      (_, cred) => cred.email === email && Credentials.isEmailPassword(cred),
+    );
 
-    if (emailExists) {
+    if (Option.isSome(emailExists)) {
       return error(new User.EmailAlreadyInUse({ email }));
     }
 
-    return this.byId.find(id).pipe(
+    return this.findById(id).pipe(
       Option.flatMap((user) =>
         this.findEmailCredential(user.value.email).pipe(
           Option.map((credential) => {
             const newUser = new Identified({ id, value: { ...user.value, email } });
             const newCredential = new EmailPassword.Secure({ email, password: credential.password });
-            const byId = this.byId.upsertAt(id, newUser);
-            const byCredential = this.byCredential.upsertAt(newCredential, id);
+            const byId = HashMap.set(this.byId, id, newUser);
+            const byCredential = HashMap.set(this.byCredential, newCredential, id);
 
             return { state: new State(byCredential, byId, this.ids), user: newUser };
           }),
@@ -376,7 +394,8 @@ class State {
     const currentCredentials = new EmailPassword.Secure({ email, password: currentPassword });
     const updatedCredentials = new EmailPassword.Secure({ email, password: updatedPassword });
 
-    const byCredentials = this.byCredential.deleteAt(currentCredentials).upsertAt(updatedCredentials, id);
+    const removed = HashMap.remove(this.byCredential, currentCredentials);
+    const byCredentials = HashMap.set(removed, updatedCredentials, id);
 
     return new State(byCredentials, this.byId, this.ids);
   };
@@ -390,7 +409,7 @@ class State {
     return this.findByEmail(email).pipe(
       Option.flatMap((user) =>
         this.findCredentialsByEmail(email).pipe(
-          Option.map(ReadonlyArray.filter((cred): cred is EmailPassword.Secure => Credentials.isEmailPassword(cred))),
+          Option.map(ReadonlyArray.filter(Credentials.isEmailPassword)),
           Option.flatMap(ReadonlyArray.head),
           Option.map((credential) => ({ user, credential })),
         ),
@@ -398,9 +417,10 @@ class State {
       Option.match({
         onNone: () => [Either.left(new Credentials.NotRecognised()), this],
         onSome: ({ user, credential }) => {
-          const byCredentials = this.byCredential.deleteAt(credential).upsertAt(resetCredentials, user.id);
+          const removed = HashMap.remove(this.byCredential, credential);
+          const byCredential = HashMap.set(removed, resetCredentials, user.id);
 
-          return [Either.right(user), new State(byCredentials, this.byId, this.ids)];
+          return [Either.right(user), new State(byCredential, this.byId, this.ids)];
         },
       }),
     );

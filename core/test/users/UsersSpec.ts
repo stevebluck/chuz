@@ -1,5 +1,5 @@
 import { Credentials, EmailPassword, Password, Token, User } from "@chuz/domain";
-import { Effect, Option } from "@chuz/prelude";
+import { Effect } from "@chuz/prelude";
 import { S } from "@chuz/prelude";
 import { Passwords, Users } from "core/index";
 import * as fc from "fast-check";
