@@ -12,7 +12,7 @@ export namespace Arbs {
 
   export namespace Credentials {
     export const StrongEmailPassword = Arbitrary.make(EmailPassword.Strong)(fc);
-    export const SocialCredential = Arbitrary.make(_Credentials.SocialCredential)(fc);
+    export const SocialCredential = Arbitrary.make(_Credentials.Social)(fc);
   }
 
   export namespace Users {

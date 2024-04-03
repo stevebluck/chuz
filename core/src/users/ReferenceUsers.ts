@@ -54,7 +54,7 @@ export class ReferenceUsers implements Users {
     );
   };
 
-  authenticate = (credential: Credentials.PlainCredential): Effect.Effect<User.Session, Credentials.NotRecognised> => {
+  authenticate = (credential: Credentials.Plain): Effect.Effect<User.Session, Credentials.NotRecognised> => {
     const findUserByCredential = Credentials.matchPlain({
       Plain: ({ email, password }) =>
         Ref.get(this.state).pipe(
@@ -67,7 +67,7 @@ export class ReferenceUsers implements Users {
           ),
           Effect.mapError(() => new Credentials.NotRecognised()),
         ),
-      SocialCredential: (credential) =>
+      Social: (credential) =>
         Ref.get(this.state).pipe(
           Effect.flatMap((state) => state.findByCredential(credential)),
           Effect.mapError(() => new Credentials.NotRecognised()),
@@ -171,7 +171,7 @@ export class ReferenceUsers implements Users {
 
   addIdentity = (
     id: User.Id,
-    credential: Credentials.SecureCredential,
+    credential: Credentials.Secure,
   ): Effect.Effect<
     ReadonlyArray.NonEmptyReadonlyArray<User.identity.Identity>,
     User.NotFound | User.CredentialInUse
@@ -199,7 +199,7 @@ export class ReferenceUsers implements Users {
 
 class State {
   constructor(
-    private readonly byCredential: HashMap.HashMap<Credentials.SecureCredential, User.Id>,
+    private readonly byCredential: HashMap.HashMap<Credentials.Secure, User.Id>,
     private readonly byId: HashMap.HashMap<User.Id, User.Identified>,
     private readonly ids: AutoIncrement<User.User>,
   ) {}
@@ -218,7 +218,7 @@ class State {
     );
   };
 
-  findByCredential = (credential: Credentials.SecureCredential): Option.Option<User.Identified> => {
+  findByCredential = (credential: Credentials.Secure): Option.Option<User.Identified> => {
     return this.byCredential.pipe(
       HashMap.findFirst((_, cred) => Credentials.equals(cred, credential)),
       Option.flatMap(([_, id]) => this.findById(id)),
@@ -247,9 +247,7 @@ class State {
     return [Either.right(user), new State(credentials, byId, ids)];
   };
 
-  findCredentialsByEmail = (
-    email: S.EmailAddress,
-  ): Option.Option<ReadonlyArray.NonEmptyArray<Credentials.SecureCredential>> => {
+  findCredentialsByEmail = (email: S.EmailAddress): Option.Option<ReadonlyArray.NonEmptyArray<Credentials.Secure>> => {
     return this.findByEmail(email).pipe(
       Option.map((user) => HashMap.filter(this.byCredential, (_, cred) => cred.email === user.value.email)),
       Option.map(HashMap.keys),
@@ -264,7 +262,7 @@ class State {
     );
   };
 
-  findCredentialsById = (id: User.Id): Option.Option<ReadonlyArray.NonEmptyArray<Credentials.SecureCredential>> => {
+  findCredentialsById = (id: User.Id): Option.Option<ReadonlyArray.NonEmptyArray<Credentials.Secure>> => {
     return this.findById(id).pipe(
       Option.map((user) => this.byCredential.pipe(HashMap.filter((userId) => Identified.equals(userId, user.id)))),
       Option.map(HashMap.keys),
@@ -275,13 +273,13 @@ class State {
 
   addCredential = (
     id: User.Id,
-    credential: Credentials.SecureCredential,
-  ): [Either.Either<Credentials.SecureCredential, User.CredentialInUse>, State] => {
+    credential: Credentials.Secure,
+  ): [Either.Either<Credentials.Secure, User.CredentialInUse>, State] => {
     if (Credentials.isEmailPassword(credential) && Option.isSome(this.findEmailCredential(credential.email))) {
       return [Either.left(new User.CredentialInUse()), this];
     }
 
-    const result: [Either.Either<Credentials.SecureCredential, User.CredentialInUse>, State] = this.findByCredential(
+    const result: [Either.Either<Credentials.Secure, User.CredentialInUse>, State] = this.findByCredential(
       credential,
     ).pipe(
       Option.match({
@@ -335,9 +333,9 @@ class State {
           id,
           value: {
             email: user.value.email,
-            firstName: draft.firstName ?? user.value.firstName,
-            lastName: draft.lastName ?? user.value.lastName,
-            optInMarketing: draft.optInMarketing ?? user.value.optInMarketing,
+            firstName: draft.firstName,
+            lastName: draft.lastName,
+            optInMarketing: draft.optInMarketing,
           },
         }),
     );

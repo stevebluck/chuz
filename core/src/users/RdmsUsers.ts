@@ -16,7 +16,7 @@ export class RdmsUsers implements Users {
     throw new Error("Method not implemented.");
   };
 
-  authenticate = (credential: Credentials.PlainCredential): Effect.Effect<User.Session, Credentials.NotRecognised> => {
+  authenticate = (credential: Credentials.Plain): Effect.Effect<User.Session, Credentials.NotRecognised> => {
     throw new Error("Method not implemented.");
   };
 
@@ -73,7 +73,7 @@ export class RdmsUsers implements Users {
 
   addIdentity(
     id: User.Id,
-    credential: Credentials.SecureCredential,
+    credential: Credentials.Secure,
   ): Effect.Effect<ReadonlyArray.NonEmptyReadonlyArray<User.identity.Identity>, User.NotFound | User.CredentialInUse> {
     throw new Error("Method not implemented.");
   }

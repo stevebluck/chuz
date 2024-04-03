@@ -12,7 +12,7 @@ export interface Users {
 
   identify(token: Token.Token<User.Id>): Effect.Effect<User.Session, Token.NoSuchToken>;
 
-  authenticate(credential: Credentials.PlainCredential): Effect.Effect<User.Session, Credentials.NotRecognised>;
+  authenticate(credential: Credentials.Plain): Effect.Effect<User.Session, Credentials.NotRecognised>;
 
   logout(token: Token.Token<User.Id>): Effect.Effect<void>;
 
@@ -41,7 +41,7 @@ export interface Users {
 
   addIdentity(
     id: User.Id,
-    credential: Credentials.SecureCredential,
+    credential: Credentials.Secure,
   ): Effect.Effect<ReadonlyArray.NonEmptyReadonlyArray<User.identity.Identity>, User.NotFound | User.CredentialInUse>;
 
   removeIdentity(

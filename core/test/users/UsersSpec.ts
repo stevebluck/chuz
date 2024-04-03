@@ -109,8 +109,8 @@ export namespace UsersSpec {
           const { users } = yield* _(TestBench);
           const session0 = yield* _(registerUser(users, registration));
 
-          const credential = new Credentials.SocialCredential({
-            id: Credentials.SocialCredentialId("googleId"),
+          const credential = new Credentials.Social({
+            id: Credentials.SocialId("googleId"),
             provider: "google",
             email: registration.credentials.email,
           });
@@ -403,12 +403,12 @@ export namespace UsersSpec {
             const identities = yield* _(users.findIdentitiesById(session.user.id));
 
             expect(identities.length).toBe(3);
-            expect(identities).toContainEqual(User.identity.EmailPassword({ email: registration.credentials.email }));
+            expect(identities).toContainEqual(User.identity.Email({ email: registration.credentials.email }));
             expect(identities).toContainEqual(
-              User.identity.SocialProvider({ email: socialCredential0.email, provider: socialCredential0.provider }),
+              User.identity.Social({ email: socialCredential0.email, provider: socialCredential0.provider }),
             );
             expect(identities).toContainEqual(
-              User.identity.SocialProvider({ email: socialCredential1.email, provider: socialCredential1.provider }),
+              User.identity.Social({ email: socialCredential1.email, provider: socialCredential1.provider }),
             );
           }),
         config,
@@ -466,7 +466,7 @@ export namespace UsersSpec {
             const twoIdentities = yield* _(users.addIdentity(session.user.id, socialCredential));
 
             const socialIdentity = User.identity.fromCredential(socialCredential);
-            const emailIdentity = User.identity.EmailPassword({ email: registration.credentials.email });
+            const emailIdentity = User.identity.Email({ email: registration.credentials.email });
 
             const oneIdentity = yield* _(users.removeIdentity(session.user.id, socialIdentity));
             const lastCredentialsError = yield* _(users.removeIdentity(session.user.id, emailIdentity), Effect.flip);
@@ -491,7 +491,7 @@ export namespace UsersSpec {
 
             yield* _(users.addIdentity(session.user.id, socialCredential));
 
-            const emailIdentity = User.identity.EmailPassword({ email: registration.credentials.email });
+            const emailIdentity = User.identity.Email({ email: registration.credentials.email });
             const socialIdentity = User.identity.fromCredential(socialCredential);
 
             const oneIdentity = yield* _(users.removeIdentity(session.user.id, emailIdentity));

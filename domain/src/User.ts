@@ -46,7 +46,7 @@ export const Partial = S.suspend(() => schema.pipe(S.omit("email")));
 
 export const Registration = S.suspend(() =>
   S.struct({
-    credentials: Domain.Credentials.SecureCredential,
+    credentials: Domain.Credentials.Secure,
     firstName: S.option(FirstName),
     lastName: S.option(LastName),
     optInMarketing: OptInMarketing,
