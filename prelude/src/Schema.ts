@@ -22,6 +22,7 @@ export const EmailAddress: S.Schema<string & Brand.Brand<"EmailAddress">, string
   .pipe(S.minLength(5), S.includes("@"), S.includes("."), S.brand("EmailAddress"))
   .annotations({
     arbitrary: () => (fc) => fc.emailAddress().map(S.decodeSync(EmailAddress)),
+    message: () => "Looks like you have a typo in your email address.",
   });
 
 export const CheckboxInput: S.Schema<boolean, string | undefined> = S.transform(

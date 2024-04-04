@@ -33,6 +33,8 @@ export const redirectToAccount = AppCookies.returnTo.pipe(
 
 export const exception = Http.response.empty({ status: 500 });
 
+export const notFound = Http.response.empty({ status: 404 });
+
 export const ok = (data?: unknown) =>
   Predicate.isUndefined(data) ? Http.response.empty({ status: 200 }) : Http.response.json(data);
 

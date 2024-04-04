@@ -57,8 +57,6 @@ export type UpdateEmailError = NotFound | EmailAlreadyInUse;
 
 export class NotFound extends Data.TaggedError("UserNotFound") {}
 
-export class EmailAlreadyInUse extends S.TaggedError<EmailAlreadyInUse>()("EmailAlreadyInUse", {
-  email: S.EmailAddress,
-}) {}
-export class LastCredentialError extends S.TaggedError<LastCredentialError>()("LastCredentialError", {}) {}
-export class CredentialInUse extends S.TaggedError<LastCredentialError>()("CredentialInUse", {}) {}
+export class EmailAlreadyInUse extends Data.TaggedError("EmailAlreadyInUse")<{ email: S.EmailAddress }> {}
+export class LastCredentialError extends Data.TaggedError("LastCredentialError") {}
+export class CredentialInUse extends Data.TaggedError("CredentialInUse") {}

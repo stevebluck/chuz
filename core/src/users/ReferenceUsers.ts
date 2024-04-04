@@ -56,12 +56,13 @@ export class ReferenceUsers implements Users {
 
   authenticate = (credential: Credentials.Plain): Effect.Effect<User.Session, Credentials.NotRecognised> => {
     const findUserByCredential = Credentials.matchPlain({
-      Plain: ({ email, password }) =>
+      Plain: (credential) =>
         Ref.get(this.state).pipe(
-          Effect.flatMap((state) => state.findEmailCredential(email)),
+          Effect.map((state) => state.findCredentialsByEmail(credential.email)),
+          Effect.flatMap(ReadonlyArray.findFirst(Credentials.isEmailPassword)),
           Effect.flatMap((secure) =>
-            Effect.if(this.match(password, secure.password), {
-              onTrue: this.findByEmail(email),
+            Effect.if(this.match(credential.password, secure.password), {
+              onTrue: this.findByEmail(credential.email),
               onFalse: new Credentials.NotRecognised(),
             }),
           ),
@@ -108,7 +109,7 @@ export class ReferenceUsers implements Users {
       Effect.flatMap(this.findById),
       Effect.flatMap((user) =>
         Ref.get(this.state).pipe(
-          Effect.flatMap((s) => s.findEmailCredential(user.value.email)),
+          Effect.flatMap((s) => s.findEmailCredential(user.id)),
           Effect.mapError(() => new Credentials.NotRecognised()),
           Effect.flatMap((secure) =>
             // Check the current password is valid and update it
@@ -162,7 +163,7 @@ export class ReferenceUsers implements Users {
     id: User.Id,
   ): Effect.Effect<ReadonlyArray.NonEmptyReadonlyArray<User.identity.Identity>, User.NotFound> => {
     return Ref.get(this.state).pipe(
-      Effect.flatMap((s) => s.findCredentialsById(id)),
+      Effect.map((s) => s.findCredentialsById(id)),
       Effect.mapError(() => new User.NotFound()),
       Effect.filterOrDie(ReadonlyArray.isNonEmptyArray, () => "User has no credentials"),
       Effect.map(ReadonlyArray.map(User.identity.fromCredential)),
@@ -212,9 +213,10 @@ class State {
   };
 
   findByEmail = (email: S.EmailAddress): Option.Option<User.Identified> => {
-    return this.byId.pipe(
-      HashMap.findFirst((user) => user.value.email === email),
-      Option.map(([_, user]) => user),
+    return this.byCredential.pipe(
+      HashMap.findFirst((_, cred) => cred.email === email),
+      Option.map(([_, id]) => id),
+      Option.flatMap(this.findById),
     );
   };
 
@@ -247,27 +249,28 @@ class State {
     return [Either.right(user), new State(credentials, byId, ids)];
   };
 
-  findCredentialsByEmail = (email: S.EmailAddress): Option.Option<ReadonlyArray.NonEmptyArray<Credentials.Secure>> => {
-    return this.findByEmail(email).pipe(
-      Option.map((user) => HashMap.filter(this.byCredential, (_, cred) => cred.email === user.value.email)),
-      Option.map(HashMap.keys),
-      Option.map(ReadonlyArray.fromIterable),
-      Option.flatMap((a) => (ReadonlyArray.isNonEmptyArray(a) ? Option.some(a) : Option.none())),
+  findCredentialsByEmail = (email: S.EmailAddress): Array<Credentials.Secure> => {
+    return this.byCredential.pipe(
+      HashMap.filter((_, cred) => cred.email === email),
+      HashMap.keys,
+      ReadonlyArray.fromIterable,
     );
   };
 
-  findEmailCredential = (email: S.EmailAddress): Option.Option<EmailPassword.Secure> => {
-    return this.findCredentialsByEmail(email).pipe(
-      Option.flatMap(ReadonlyArray.findFirst(Credentials.isEmailPassword)),
+  findEmailCredential = (id: User.Id): Option.Option<EmailPassword.Secure> => {
+    return this.byCredential.pipe(
+      HashMap.filter((userId) => Identified.equals(id, userId)),
+      HashMap.keys,
+      ReadonlyArray.fromIterable,
+      ReadonlyArray.findFirst(Credentials.isEmailPassword),
     );
   };
 
-  findCredentialsById = (id: User.Id): Option.Option<ReadonlyArray.NonEmptyArray<Credentials.Secure>> => {
-    return this.findById(id).pipe(
-      Option.map((user) => this.byCredential.pipe(HashMap.filter((userId) => Identified.equals(userId, user.id)))),
-      Option.map(HashMap.keys),
-      Option.map(ReadonlyArray.fromIterable),
-      Option.flatMap((a) => (ReadonlyArray.isNonEmptyArray(a) ? Option.some(a) : Option.none())),
+  findCredentialsById = (id: User.Id): Array<Credentials.Secure> => {
+    return this.byCredential.pipe(
+      HashMap.filter((userId) => Identified.equals(userId, id)),
+      HashMap.keys,
+      ReadonlyArray.fromIterable,
     );
   };
 
@@ -275,7 +278,18 @@ class State {
     id: User.Id,
     credential: Credentials.Secure,
   ): [Either.Either<Credentials.Secure, User.CredentialInUse>, State] => {
-    if (Credentials.isEmailPassword(credential) && Option.isSome(this.findEmailCredential(credential.email))) {
+    const alreadyHasEmailCredential = this.findEmailCredential(id);
+
+    if (Option.isSome(alreadyHasEmailCredential) && Credentials.isEmailPassword(credential)) {
+      return [Either.left(new User.CredentialInUse()), this];
+    }
+
+    const emailAlreadyTaken = HashMap.findFirst(
+      this.byCredential,
+      (userId, cred) => cred.email === credential.email && !Identified.equals(userId, id),
+    );
+
+    if (Option.isSome(emailAlreadyTaken)) {
       return [Either.left(new User.CredentialInUse()), this];
     }
 
@@ -300,17 +314,17 @@ class State {
   ): [Either.Either<User.identity.Identity, User.LastCredentialError | User.NotFound>, State] => {
     const credentials = this.findCredentialsById(id);
 
-    if (Option.isNone(credentials)) {
+    if (ReadonlyArray.isEmptyArray(credentials)) {
       return [Either.left(new User.NotFound()), this];
     }
 
-    const newTotal = credentials.value.length - 1;
+    const newTotal = credentials.length - 1;
 
     if (newTotal < 1) {
       return [Either.left(new User.LastCredentialError()), this];
     }
 
-    return ReadonlyArray.findFirst(credentials.value, (cred) => {
+    return ReadonlyArray.findFirst(credentials, (cred) => {
       const that = User.identity.fromCredential(cred);
       return User.identity.equals(identity, that);
     }).pipe(
@@ -354,23 +368,24 @@ class State {
       this,
     ];
 
-    const emailExists = HashMap.findFirst(
+    const emailAlreadyExists = HashMap.findFirst(
       this.byCredential,
-      (_, cred) => cred.email === email && Credentials.isEmailPassword(cred),
+      (userId, cred) => cred.email === email && !Identified.equals(userId, id),
     );
 
-    if (Option.isSome(emailExists)) {
+    if (Option.isSome(emailAlreadyExists)) {
       return error(new User.EmailAlreadyInUse({ email }));
     }
 
     return this.findById(id).pipe(
       Option.flatMap((user) =>
-        this.findEmailCredential(user.value.email).pipe(
+        this.findEmailCredential(user.id).pipe(
           Option.map((credential) => {
             const newUser = new Identified({ id, value: { ...user.value, email } });
             const newCredential = new EmailPassword.Secure({ email, password: credential.password });
             const byId = HashMap.set(this.byId, id, newUser);
-            const byCredential = HashMap.set(this.byCredential, newCredential, id);
+            const removeCredential = HashMap.remove(this.byCredential, credential);
+            const byCredential = HashMap.set(removeCredential, newCredential, id);
 
             return { state: new State(byCredential, byId, this.ids), user: newUser };
           }),
@@ -406,11 +421,7 @@ class State {
 
     return this.findByEmail(email).pipe(
       Option.flatMap((user) =>
-        this.findCredentialsByEmail(email).pipe(
-          Option.map(ReadonlyArray.filter(Credentials.isEmailPassword)),
-          Option.flatMap(ReadonlyArray.head),
-          Option.map((credential) => ({ user, credential })),
-        ),
+        this.findEmailCredential(user.id).pipe(Option.map((credential) => ({ user, credential }))),
       ),
       Option.match({
         onNone: () => [Either.left(new Credentials.NotRecognised()), this],

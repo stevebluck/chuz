@@ -15,9 +15,9 @@ export type Code = string & Brand.Brand<"AuthCode">;
 export type State = string & Brand.Brand<"AuthState">;
 export type Intent = "login" | "register";
 
-export type ProviderCode = { _tag: Credentials.SocialCredentialProvider; code: Code; state: State };
+export type ProviderCode = { _tag: Credentials.SocialProvider; code: Code; state: State };
 
-export type ProviderState = { _tag: Credentials.SocialCredentialProvider; state: State };
+export type ProviderState = { _tag: Credentials.SocialProvider; state: State };
 
 export const Code = S.string.pipe(S.brand("AuthCode"));
 

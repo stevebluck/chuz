@@ -32,7 +32,7 @@ export class GoogleAuth extends Effect.Tag("@app/auth/GoogleAuth")<GoogleAuth, A
             Effect.flatMap(GoogleUser.fromUnknown),
             Effect.flatMap((user) =>
               registerOrAuthenticate(
-                new Credentials.SocialCredential({ id: user.id, email: user.email, provider: "google" }),
+                new Credentials.Social({ id: user.id, email: user.email, provider: "google" }),
                 user,
               ),
             ),
@@ -64,7 +64,7 @@ export class GoogleAuth extends Effect.Tag("@app/auth/GoogleAuth")<GoogleAuth, A
 }
 
 class GoogleUser extends S.Class<GoogleUser>("GoogleUser")({
-  id: Credentials.SocialCredentialId,
+  id: Credentials.SocialId,
   email: S.EmailAddress,
   verified_email: S.boolean,
   name: S.optionFromNullish(S.string, null),
@@ -85,7 +85,7 @@ const getUserInfo = (token: string): Effect.Effect<unknown, GetUserInfoError> =>
   });
 
 const registerOrAuthenticate = (
-  credential: Credentials.SocialCredential,
+  credential: Credentials.Social,
   user: GoogleUser,
 ): Effect.Effect<User.Session, User.EmailAlreadyInUse | Credentials.NotRecognised, Users> =>
   Users.findByEmail(user.email).pipe(

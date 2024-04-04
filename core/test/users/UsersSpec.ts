@@ -503,6 +503,30 @@ export namespace UsersSpec {
           }),
         config,
       );
+
+      asyncProperty(
+        "users cannot add an email belonging to another user",
+        fc.tuple(Arbs.Users.Register, Arbs.Users.Register),
+        ([register1, register2]) =>
+          Effect.gen(function* (_) {
+            const { users } = yield* _(TestBench);
+
+            yield* _(registerUser(users, register1));
+
+            const user2 = yield* _(registerUser(users, register2));
+
+            const socialCredential = new Credentials.Social({
+              email: register1.credentials.email,
+              provider: "google",
+              id: Credentials.SocialId("googleId"),
+            });
+
+            const error = yield* _(users.addIdentity(user2.user.id, socialCredential), Effect.flip);
+
+            expect(error).toEqual(new User.CredentialInUse());
+          }),
+        config,
+      );
     });
   };
   const registerUser = (users: Users, register: Arbs.Users.Register) =>

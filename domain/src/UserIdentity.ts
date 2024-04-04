@@ -1,4 +1,4 @@
-import { Data, Equal, Equivalence, S } from "@chuz/prelude";
+import { Data, Equal, Equivalence, Match, S } from "@chuz/prelude";
 import * as Credentials from "./Credentials";
 
 export type Identity = Data.TaggedEnum<{
@@ -19,3 +19,7 @@ export const fromCredential = Credentials.matchSecure({
 });
 
 export const equals: Equivalence.Equivalence<Identity> = Equal.equals;
+
+export const isEmail = (identity: Identity): identity is ReturnType<typeof Email> => identity._tag === "Email";
+
+export const match = Match.typeTags<Identity>();
