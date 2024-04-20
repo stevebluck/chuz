@@ -1,3 +1,5 @@
+import { Password } from "@chuz/domain";
+import { S } from "@chuz/prelude";
 import { Form } from "@remix-run/react";
 import { Routes } from "src/Routes";
 import { Link } from "src/components/Link";
@@ -6,10 +8,15 @@ import { Input } from "src/components/ui/input";
 import { Label } from "src/components/ui/label";
 import { cn } from "src/styles/classnames";
 
+export const UpdatePasswordFormFields = S.taggedStruct("UpdatePasswordForm", {
+  currentPassword: Password.Plaintext,
+  password: Password.Strong,
+  password2: Password.Strong,
+});
+
 export const UpdatePasswordForm = () => {
   return (
-    <Form method="POST" action={Routes.account.loginAndSecurity}>
-      <Input name="_tag" type="hidden" value="UpdatePassword" />
+    <Form method="POST">
       <div className="grid gap-8">
         <div className="grid gap-2">
           <Label htmlFor="currentPassword">Current password</Label>

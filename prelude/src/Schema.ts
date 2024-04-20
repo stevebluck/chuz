@@ -5,6 +5,9 @@ export * from "@effect/schema/Schema";
 export * as PR from "@effect/schema/ParseResult";
 export * as ArrayFormatter from "@effect/schema/ArrayFormatter";
 
+export const taggedStruct = <Name extends string, Fields extends S.Struct.Fields>(name: Name, fields: Fields) =>
+  S.struct(fields).pipe(S.attachPropertySignature("_tag", name));
+
 export const String100: S.Schema<string & Brand.Brand<"String100">, string> = S.Trim.pipe(
   S.minLength(1),
   S.maxLength(100),

@@ -1,16 +1,17 @@
-import { User } from "@chuz/domain";
-import { Effect, Option, ReadonlyArray } from "@chuz/prelude";
+import { Password, User } from "@chuz/domain";
+import { Effect, Match, Option, ReadonlyArray, S } from "@chuz/prelude";
 import { useLoaderData } from "@remix-run/react";
 import { ShieldIcon } from "lucide-react";
 import { Routes } from "src/Routes";
 import { AccountSettingsLayout } from "src/account/AccountSettingsLayout";
 import { AddPasswordForm } from "src/account/AddPasswordForm";
-import { UpdatePasswordForm } from "src/account/UpdatePasswordForm";
+import { UpdatePasswordForm, UpdatePasswordFormFields } from "src/account/UpdatePasswordForm";
 import { PreviewContent } from "src/components/PreviewContent";
 import { TitledSection } from "src/components/TitledSection";
 import { Card, CardDescription, CardHeader, CardTitle } from "src/components/ui/card";
 import { useActiveState } from "src/hooks/useActiveState";
 import { Http, Session, Users } from "src/server";
+import { Hasher } from "src/server/Passwords";
 import * as Remix from "src/server/Remix";
 
 export const loader = Remix.loader(
@@ -24,7 +25,42 @@ export const loader = Remix.loader(
   ),
 );
 
-export const action = Remix.action(Http.response.redirect(Routes.account.loginAndSecurity));
+const forms = S.union(UpdatePasswordFormFields);
+const matchForm = Match.typeTags<S.Schema.Type<typeof forms>>();
+
+export const action = Remix.action(
+  Session.authenticated.pipe(
+    Effect.flatMap((session) =>
+      Http.request.formData(forms).pipe(
+        Effect.flatMap(
+          matchForm({
+            UpdatePasswordForm: (form) =>
+              Effect.succeed(form).pipe(
+                Effect.filterOrFail(
+                  (form) => Password.strongEquals(form.password, form.password2),
+                  () => new Password.PasswordsDoNotMatch(),
+                ),
+                Effect.bind("hashed", (form) => Hasher.hash(form.password)),
+                Effect.flatMap(({ currentPassword, hashed }) =>
+                  Users.updatePassword(session.token, currentPassword, hashed),
+                ),
+                Effect.zipRight(Http.response.redirect(Routes.account.loginAndSecurity)),
+                Effect.catchTags({
+                  CredentialsNotRecognised: Http.response.badRequest,
+                  PasswordsDoNotMatch: Http.response.badRequest,
+                }),
+              ),
+          }),
+        ),
+      ),
+    ),
+    Effect.catchTags({
+      InvalidFormData: Http.response.validationError,
+      UserNotFound: () => Http.response.unauthorized,
+      Unauthorised: () => Http.response.unauthorized,
+    }),
+  ),
+);
 
 const Section = {
   updatePassword: "update-password",
@@ -48,11 +84,9 @@ export default function LoginAndSecurity() {
             onActivate={() => setActive(Section.updatePassword, true)}
             onCancel={() => setActive(Section.updatePassword, false)}
             preview={
-              hasPassword ? (
-                <p className="text-muted-foreground">*********</p>
-              ) : (
-                <p className="text-muted-foreground">No password is currently set</p>
-              )
+              <p className="text-muted-foreground">
+                {hasPassword ? "Password last updated (TBC)" : "No password is currently set"}
+              </p>
             }
           >
             {hasPassword ? <UpdatePasswordForm /> : <AddPasswordForm />}

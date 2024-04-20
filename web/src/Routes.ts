@@ -17,6 +17,7 @@ export const Routes = {
     home: Route("/account"),
     notifications: Route("/account/notifications"),
     loginAndSecurity: Route("/account/login-and-security"),
+    loginAndSecurityError: (name: string) => Route(`/account/login-and-security?active=${name}`),
     personalInfo: Route("/account/personal-info"),
   },
   api: {

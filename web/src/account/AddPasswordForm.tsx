@@ -1,12 +1,11 @@
 import { Form } from "@remix-run/react";
-import { Routes } from "src/Routes";
 import { Button } from "src/components/ui/button";
 import { Input } from "src/components/ui/input";
 import { Label } from "src/components/ui/label";
 
 export const AddPasswordForm = () => {
   return (
-    <Form method="POST" action={Routes.account.loginAndSecurity}>
+    <Form method="POST">
       <Input name="_tag" type="hidden" value="AddPassword" />
       <div className="grid gap-8">
         <div className="grid gap-6">
