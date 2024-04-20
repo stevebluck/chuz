@@ -15,7 +15,7 @@ import {
 export const UserDropdownMenu = () => (
   <DropdownMenu>
     <DropdownMenuTrigger asChild>
-      <Button variant="secondary" size="icon" className="rounded-full">
+      <Button variant="ghost" size="icon" className="rounded-full">
         <CircleUser className="h-5 w-5" />
         <span className="sr-only">Toggle user menu</span>
       </Button>
@@ -24,7 +24,7 @@ export const UserDropdownMenu = () => (
       <DropdownMenuLabel>My Account</DropdownMenuLabel>
       <DropdownMenuSeparator />
       <DropdownMenuItem asChild>
-        <Link to={Routes.settings}>Settings</Link>
+        <Link to={Routes.account.home}>Account</Link>
       </DropdownMenuItem>
       <DropdownMenuSeparator />
       <Form method="POST" action={Routes.logout} className="flex flex-col flex-1">

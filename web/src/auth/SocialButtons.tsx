@@ -16,7 +16,7 @@ export const AuthSocialButtons = ({ disabled, action }: Props) => {
       <Form method="POST" action={action} className="flex flex-col">
         <Input name="_tag" type="hidden" value="Provider" />
         <Input name="provider" type="hidden" value="google" />
-        <Button variant="outline" disabled={disabled}>
+        <Button variant="secondary" disabled={disabled}>
           <GoogleIcon className="mr-2 h-4 w-4" />
           Google
         </Button>
@@ -24,7 +24,7 @@ export const AuthSocialButtons = ({ disabled, action }: Props) => {
       <Form method="POST" action={action} className="flex flex-col">
         <Input name="_tag" type="hidden" value="Provider" />
         <Input name="provider" type="hidden" value="apple" />
-        <Button variant="outline" disabled={disabled}>
+        <Button variant="secondary" disabled={disabled}>
           <AppleIcon className="mr-2 h-5 w-5 dark:fill-white" />
           Apple
         </Button>

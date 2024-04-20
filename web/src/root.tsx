@@ -1,6 +1,7 @@
 import { Effect, Option } from "@chuz/prelude";
 import { LinksFunction } from "@remix-run/node";
 import { Links, Meta, Outlet, Scripts, ScrollRestoration } from "@remix-run/react";
+import { RootLayout } from "./components/RootLayout";
 import { Toaster } from "./components/ui/sonner";
 import { Http, Session } from "./server";
 import * as Remix from "./server/Remix";
@@ -44,7 +45,9 @@ export default () => {
         <Links />
       </head>
       <body className="bg-background h-full font-sans antialiased">
-        <Outlet />
+        <RootLayout>
+          <Outlet />
+        </RootLayout>
         <ScrollRestoration />
         <Scripts />
         <Toaster />

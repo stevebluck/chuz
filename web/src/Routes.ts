@@ -13,9 +13,15 @@ export const Routes = {
   resetPassword: (token: string) => Route(`/reset-password?token=${token}`),
   logout: Route("/logout"),
   dashboard: Route("/dashboard"),
-  settings: Route("/settings"),
-  account: Route("/settings/account"),
-  notifications: Route("/settings/notifications"),
-  authentication: Route("/settings/authentication"),
-  todo: Route("/my-account"),
+  account: {
+    home: Route("/account"),
+    notifications: Route("/account/notifications"),
+    loginAndSecurity: Route("/account/login-and-security"),
+    personalInfo: Route("/account/personal-info"),
+  },
+  api: {
+    addPassword: Route("/api/add-password"),
+    updatePassword: Route("/api/update-password"),
+  },
+  todo: Route("/"),
 };

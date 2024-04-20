@@ -1,35 +1,22 @@
-import { Routes } from "src/Routes";
-import { NavLink, NavLinkRenderProps } from "src/components/Link";
+import { AccountBreadcrumb } from "src/account/AccountBreadcrumb";
+import { BreadcrumbItem, BreadcrumbPage } from "src/components/ui/breadcrumb";
 
 type Props = {
+  title: string;
   children: React.ReactNode;
 };
-
-const navLinkClassname = ({ isActive }: NavLinkRenderProps) => (isActive ? "font-semibold text-primary" : "");
-
-export const AccountSettingsLayout = ({ children }: Props) => {
+export const AccountSettingsLayout = ({ title, children }: Props) => {
   return (
-    <main className="flex min-h-[calc(100vh_-_theme(spacing.16))] flex-1 flex-col gap-4 bg-muted/40 p-4 md:gap-8 md:p-10">
-      <div className="mx-auto grid w-full max-w-6xl gap-2">
-        <h1 className="text-3xl font-semibold">Settings</h1>
+    <div className="p-4 md:p-10 mx-auto w-full max-w-6xl">
+      <div className="flex flex-col gap-4 pb-10 md:pb-16">
+        <AccountBreadcrumb>
+          <BreadcrumbItem>
+            <BreadcrumbPage>{title}</BreadcrumbPage>
+          </BreadcrumbItem>
+        </AccountBreadcrumb>
+        <h1 className="text-3xl font-semibold">{title}</h1>
       </div>
-      <div className="mx-auto grid w-full max-w-6xl items-start gap-6 md:grid-cols-[180px_1fr] lg:grid-cols-[250px_1fr]">
-        <nav className="grid gap-4 text-sm text-muted-foreground">
-          <NavLink to={Routes.settings} end className={navLinkClassname}>
-            General
-          </NavLink>
-          <NavLink to={Routes.account} className={navLinkClassname}>
-            Account
-          </NavLink>
-          <NavLink to={Routes.notifications} className={navLinkClassname}>
-            Notifications
-          </NavLink>
-          <NavLink to={Routes.authentication} className={navLinkClassname}>
-            Password & authentication
-          </NavLink>
-        </nav>
-        {children}
-      </div>
-    </main>
+      <div className="flex flex-col md:flex-row gap-8 md:gap-20">{children}</div>
+    </div>
   );
 };

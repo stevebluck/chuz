@@ -1,6 +1,5 @@
 import { Effect } from "@chuz/prelude";
 import { Outlet } from "@remix-run/react";
-import { AccountLayout } from "src/account/AccountLayout";
 import { Http, Session } from "src/server";
 import * as Remix from "src/server/Remix";
 import { AppCookies } from "src/server/cookies/AppCookies";
@@ -13,10 +12,6 @@ export const loader = Remix.loader(
   ),
 );
 
-export default function Account() {
-  return (
-    <AccountLayout>
-      <Outlet />
-    </AccountLayout>
-  );
+export default function Private() {
+  return <Outlet />;
 }

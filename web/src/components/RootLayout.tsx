@@ -5,13 +5,13 @@ import { Logo } from "src/components/Logo";
 import { Button } from "src/components/ui/button";
 import { Input } from "src/components/ui/input";
 import { Sheet, SheetContent, SheetTrigger } from "src/components/ui/sheet";
-import { UserDropdownMenu } from "./UserDropdownMenu";
+import { UserDropdownMenu } from "../account/UserDropdownMenu";
 
 interface Props {
   children: React.ReactNode;
 }
 
-export const AccountLayout = ({ children }: Props) => {
+export const RootLayout = ({ children }: Props) => {
   return (
     <div className="flex min-h-screen w-full flex-col">
       <header className="sticky top-0 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6">
@@ -22,13 +22,10 @@ export const AccountLayout = ({ children }: Props) => {
           <NavLink to={Routes.dashboard} end className={headerNavItemClassname}>
             Dashboard
           </NavLink>
-          <NavLink to={Routes.settings} className={headerNavItemClassname}>
-            Settings
-          </NavLink>
         </nav>
         <Sheet>
           <SheetTrigger asChild>
-            <Button variant="outline" size="icon" className="shrink-0 md:hidden">
+            <Button variant="secondary" size="icon" className="shrink-0 md:hidden">
               <Menu className="h-5 w-5" />
               <span className="sr-only">Toggle navigation menu</span>
             </Button>
@@ -40,9 +37,6 @@ export const AccountLayout = ({ children }: Props) => {
               </Link>
               <NavLink to={Routes.dashboard} className={sheetNavItemClassname}>
                 Dashboard
-              </NavLink>
-              <NavLink to={Routes.settings} className={sheetNavItemClassname}>
-                Settings
               </NavLink>
             </nav>
           </SheetContent>
