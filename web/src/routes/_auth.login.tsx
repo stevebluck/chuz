@@ -36,11 +36,11 @@ export const action = Remix.action(
         }),
       ),
       Effect.catchTags({
+        CredentialNotRecognised: Http.response.badRequest,
         AlreadyAuthenticated: () => Http.response.redirectToAccount,
         CookieError: () => Http.response.exception,
         GenerateUrlError: () => Http.response.exception,
         InvalidFormData: Http.response.validationError,
-        CredentialsNotRecognised: Http.response.badRequest,
       }),
     ),
   ),

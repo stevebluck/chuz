@@ -1,4 +1,4 @@
-import { EmailPassword, Password, User as _User, Credentials as _Credentials } from "@chuz/domain";
+import { EmailPassword, Password, User as _User, Credential as _Credentials } from "@chuz/domain";
 import { Arbitrary, Option, S } from "@chuz/prelude";
 import * as fc from "fast-check";
 
@@ -27,8 +27,6 @@ export namespace Arbs {
       lastName: LastName.map(Option.fromNullable),
       optInMarketing: OptInMarketing,
     });
-
-    export const User = Arbitrary.make(_User.schema)(fc);
 
     export const PartialUser = Arbitrary.make(_User.Partial)(fc);
   }

@@ -1,7 +1,7 @@
-import { Data, Option } from "@chuz/prelude";
+import { Data, Equal, Option } from "@chuz/prelude";
 import { S } from "@chuz/prelude";
 import * as Domain from ".";
-import * as identity from "./UserIdentity";
+import * as identity from "./Identity";
 
 export { identity };
 
@@ -21,20 +21,6 @@ export type FirstName = S.Schema.Type<typeof FirstName>;
 export type LastName = S.Schema.Type<typeof LastName>;
 export type OptInMarketing = S.Schema.Type<typeof OptInMarketing>;
 export interface Partial extends S.Schema.Type<typeof Partial> {}
-export interface Registration extends S.Schema.Type<typeof Registration> {}
-
-export const schema = S.suspend(() =>
-  S.struct({
-    email: S.EmailAddress,
-    firstName: S.optionFromNullable(FirstName),
-    lastName: S.optionFromNullable(LastName),
-    optInMarketing: OptInMarketing,
-  }),
-);
-
-export const make = Data.case<User>();
-
-export const from = S.decode(schema);
 
 export const OptInMarketing = S.boolean.pipe(S.brand("OptInMarketing"));
 
@@ -42,21 +28,17 @@ export const FirstName = S.String100.pipe(S.brand("FirstName"));
 
 export const LastName = S.String100.pipe(S.brand("LastName"));
 
-export const Partial = S.suspend(() => schema.pipe(S.omit("email")));
+export const User = S.struct({
+  email: S.EmailAddress,
+  firstName: S.optionFromNullable(FirstName),
+  lastName: S.optionFromNullable(LastName),
+  optInMarketing: OptInMarketing,
+});
 
-export const Registration = S.suspend(() =>
-  S.struct({
-    credentials: Domain.Credentials.Secure,
-    firstName: S.option(FirstName),
-    lastName: S.option(LastName),
-    optInMarketing: OptInMarketing,
-  }),
-);
+export const eqId = Equal.equals<Id, Id>;
 
-export type UpdateEmailError = NotFound | EmailAlreadyInUse;
+export const make = Data.case<User>();
 
-export class NotFound extends Data.TaggedError("UserNotFound") {}
+export const from = S.decode(User);
 
-export class EmailAlreadyInUse extends Data.TaggedError("EmailAlreadyInUse")<{ email: S.EmailAddress }> {}
-export class LastCredentialError extends Data.TaggedError("LastCredentialError") {}
-export class CredentialInUse extends Data.TaggedError("CredentialInUse") {}
+export const Partial = User.pipe(S.omit("email"));

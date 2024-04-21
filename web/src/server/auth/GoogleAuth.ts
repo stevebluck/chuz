@@ -1,6 +1,7 @@
-import { Credentials, User } from "@chuz/domain";
+import { Credential, User } from "@chuz/domain";
 import { Context, Data, Effect, Layer } from "@chuz/prelude";
 import { S } from "@chuz/prelude";
+import { EmailAlreadyInUse } from "core/index";
 import { google } from "googleapis";
 import { LayerUtils } from "../LayerUtils";
 import { Users } from "../Users";
@@ -32,7 +33,7 @@ export class GoogleAuth extends Effect.Tag("@app/auth/GoogleAuth")<GoogleAuth, A
             Effect.flatMap(GoogleUser.fromUnknown),
             Effect.flatMap((user) =>
               registerOrAuthenticate(
-                new Credentials.Social({ id: user.id, email: user.email, provider: "google" }),
+                new Credential.Social({ id: user.id, email: user.email, provider: "google" }),
                 user,
               ),
             ),
@@ -64,7 +65,7 @@ export class GoogleAuth extends Effect.Tag("@app/auth/GoogleAuth")<GoogleAuth, A
 }
 
 class GoogleUser extends S.Class<GoogleUser>("GoogleUser")({
-  id: Credentials.SocialId,
+  id: Credential.SocialId,
   email: S.EmailAddress,
   verified_email: S.boolean,
   name: S.optionFromNullish(S.string, null),
@@ -85,10 +86,10 @@ const getUserInfo = (token: string): Effect.Effect<unknown, GetUserInfoError> =>
   });
 
 const registerOrAuthenticate = (
-  credential: Credentials.Social,
+  credential: Credential.Social,
   user: GoogleUser,
-): Effect.Effect<User.Session, User.EmailAlreadyInUse | Credentials.NotRecognised, Users> =>
-  Users.findByEmail(user.email).pipe(
+): Effect.Effect<User.Session, EmailAlreadyInUse | Credential.NotRecognised, Users> =>
+  Users.getByEmail(user.email).pipe(
     Effect.zipRight(Users.authenticate(credential)),
     Effect.catchAll(() =>
       Users.register({

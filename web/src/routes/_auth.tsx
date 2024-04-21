@@ -1,4 +1,4 @@
-import { Credentials } from "@chuz/domain";
+import { Credential } from "@chuz/domain";
 import { Effect } from "@chuz/prelude";
 import { S } from "@chuz/prelude";
 import { Outlet } from "@remix-run/react";
@@ -10,7 +10,7 @@ import { SocialAuth } from "src/server/auth/SocialAuth";
 import { AppCookies } from "src/server/cookies/AppCookies";
 
 const SearchParams = S.struct({
-  _tag: Credentials.SocialProvider,
+  _tag: Credential.SocialProvider,
   code: Auth.Code,
   state: Auth.State,
 });
@@ -32,7 +32,7 @@ export const loader = Remix.loader(
           CookieNotPresent: () => Http.response.ok(),
           SearchParamsError: () => Http.response.ok(),
           EmailAlreadyInUse: Http.response.badRequest,
-          CredentialsNotRecognised: Http.response.badRequest,
+          CredentialNotRecognised: Http.response.badRequest,
           ExchangeCodeError: () => Http.response.exception,
           StateDoesNotMatch: () => Http.response.exception,
         }),

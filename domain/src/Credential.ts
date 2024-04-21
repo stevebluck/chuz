@@ -1,4 +1,4 @@
-import { Data, Equal, Equivalence, Match } from "@chuz/prelude";
+import { Data, Equal, Equivalence, Match, Number, Option } from "@chuz/prelude";
 import { S } from "@chuz/prelude";
 import * as EmailPassword from "./EmailPassword";
 
@@ -20,6 +20,11 @@ export class Social extends S.TaggedClass<Social>()("Social", {
   static equals: Equivalence.Equivalence<Social> = Equal.equals;
 }
 
+export const hasFallbackCredential = (
+  emailCredential: Option.Option<EmailPassword.Secure>,
+  socialCredentials: Social[],
+) => Option.isSome(emailCredential) || Number.greaterThan(socialCredentials.length, 1);
+
 export const SocialId = Social.fields.id;
 
 export const SocialProvider = Social.fields.provider;
@@ -37,6 +42,8 @@ export const isEmailPassword = (credential: Secure): credential is EmailPassword
 
 export const isSocialIdentity = (credential: Secure): credential is EmailPassword.Secure => S.is(Social)(credential);
 
-export const equals: Equivalence.Equivalence<Secure> = Equal.equals;
+export const equals = Equal.equals<Secure>;
 
-export class NotRecognised extends Data.TaggedError("CredentialsNotRecognised") {}
+export class InUse extends Data.TaggedError("CredentialInUse") {}
+export class NotRecognised extends Data.TaggedError("CredentialNotRecognised") {}
+export class NoFallbackAvailable extends Data.TaggedError("NoFallbackCredentialAvailable") {}

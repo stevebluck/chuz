@@ -16,7 +16,7 @@ export const action = Remix.action(
     Effect.flatMap(({ email }) => Users.requestPasswordReset(email)),
     Effect.flatMap(Http.response.ok),
     Effect.catchTags({
-      CredentialsNotRecognised: Http.response.badRequest,
+      CredentialNotRecognised: Http.response.badRequest,
       InvalidFormData: Http.response.validationError,
       AlreadyAuthenticated: () => Http.response.unauthorized,
     }),

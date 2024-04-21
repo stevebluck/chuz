@@ -23,7 +23,7 @@ type AppEnv = Layer.Layer.Success<typeof AppLayer>;
 
 type RequestEnv = HttpServer.request.ServerRequest | FileSystem.FileSystem | Params | Session | Scope.Scope | Path.Path;
 
-export interface RemixHandler<E, R>
+export interface RemixHandler<R>
   extends Effect.Effect<
     HttpServer.response.ServerResponse,
     HttpServer.response.ServerResponse | BodyError,
@@ -72,7 +72,7 @@ const setSessionCookie = (response: HttpServer.response.ServerResponse) =>
   });
 
 export const loader =
-  <E, R extends AppEnv | RequestEnv>(effect: RemixHandler<E, R>) =>
+  <R extends AppEnv | RequestEnv>(effect: RemixHandler<R>) =>
   async (args: LoaderFunctionArgs): Promise<Response> =>
     effect.pipe(
       Effect.flatMap(setSessionCookie),
@@ -83,7 +83,7 @@ export const loader =
     );
 
 export const action =
-  <E>(effect: RemixHandler<E, AppEnv | RequestEnv>) =>
+  (effect: RemixHandler<AppEnv | RequestEnv>) =>
   async (args: ActionFunctionArgs): Promise<Response> =>
     effect.pipe(
       Effect.flatMap(setSessionCookie),

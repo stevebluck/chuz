@@ -1,4 +1,4 @@
-import { EmailPassword, Identified, Password, Session, User } from "@chuz/domain";
+import { EmailPassword, Password, Session, User } from "@chuz/domain";
 import { Clock, Effect, Option, S } from "@chuz/prelude";
 import * as Core from "core/index";
 
@@ -7,7 +7,7 @@ export type TestBench = Core.Capabilities;
 export namespace TestBench {
   export const make: Effect.Effect<Core.Capabilities> = Effect.gen(function* (_) {
     const clock = Clock.make();
-    const userTokens = yield* _(Core.ReferenceTokens.create(clock, Identified.equals));
+    const userTokens = yield* _(Core.ReferenceTokens.create(clock, User.eqId));
     const passwordResetTokens = yield* _(Core.ReferenceTokens.create(clock, Password.resetEquals));
 
     const users = yield* _(Core.ReferenceUsers.make(userTokens, passwordResetTokens, match));
@@ -27,7 +27,7 @@ export namespace TestBench {
         password,
       });
 
-      const registration: User.Registration = {
+      const registration: Core.Registration = {
         credentials: credential,
         firstName: Option.some(userRegistration.firstName),
         lastName: Option.some(userRegistration.lastName),

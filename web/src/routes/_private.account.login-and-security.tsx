@@ -1,10 +1,10 @@
 import { Password, User } from "@chuz/domain";
-import { Effect, Match, Option, ReadonlyArray, S } from "@chuz/prelude";
+import { Effect, Match, Option, S, Tuple } from "@chuz/prelude";
 import { useLoaderData } from "@remix-run/react";
 import { ShieldIcon } from "lucide-react";
 import { Routes } from "src/Routes";
 import { AccountSettingsLayout } from "src/account/AccountSettingsLayout";
-import { AddPasswordForm } from "src/account/AddPasswordForm";
+import { SetPasswordForm, SetPasswordFormFields } from "src/account/SetPasswordForm";
 import { UpdatePasswordForm, UpdatePasswordFormFields } from "src/account/UpdatePasswordForm";
 import { PreviewContent } from "src/components/PreviewContent";
 import { TitledSection } from "src/components/TitledSection";
@@ -16,16 +16,18 @@ import * as Remix from "src/server/Remix";
 
 export const loader = Remix.loader(
   Session.authenticated.pipe(
-    Effect.flatMap((session) => Users.findIdentitiesById(session.user.id)),
-    Effect.flatMap(Http.response.ok),
-    Effect.catchTags({
-      UserNotFound: () => Http.response.unauthorized,
-      Unauthorised: () => Http.response.unauthorized,
-    }),
+    Effect.flatMap((session) => Users.identities(session.user.id)),
+    Effect.flatMap((identities) =>
+      Http.response.ok({
+        hasPassword: Option.isSome(Tuple.getFirst(identities)),
+        identities: Tuple.getSecond(identities),
+      }),
+    ),
+    Effect.catchTags({ Unauthorised: () => Http.response.unauthorized }),
   ),
 );
 
-const forms = S.union(UpdatePasswordFormFields);
+const forms = S.union(UpdatePasswordFormFields, SetPasswordFormFields);
 const matchForm = Match.typeTags<S.Schema.Type<typeof forms>>();
 
 export const action = Remix.action(
@@ -34,10 +36,24 @@ export const action = Remix.action(
       Http.request.formData(forms).pipe(
         Effect.flatMap(
           matchForm({
+            SetPasswordForm: (form) =>
+              Effect.succeed(form).pipe(
+                Effect.filterOrFail(
+                  (form) => Password.strongEquals(form.password)(form.password2),
+                  () => new Password.PasswordsDoNotMatch(),
+                ),
+                Effect.bind("hashed", (form) => Hasher.hash(form.password)),
+                Effect.flatMap(({ hashed }) => Users.setPassword(session.token, hashed)),
+                Effect.zipRight(Http.response.redirect(Routes.account.loginAndSecurity)),
+                Effect.catchTags({
+                  PasswordsDoNotMatch: Http.response.badRequest,
+                  PasswordAlreadySet: Http.response.badRequest,
+                }),
+              ),
             UpdatePasswordForm: (form) =>
               Effect.succeed(form).pipe(
                 Effect.filterOrFail(
-                  (form) => Password.strongEquals(form.password, form.password2),
+                  (form) => Password.strongEquals(form.password)(form.password2),
                   () => new Password.PasswordsDoNotMatch(),
                 ),
                 Effect.bind("hashed", (form) => Hasher.hash(form.password)),
@@ -46,7 +62,7 @@ export const action = Remix.action(
                 ),
                 Effect.zipRight(Http.response.redirect(Routes.account.loginAndSecurity)),
                 Effect.catchTags({
-                  CredentialsNotRecognised: Http.response.badRequest,
+                  CredentialNotRecognised: Http.response.badRequest,
                   PasswordsDoNotMatch: Http.response.badRequest,
                 }),
               ),
@@ -56,19 +72,23 @@ export const action = Remix.action(
     ),
     Effect.catchTags({
       InvalidFormData: Http.response.validationError,
-      UserNotFound: () => Http.response.unauthorized,
+      NoSuchToken: () => Http.response.unauthorized,
       Unauthorised: () => Http.response.unauthorized,
     }),
   ),
 );
+
+type LoaderResponse = {
+  hasPassword: boolean;
+  socialIdentities: User.identity.Social[];
+};
 
 const Section = {
   updatePassword: "update-password",
 } as const;
 
 export default function LoginAndSecurity() {
-  const identities = useLoaderData<Array<User.identity.Identity>>();
-  const hasPassword = ReadonlyArray.findFirst(identities, User.identity.isEmail).pipe(Option.isSome);
+  const { hasPassword } = useLoaderData<LoaderResponse>();
 
   const { isActive, setActive, isOtherActive } = useActiveState(Section);
 
@@ -89,7 +109,7 @@ export default function LoginAndSecurity() {
               </p>
             }
           >
-            {hasPassword ? <UpdatePasswordForm /> : <AddPasswordForm />}
+            {hasPassword ? <UpdatePasswordForm /> : <SetPasswordForm />}
           </PreviewContent>
         </TitledSection>
         <TitledSection title="Social accounts">...</TitledSection>

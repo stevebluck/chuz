@@ -1,13 +1,14 @@
-import { Credentials, User } from "@chuz/domain";
+import { Credential, User } from "@chuz/domain";
 import { Brand, makeUuid } from "@chuz/prelude";
 import { Data, Effect, Equal, Equivalence, ReadonlyArray, String } from "@chuz/prelude";
 import { S } from "@chuz/prelude";
+import { EmailAlreadyInUse } from "core/index";
 import { Users } from "../Users";
 
 export interface SocialAuths {
   exchangeCodeForSession: (
     provider: ProviderCode,
-  ) => Effect.Effect<User.Session, ExchangeCodeError | User.EmailAlreadyInUse | Credentials.NotRecognised, Users>;
+  ) => Effect.Effect<User.Session, ExchangeCodeError | EmailAlreadyInUse | Credential.NotRecognised, Users>;
   generateAuthUrl: (provider: ProviderState) => Effect.Effect<string, GenerateUrlError>;
 }
 
@@ -15,9 +16,9 @@ export type Code = string & Brand.Brand<"AuthCode">;
 export type State = string & Brand.Brand<"AuthState">;
 export type Intent = "login" | "register";
 
-export type ProviderCode = { _tag: Credentials.SocialProvider; code: Code; state: State };
+export type ProviderCode = { _tag: Credential.SocialProvider; code: Code; state: State };
 
-export type ProviderState = { _tag: Credentials.SocialProvider; state: State };
+export type ProviderState = { _tag: Credential.SocialProvider; state: State };
 
 export const Code = S.string.pipe(S.brand("AuthCode"));
 

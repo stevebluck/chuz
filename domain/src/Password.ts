@@ -1,6 +1,7 @@
 import { Equivalence, Brand, Equal, Data } from "@chuz/prelude";
 import { S } from "@chuz/prelude";
-import { Id, Identified } from "./Identified";
+import { Id } from "./Identified";
+import { User } from "./User";
 
 export type Plaintext = string & Brand.Brand<"PlaintextPassword">;
 export type Strong = string & Brand.Brand<"StrongPassword">;
@@ -16,12 +17,12 @@ export const Strong = S.string.pipe(
   S.message(() => "Your password needs to be a bit stronger!"),
 );
 
-export const strongEquals = Equal.equivalence<Strong>();
+export const strongEquals = Equal.equals<Strong>;
 
 export const Hashed = S.NonEmpty.pipe(S.brand("HashedPassword"));
 
-export const resetEquals = Equivalence.make<Reset<any>>(
-  ([email1, id1], [email2, id2]) => Equal.equals(email1, email2) && Identified.equals(id1, id2),
+export const resetEquals = Equivalence.make<Reset<User>>(
+  ([email1, id1], [email2, id2]) => Equal.equals(email1, email2) && Equal.equals(id1, id2),
 );
 
 export class PasswordsDoNotMatch extends Data.TaggedError("PasswordsDoNotMatch") {}

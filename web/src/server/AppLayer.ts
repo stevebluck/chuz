@@ -45,7 +45,7 @@ const Dev = Layer.mergeAll(Users.dev, SocialAuth.layer, AppCookies.layer, Passwo
   Layer.provide(DevTools.layer()),
 );
 
-const Live = Layer.mergeAll(Users.live, SocialAuth.layer, AppCookies.layer, Passwords.Hasher.layer).pipe(
+const Live = Layer.mergeAll(Users.dev, SocialAuth.layer, AppCookies.layer, Passwords.Hasher.layer).pipe(
   Layer.provide(Configs),
   Layer.provide(PostgresConfigLive),
 );
