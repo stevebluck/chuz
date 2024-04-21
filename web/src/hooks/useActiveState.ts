@@ -8,7 +8,7 @@ export const useActiveState = <A extends Record<string, string>>(sections: A) =>
 
   const values = Object.fromEntries(searchParams.entries());
 
-  const activeSection = S.decodeUnknownOption(S.struct({ active: S.literal(...Object.values(sections)) }))(values);
+  const activeSection = S.decodeUnknownOption(S.Struct({ active: S.Literal(...Object.values(sections)) }))(values);
 
   const setActive = (section: A[keyof A], active: boolean) => {
     const params = new URLSearchParams();

@@ -8,11 +8,11 @@ import { Input } from "src/components/ui/input";
 import { Label } from "src/components/ui/label";
 import { cn } from "src/styles/classnames";
 
-export const UpdatePasswordFormFields = S.taggedStruct("UpdatePasswordForm", {
+export const UpdatePasswordFormFields = S.Struct({
   currentPassword: Password.Plaintext,
   password: Password.Strong,
   password2: Password.Strong,
-});
+}).pipe(S.attachPropertySignature("_tag", "UpdatePasswordForm"));
 
 export const UpdatePasswordForm = () => {
   return (

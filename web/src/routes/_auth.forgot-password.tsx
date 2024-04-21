@@ -8,7 +8,7 @@ import { Session, Http, Users } from "src/server";
 import * as Remix from "src/server/Remix";
 
 type FormFields = S.Schema.Type<typeof FormFields>;
-const FormFields = S.struct({ email: S.EmailAddress });
+const FormFields = S.Struct({ email: S.EmailAddress });
 
 export const action = Remix.action(
   Session.guest.pipe(

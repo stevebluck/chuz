@@ -1,17 +1,5 @@
 import { Credential, Identified, Password, Session, Token, User } from "@chuz/domain";
-import {
-  Duration,
-  Effect,
-  Either,
-  HashMap,
-  Option,
-  Predicate,
-  ReadonlyArray,
-  Ref,
-  S,
-  Tuple,
-  identity,
-} from "@chuz/prelude";
+import { Duration, Effect, Either, HashMap, Option, Predicate, Array, Ref, S, Tuple, identity } from "@chuz/prelude";
 import { Passwords } from "core/auth/Passwords";
 import { AutoIncrement } from "core/persistence/AutoIncrement";
 import { Tokens } from "core/tokens/Tokens";
@@ -164,11 +152,11 @@ export class ReferenceUsers implements Users {
   removePassword = (token: User.Token): Effect.Effect<void, Token.NoSuchToken | Credential.NoFallbackAvailable> => {
     return Effect.all([this.userTokens.lookup(token), Ref.get(this.state)]).pipe(
       Effect.filterOrFail(
-        ([id, state]) => ReadonlyArray.isNonEmptyArray(state.findSocialCredentialsById(id)),
+        ([id, state]) => Array.isNonEmptyArray(state.findSocialCredentialsById(id)),
         () => new Credential.NoFallbackAvailable(),
       ),
       Effect.tap(([id]) => Ref.modify(this.state, (s) => s.removePassword(id))),
-      Effect.asUnit,
+      Effect.asVoid,
     );
   };
 
@@ -293,10 +281,7 @@ class State {
   };
 
   findSocialCredentialsById = (id: User.Id): Array<Credential.Social> => {
-    return HashMap.filter(this.socials, (userId) => User.eqId(id, userId)).pipe(
-      HashMap.keys,
-      ReadonlyArray.fromIterable,
-    );
+    return HashMap.filter(this.socials, (userId) => User.eqId(id, userId)).pipe(HashMap.keys, Array.fromIterable);
   };
 
   register = (input: Registration): [User.Identified, State] => {
@@ -425,10 +410,7 @@ class State {
   addSocialCredential = (id: User.Id, credential: Credential.Social): [Array<Credential.Social>, State] => {
     const socials = HashMap.set(this.socials, credential, id);
 
-    return [
-      socials.pipe(HashMap.keys, ReadonlyArray.fromIterable),
-      new State(this.users, this.passwords, socials, this.ids),
-    ];
+    return [socials.pipe(HashMap.keys, Array.fromIterable), new State(this.users, this.passwords, socials, this.ids)];
   };
 
   removeSocialCredential = (userId: User.Id, credentialId: Credential.SocialId): [Array<Credential.Social>, State] => {
@@ -440,9 +422,6 @@ class State {
       Option.getOrElse(() => this.socials),
     );
 
-    return [
-      socials.pipe(HashMap.keys, ReadonlyArray.fromIterable),
-      new State(this.users, this.passwords, socials, this.ids),
-    ];
+    return [socials.pipe(HashMap.keys, Array.fromIterable), new State(this.users, this.passwords, socials, this.ids)];
   };
 }

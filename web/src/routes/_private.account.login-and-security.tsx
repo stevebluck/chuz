@@ -27,7 +27,7 @@ export const loader = Remix.loader(
   ),
 );
 
-const forms = S.union(UpdatePasswordFormFields, SetPasswordFormFields);
+const forms = S.Union(UpdatePasswordFormFields, SetPasswordFormFields);
 const matchForm = Match.typeTags<S.Schema.Type<typeof forms>>();
 
 export const action = Remix.action(
@@ -78,17 +78,15 @@ export const action = Remix.action(
   ),
 );
 
-type LoaderResponse = {
-  hasPassword: boolean;
-  socialIdentities: User.identity.Social[];
-};
-
 const Section = {
   updatePassword: "update-password",
 } as const;
 
 export default function LoginAndSecurity() {
-  const { hasPassword } = useLoaderData<LoaderResponse>();
+  const { hasPassword } = useLoaderData<{
+    hasPassword: boolean;
+    socialIdentities: User.identity.Social[];
+  }>();
 
   const { isActive, setActive, isOtherActive } = useActiveState(Section);
 

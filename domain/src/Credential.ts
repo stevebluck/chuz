@@ -14,7 +14,7 @@ export type SocialId = S.Schema.Type<typeof SocialId>;
 
 export class Social extends S.TaggedClass<Social>()("Social", {
   id: S.NonEmpty.pipe(S.brand("SocialId")),
-  provider: S.literal("google", "apple"),
+  provider: S.Literal("google", "apple"),
   email: S.EmailAddress,
 }) {
   static equals: Equivalence.Equivalence<Social> = Equal.equals;
@@ -29,9 +29,9 @@ export const SocialId = Social.fields.id;
 
 export const SocialProvider = Social.fields.provider;
 
-export const Plain = S.union(EmailPassword.Plain, Social);
+export const Plain = S.Union(EmailPassword.Plain, Social);
 
-export const Secure = S.union(EmailPassword.Secure, Social);
+export const Secure = S.Union(EmailPassword.Secure, Social);
 
 export const matchPlain = Match.typeTags<Plain>();
 

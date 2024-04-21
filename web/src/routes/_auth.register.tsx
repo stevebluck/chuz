@@ -13,9 +13,9 @@ import { SocialAuth } from "src/server/auth/SocialAuth";
 import { AppCookies } from "src/server/cookies/AppCookies";
 
 type RegisterFormFields = S.Schema.Type<typeof RegisterFormFields>;
-const RegisterFormFields = S.union(
-  S.struct({
-    _tag: S.literal("Strong"),
+const RegisterFormFields = S.Union(
+  S.Struct({
+    _tag: S.Literal("Strong"),
     email: S.EmailAddress,
     password: Password.Strong,
     firstName: S.optionalTextInput(User.FirstName),

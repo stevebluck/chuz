@@ -4,8 +4,8 @@ import { LinkedCard } from "src/components/LinkedCard";
 
 export default function Account() {
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-10">
-      <div className="mx-auto w-full max-w-6xl">
+    <div className="flex flex-1 flex-col">
+      <div className="mx-auto w-full max-w-6xl pb-10 md:pb-16">
         <h1 className="text-3xl font-semibold">Account</h1>
       </div>
       <div className="mx-auto w-full max-w-6xl">

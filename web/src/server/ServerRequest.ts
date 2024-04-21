@@ -1,4 +1,4 @@
-import { Data, Effect, ReadonlyRecord, PR, S } from "@chuz/prelude";
+import { Data, Effect, Record, PR, S } from "@chuz/prelude";
 import * as Http from "@effect/platform/HttpServer";
 
 export const searchParams = <A, Out extends Record<string, string | undefined>>(
@@ -6,7 +6,7 @@ export const searchParams = <A, Out extends Record<string, string | undefined>>(
 ): Effect.Effect<A, SearchParamsError, Http.request.ServerRequest> =>
   Http.request.ServerRequest.pipe(
     Effect.map((req) => new URL(req.url)),
-    Effect.map((url) => ReadonlyRecord.fromEntries(url.searchParams.entries()) as Out),
+    Effect.map((url) => Record.fromEntries(url.searchParams.entries()) as Out),
     Effect.flatMap(S.decode(schema, { errors: "all" })),
     Effect.mapError((error) => new SearchParamsError({ error })),
   );

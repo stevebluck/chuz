@@ -10,8 +10,8 @@ import { Session, Http, Users } from "src/server";
 import { Hasher } from "src/server/Passwords";
 import * as Remix from "src/server/Remix";
 
-const FormFields = S.struct({ password: Password.Strong });
-const SearchParams = S.struct({ token: S.NonEmpty });
+const FormFields = S.Struct({ password: Password.Strong });
+const SearchParams = S.Struct({ token: S.NonEmpty });
 
 export const action = Remix.action(
   Session.guest.pipe(

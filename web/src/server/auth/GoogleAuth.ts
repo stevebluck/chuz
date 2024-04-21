@@ -67,11 +67,11 @@ export class GoogleAuth extends Effect.Tag("@app/auth/GoogleAuth")<GoogleAuth, A
 class GoogleUser extends S.Class<GoogleUser>("GoogleUser")({
   id: Credential.SocialId,
   email: S.EmailAddress,
-  verified_email: S.boolean,
-  name: S.optionFromNullish(S.string, null),
-  given_name: S.optionFromNullish(User.FirstName, null),
-  family_name: S.optionFromNullish(User.LastName, null),
-  picture: S.optionFromNullish(S.string, null),
+  verified_email: S.Boolean,
+  name: S.OptionFromNullishOr(S.String, null),
+  given_name: S.OptionFromNullishOr(User.FirstName, null),
+  family_name: S.OptionFromNullishOr(User.LastName, null),
+  picture: S.OptionFromNullishOr(S.String, null),
 }) {
   static fromUnknown = S.decodeUnknown(GoogleUser);
 }

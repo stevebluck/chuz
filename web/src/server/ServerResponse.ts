@@ -1,4 +1,4 @@
-import { Effect, PR, Predicate, ReadonlyArray, ReadonlyRecord } from "@chuz/prelude";
+import { Effect, PR, Predicate, Array, Record } from "@chuz/prelude";
 import { ArrayFormatter } from "@chuz/prelude/src/Schema";
 import * as Http from "@effect/platform/HttpServer";
 import { Routes } from "src/Routes";
@@ -42,17 +42,14 @@ export const redirect = (location: string): ServerResponseEffect =>
   Http.response.empty({ status: 302, headers: Http.headers.fromInput({ location }) });
 
 export const validationError = ({ error }: InvalidFormData): ServerResponseEffect =>
-  Http.response.json(
-    { _tag: "FormError", error: ReadonlyRecord.map(formatParseError(error), (a) => a[0]) },
-    { status: 400 },
-  );
+  Http.response.json({ _tag: "FormError", error: Record.map(formatParseError(error), (a) => a[0]) }, { status: 400 });
 
 export const badRequest = <E extends { _tag: string }>(error: E): ServerResponseEffect =>
   Http.response.json(error, { status: 400 });
 
 const formatParseError = (error: PR.ParseError): Record<string, string[]> => {
-  return ReadonlyRecord.map(
-    ReadonlyArray.groupBy(ArrayFormatter.formatError(error), (i) => i.path.join(".")),
-    ReadonlyArray.map((a) => a.message),
+  return Record.map(
+    Array.groupBy(ArrayFormatter.formatErrorSync(error), (i) => i.path.join(".")),
+    Array.map((a) => a.message),
   );
 };

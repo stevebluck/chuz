@@ -1,5 +1,5 @@
 import { Token } from "@chuz/domain";
-import { HashMap, ReadonlyArray, Timestamp, makeUuid } from "@chuz/prelude";
+import { HashMap, Array, Timestamp, makeUuid } from "@chuz/prelude";
 import { Clock, Effect, Equivalence, Option, Ref } from "@chuz/prelude";
 import { addMilliseconds, isAfter } from "date-fns";
 import { Tokens } from "./Tokens";
@@ -71,5 +71,5 @@ class State<A> {
   revokeMany = (token: Array<Token.Token<A>>): State<A> => new State(HashMap.removeMany(this.table, token), this.eq);
 
   findByValue = (a: A): Array<Token.Token<A>> =>
-    HashMap.filter(this.table, ([value]) => this.eq(value, a)).pipe(HashMap.keys, ReadonlyArray.fromIterable);
+    HashMap.filter(this.table, ([value]) => this.eq(value, a)).pipe(HashMap.keys, Array.fromIterable);
 }

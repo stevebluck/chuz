@@ -29,7 +29,7 @@ export class AppCookies extends Effect.Tag("@app/AppCookies")<AppCookies, Cookie
       const secret = Secret.value(secrets[0]);
 
       return AppCookies.of({
-        token: new Cookie("_session", S.string, {
+        token: new Cookie("_session", S.String, {
           secure,
           path: "/",
           sameSite: "lax",
@@ -44,7 +44,7 @@ export class AppCookies extends Effect.Tag("@app/AppCookies")<AppCookies, Cookie
           httpOnly: true,
           secret,
         }),
-        returnTo: new Cookie("_returnTo", S.string, {
+        returnTo: new Cookie("_returnTo", S.String, {
           path: "/",
           maxAge: "30 minute",
           secure,

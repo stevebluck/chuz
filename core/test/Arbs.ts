@@ -4,21 +4,21 @@ import * as fc from "fast-check";
 
 export namespace Arbs {
   export namespace Passwords {
-    export const Plaintext = Arbitrary.make(Password.Plaintext)(fc);
-    export const Strong = Arbitrary.make(Password.Strong)(fc);
+    export const Plaintext = Arbitrary.make(Password.Plaintext);
+    export const Strong = Arbitrary.make(Password.Strong);
   }
 
-  export const Email = Arbitrary.make(S.EmailAddress)(fc);
+  export const Email = Arbitrary.make(S.EmailAddress);
 
   export namespace Credentials {
-    export const StrongEmailPassword = Arbitrary.make(EmailPassword.Strong)(fc);
-    export const SocialCredential = Arbitrary.make(_Credentials.Social)(fc);
+    export const StrongEmailPassword = Arbitrary.make(EmailPassword.Strong);
+    export const SocialCredential = Arbitrary.make(_Credentials.Social);
   }
 
   export namespace Users {
-    export const FirstName = Arbitrary.make(_User.FirstName)(fc);
-    export const LastName = Arbitrary.make(_User.LastName)(fc);
-    export const OptInMarketing = Arbitrary.make(_User.OptInMarketing)(fc);
+    export const FirstName = Arbitrary.make(_User.FirstName);
+    export const LastName = Arbitrary.make(_User.LastName);
+    export const OptInMarketing = Arbitrary.make(_User.OptInMarketing);
 
     export type Register = typeof Register extends fc.Arbitrary<infer A> ? A : never;
     export const Register = fc.record({
@@ -28,6 +28,6 @@ export namespace Arbs {
       optInMarketing: OptInMarketing,
     });
 
-    export const PartialUser = Arbitrary.make(_User.Partial)(fc);
+    export const PartialUser = Arbitrary.make(_User.Partial);
   }
 }

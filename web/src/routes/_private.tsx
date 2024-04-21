@@ -13,5 +13,11 @@ export const loader = Remix.loader(
 );
 
 export default function Private() {
-  return <Outlet />;
+  return (
+    <div className="flex flex-1 flex-col p-4 md:p-10">
+      <div className="mx-auto w-full max-w-6xl">
+        <Outlet />
+      </div>
+    </div>
+  );
 }

@@ -3,8 +3,6 @@ import * as Credentials from "./Credential";
 
 export type Identities = [Option.Option<EmailPassword>, Array<Social>];
 
-export const Identities = S.tuple(S.option(Credentials.EmailPassword.Secure), S.array(Credentials.Social));
-
 type EmailPassword = {
   email: S.EmailAddress;
 };

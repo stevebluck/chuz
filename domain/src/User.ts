@@ -22,16 +22,16 @@ export type LastName = S.Schema.Type<typeof LastName>;
 export type OptInMarketing = S.Schema.Type<typeof OptInMarketing>;
 export interface Partial extends S.Schema.Type<typeof Partial> {}
 
-export const OptInMarketing = S.boolean.pipe(S.brand("OptInMarketing"));
+export const OptInMarketing = S.Boolean.pipe(S.brand("OptInMarketing"));
 
 export const FirstName = S.String100.pipe(S.brand("FirstName"));
 
 export const LastName = S.String100.pipe(S.brand("LastName"));
 
-export const User = S.struct({
+export const User = S.Struct({
   email: S.EmailAddress,
-  firstName: S.optionFromNullable(FirstName),
-  lastName: S.optionFromNullable(LastName),
+  firstName: S.OptionFromNullOr(FirstName),
+  lastName: S.OptionFromNullOr(LastName),
   optInMarketing: OptInMarketing,
 });
 

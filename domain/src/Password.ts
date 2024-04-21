@@ -10,7 +10,7 @@ export type Reset<A> = [S.EmailAddress, Id<A>];
 
 export const Plaintext = S.NonEmpty.pipe(S.brand("PlaintextPassword"));
 
-export const Strong = S.string.pipe(
+export const Strong = S.String.pipe(
   S.minLength(8),
   S.maxLength(64),
   S.brand("StrongPassword"),

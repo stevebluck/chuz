@@ -65,9 +65,9 @@ export type AddCredentialError = Token.NoSuchToken | Credential.InUse;
 
 export interface Registration extends S.Schema.Type<typeof Registration> {}
 
-export const Registration = S.struct({
+export const Registration = S.Struct({
   credentials: Credential.Secure,
-  firstName: S.option(User.FirstName),
-  lastName: S.option(User.LastName),
+  firstName: S.Option(User.FirstName),
+  lastName: S.Option(User.LastName),
   optInMarketing: User.OptInMarketing,
 });

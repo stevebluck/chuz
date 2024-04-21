@@ -5,10 +5,10 @@ import { Button } from "src/components/ui/button";
 import { Input } from "src/components/ui/input";
 import { Label } from "src/components/ui/label";
 
-export const SetPasswordFormFields = S.taggedStruct("SetPasswordForm", {
+export const SetPasswordFormFields = S.Struct({
   password: Password.Strong,
   password2: Password.Strong,
-});
+}).pipe(S.attachPropertySignature("_tag", "SetPasswordForm"));
 
 export const SetPasswordForm = () => {
   return (

@@ -10,13 +10,13 @@
     "check": "tsc --noEmit"
   },
   "dependencies": {
-    "@effect/schema": "^0.64.13",
-    "effect": "^2.4.13"
+    "@effect/schema": "^0.66.5",
+    "effect": "^3.0.3"
   },
   "devDependencies": {
     "@chuz/typescript-config": "workspace:*",
-    "@types/node": "^20.11.30",
-    "fast-check": "^3.16.0",
-    "typescript": "^5.4.2"
+    "@types/node": "^20.12.7",
+    "fast-check": "^3.17.2",
+    "typescript": "^5.4.5"
   }
 }

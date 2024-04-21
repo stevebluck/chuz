@@ -1,3 +1,4 @@
+import { AST } from "@effect/schema";
 import * as S from "@effect/schema/Schema";
 import { Brand, Option, Predicate } from "effect";
 
@@ -5,8 +6,11 @@ export * from "@effect/schema/Schema";
 export * as PR from "@effect/schema/ParseResult";
 export * as ArrayFormatter from "@effect/schema/ArrayFormatter";
 
-export const taggedStruct = <Name extends string, Fields extends S.Struct.Fields>(name: Name, fields: Fields) =>
-  S.struct(fields).pipe(S.attachPropertySignature("_tag", name));
+export const taggedStruct = <Name extends AST.LiteralValue | symbol, Fields extends S.Struct.Fields>(
+  name: Name,
+  fields: Fields,
+  // @ts-expect-error
+) => S.Struct(fields).pipe(S.attachPropertySignature("_tag", name));
 
 export const String100: S.Schema<string & Brand.Brand<"String100">, string> = S.Trim.pipe(
   S.minLength(1),
@@ -28,22 +32,22 @@ export const EmailAddress: S.Schema<string & Brand.Brand<"EmailAddress">, string
     message: () => "Looks like you have a typo in your email address.",
   });
 
-export const CheckboxInput: S.Schema<boolean, string | undefined> = S.transform(
-  S.orUndefined(S.NonEmpty),
-  S.boolean,
-  Predicate.isNotUndefined,
-  String,
-);
+export const CheckboxInput: S.Schema<boolean, string | undefined> = S.transform(S.UndefinedOr(S.NonEmpty), S.Boolean, {
+  decode: Predicate.isNotUndefined,
+  encode: String,
+});
 
 export const OptionStringFromEmptyString: S.Schema<Option.Option<string>, string> = S.transform(
   S.Trim,
-  S.option(S.Trim),
-  (a) => (a.length > 0 ? { _tag: "Some" as const, value: a } : { _tag: "None" as const }),
-  (a) => (a._tag === "Some" ? a.value : ""),
+  S.Option(S.Trim),
+  {
+    decode: (a) => (a.length > 0 ? { _tag: "Some" as const, value: a } : { _tag: "None" as const }),
+    encode: (a) => (a._tag === "Some" ? a.value : ""),
+  },
 );
 
 export const optionalTextInput = <A>(schema: S.Schema<A, string>): S.Schema<Option.Option<A>, string> =>
-  S.compose(OptionStringFromEmptyString, S.optionFromSelf(schema));
+  S.compose(OptionStringFromEmptyString, S.OptionFromSelf(schema));
 
 export const fromCheckboxInput = <A>(schema: S.Schema<A, boolean>): S.Schema<A, string | undefined> =>
   S.compose(CheckboxInput, schema);

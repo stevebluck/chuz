@@ -9,7 +9,7 @@ import * as Auth from "src/server/auth/Auth";
 import { SocialAuth } from "src/server/auth/SocialAuth";
 import { AppCookies } from "src/server/cookies/AppCookies";
 
-const SearchParams = S.struct({
+const SearchParams = S.Struct({
   _tag: Credential.SocialProvider,
   code: Auth.Code,
   state: Auth.State,

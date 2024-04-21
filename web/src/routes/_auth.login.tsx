@@ -13,7 +13,7 @@ import { SocialAuth } from "src/server/auth/SocialAuth";
 import { AppCookies } from "src/server/cookies/AppCookies";
 
 type LoginFormFields = S.Schema.Type<typeof LoginFormFields>;
-const LoginFormFields = S.union(EmailPassword.Plain, SocialProvider);
+const LoginFormFields = S.Union(EmailPassword.Plain, SocialProvider);
 
 export const action = Remix.action(
   Effect.flatMap(AppCookies.authState, (stateCookie) =>

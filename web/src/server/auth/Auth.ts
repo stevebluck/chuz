@@ -1,6 +1,6 @@
 import { Credential, User } from "@chuz/domain";
 import { Brand, makeUuid } from "@chuz/prelude";
-import { Data, Effect, Equal, Equivalence, ReadonlyArray, String } from "@chuz/prelude";
+import { Data, Effect, Equal, Equivalence, Array, String } from "@chuz/prelude";
 import { S } from "@chuz/prelude";
 import { EmailAlreadyInUse } from "core/index";
 import { Users } from "../Users";
@@ -20,9 +20,9 @@ export type ProviderCode = { _tag: Credential.SocialProvider; code: Code; state:
 
 export type ProviderState = { _tag: Credential.SocialProvider; state: State };
 
-export const Code = S.string.pipe(S.brand("AuthCode"));
+export const Code = S.String.pipe(S.brand("AuthCode"));
 
-export const Intent = S.literal("login", "register");
+export const Intent = S.Literal("login", "register");
 
 export const State = S.NonEmpty.pipe(S.brand("AuthState"));
 export const makeState = (intent: Intent) =>
@@ -33,7 +33,7 @@ export const makeState = (intent: Intent) =>
 
 export const intentFromState = (state: State): Effect.Effect<Intent> =>
   Effect.sync(() => String.split(state, "+")).pipe(
-    Effect.flatMap(ReadonlyArray.head),
+    Effect.flatMap(Array.head),
     Effect.flatMap(S.decodeUnknown(Intent)),
     Effect.orElseSucceed(() => "login" as const),
   );
