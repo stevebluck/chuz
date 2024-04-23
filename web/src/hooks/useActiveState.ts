@@ -1,32 +1,16 @@
-import { Option, S } from "@chuz/prelude";
 import { useSearchParams } from "@remix-run/react";
 
-const SEARCH_PARAM_ACTIVE_KEY = "active";
-
 export const useActiveState = <A extends Record<string, string>>(sections: A) => {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
 
-  const values = Object.fromEntries(searchParams.entries());
-
-  const activeSection = S.decodeUnknownOption(S.Struct({ active: S.Literal(...Object.values(sections)) }))(values);
-
-  const setActive = (section: A[keyof A], active: boolean) => {
-    const params = new URLSearchParams();
-    active ? params.set(SEARCH_PARAM_ACTIVE_KEY, section) : params.delete(SEARCH_PARAM_ACTIVE_KEY);
-
-    setSearchParams(params, { replace: true });
+  const isActive = (section: A[keyof A]) => {
+    const activeSection = searchParams.get("active");
+    return activeSection ? activeSection === section : false;
   };
 
-  const isActive = (section: A[keyof A]) =>
-    activeSection.pipe(
-      Option.map(({ active }) => active === section),
-      Option.getOrElse(() => false),
-    );
-
-  const isOtherActive = (section: A[keyof A]) => Option.isSome(activeSection) && !isActive(section);
+  const isOtherActive = (section: A[keyof A]) => (searchParams.get("active") ? !isActive(section) : false);
 
   return {
-    setActive,
     isActive,
     isOtherActive,
   };

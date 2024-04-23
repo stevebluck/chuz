@@ -1,4 +1,6 @@
-import { Button } from "./ui/button";
+import { Route } from "src/Routes";
+import { Link } from "./Link";
+import { buttonVariants } from "./ui/button";
 
 type Props = {
   children: React.ReactNode;
@@ -7,8 +9,8 @@ type Props = {
   activateButtonLabel: string;
   isActive: boolean;
   isDisabled: boolean;
-  onActivate: () => void;
-  onCancel: () => void;
+  activateRoute: Route;
+  cancelRoute: Route;
 };
 
 export const PreviewContent = ({
@@ -16,8 +18,8 @@ export const PreviewContent = ({
   title,
   isActive,
   isDisabled,
-  onCancel,
-  onActivate,
+  activateRoute,
+  cancelRoute,
   children,
   preview,
 }: Props) => {
@@ -27,13 +29,13 @@ export const PreviewContent = ({
       <div className="flex justify-between gap-2 pb-2">
         <h3 className="font-semibold">{title}</h3>
         {isActive ? (
-          <Button variant="link" type="button" onClick={onCancel}>
+          <Link className={buttonVariants({ variant: "link" })} to={cancelRoute}>
             Cancel
-          </Button>
+          </Link>
         ) : (
-          <Button variant="link" type="button" onClick={onActivate}>
+          <Link className={buttonVariants({ variant: "link" })} to={activateRoute}>
             {activateButtonLabel}
-          </Button>
+          </Link>
         )}
       </div>
       {isActive ? children : preview}

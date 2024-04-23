@@ -24,6 +24,7 @@ export const String1000: S.Schema<string & Brand.Brand<"String1000">, string> = 
   S.brand("String1000"),
 );
 
+// TODO: Move to domain
 export type EmailAddress = S.Schema.Type<typeof EmailAddress>;
 export const EmailAddress: S.Schema<string & Brand.Brand<"EmailAddress">, string> = S.compose(S.Lowercase, S.Trim)
   .pipe(S.minLength(5), S.includes("@"), S.includes("."), S.brand("EmailAddress"))
@@ -32,11 +33,13 @@ export const EmailAddress: S.Schema<string & Brand.Brand<"EmailAddress">, string
     message: () => "Looks like you have a typo in your email address.",
   });
 
+// TODO Rename BooleanFromString
 export const CheckboxInput: S.Schema<boolean, string | undefined> = S.transform(S.UndefinedOr(S.NonEmpty), S.Boolean, {
   decode: Predicate.isNotUndefined,
   encode: String,
 });
 
+// TODO: Rename OptionFromString
 export const OptionStringFromEmptyString: S.Schema<Option.Option<string>, string> = S.transform(
   S.Trim,
   S.Option(S.Trim),
@@ -46,8 +49,10 @@ export const OptionStringFromEmptyString: S.Schema<Option.Option<string>, string
   },
 );
 
+// TODO: Move to web
 export const optionalTextInput = <A>(schema: S.Schema<A, string>): S.Schema<Option.Option<A>, string> =>
   S.compose(OptionStringFromEmptyString, S.OptionFromSelf(schema));
 
+// TODO: Move to web
 export const fromCheckboxInput = <A>(schema: S.Schema<A, boolean>): S.Schema<A, string | undefined> =>
   S.compose(CheckboxInput, schema);

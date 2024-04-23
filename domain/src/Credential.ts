@@ -1,6 +1,7 @@
-import { Data, Equal, Equivalence, Match, Number, Option } from "@chuz/prelude";
+import { Data, Equal, Equivalence, Match, Number, Option, Tuple } from "@chuz/prelude";
 import { S } from "@chuz/prelude";
 import * as EmailPassword from "./EmailPassword";
+import { identity } from "./User";
 
 export { EmailPassword };
 
@@ -8,26 +9,25 @@ export type Plain = EmailPassword.Plain | Social;
 
 export type Secure = EmailPassword.Secure | Social;
 
-export type SocialProvider = S.Schema.Type<typeof SocialProvider>;
+export type Provider = SocialProvider | "email";
+
+export type SocialProvider = "google" | "apple";
 
 export type SocialId = S.Schema.Type<typeof SocialId>;
+export const SocialId = S.NonEmpty.pipe(S.brand("SocialId"));
+
+export const SocialProvider: S.Schema<SocialProvider> = S.Literal("google", "apple");
 
 export class Social extends S.TaggedClass<Social>()("Social", {
-  id: S.NonEmpty.pipe(S.brand("SocialId")),
-  provider: S.Literal("google", "apple"),
+  id: SocialId,
+  provider: SocialProvider,
   email: S.EmailAddress,
 }) {
   static equals: Equivalence.Equivalence<Social> = Equal.equals;
 }
 
-export const hasFallbackCredential = (
-  emailCredential: Option.Option<EmailPassword.Secure>,
-  socialCredentials: Social[],
-) => Option.isSome(emailCredential) || Number.greaterThan(socialCredentials.length, 1);
-
-export const SocialId = Social.fields.id;
-
-export const SocialProvider = Social.fields.provider;
+export const hasFallbackCredential = (identities: identity.Identities) =>
+  Option.isSome(Tuple.getFirst(identities)) || Number.greaterThan(Tuple.getSecond(identities).length, 1);
 
 export const Plain = S.Union(EmailPassword.Plain, Social);
 
@@ -44,6 +44,6 @@ export const isSocialIdentity = (credential: Secure): credential is EmailPasswor
 
 export const equals = Equal.equals<Secure>;
 
-export class InUse extends Data.TaggedError("CredentialInUse") {}
+export class AlreadyExists extends Data.TaggedError("CredentialAlareadyExists") {}
 export class NotRecognised extends Data.TaggedError("CredentialNotRecognised") {}
 export class NoFallbackAvailable extends Data.TaggedError("NoFallbackCredentialAvailable") {}

@@ -1,21 +1,29 @@
 import { Data, Option, S } from "@chuz/prelude";
-import * as Credentials from "./Credential";
+import * as Credential from "./Credential";
 
 export type Identities = [Option.Option<EmailPassword>, Array<Social>];
 
 type EmailPassword = {
+  _tag: "Email";
   email: S.EmailAddress;
 };
 
 export type Social = {
+  _tag: "Social";
   email: S.EmailAddress;
-  provider: Credentials.SocialProvider;
+  provider: Credential.SocialProvider;
 };
 
-const Social = Data.case<Social>();
-const EmailPassword = Data.case<EmailPassword>();
+export const Social = Data.tagged<Social>("Social");
+export const EmailPassword = Data.tagged<EmailPassword>("Email");
 
-export const fromCredential = Credentials.matchSecure({
-  Secure: (secure) => EmailPassword({ email: secure.email }),
-  Social: (social) => Social({ email: social.email, provider: social.provider }),
+export const fromEmailCredential = (credential: Credential.EmailPassword.Secure): EmailPassword =>
+  EmailPassword({ email: credential.email });
+
+export const fromSocialCredential = (credential: Credential.Social): Social =>
+  Social({ email: credential.email, provider: credential.provider });
+
+export const fromCredential = Credential.matchSecure({
+  Secure: fromEmailCredential,
+  Social: fromSocialCredential,
 });

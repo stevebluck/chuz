@@ -1,7 +1,7 @@
 import { Credential, EmailPassword, Password, Token, User } from "@chuz/domain";
-import { Effect } from "@chuz/prelude";
+import { Effect, Option } from "@chuz/prelude";
 import { S } from "@chuz/prelude";
-import { EmailAlreadyInUse, Passwords, UserNotFound, Users } from "core/index";
+import { EmailAlreadyInUse, Passwords, Users } from "core/index";
 import * as fc from "fast-check";
 import { afterAll, describe, expect } from "vitest";
 import { Arbs } from "../Arbs";
@@ -13,144 +13,297 @@ export namespace UsersSpec {
   export const run = (TestBench: Effect.Effect<TestBench.Seeded>, config: SpecConfig = defaultSpecConfig) => {
     afterAll(config.afterAll);
 
-    asyncProperty(
-      "users can register with unique emails (case insensitive)",
-      Arbs.Users.Register,
-      (register) =>
+    describe("Users.register", () => {
+      asyncProperty(
+        "users can register with unique emails (case insensitive)",
+        Arbs.Users.EmailRegistration,
+        (register) =>
+          Effect.gen(function* (_) {
+            const { users } = yield* _(TestBench);
+            const registerUserWithEmail = (email: S.EmailAddress) =>
+              registerUser(users, { ...register, credentials: { ...register.credentials, email } });
+
+            const session = yield* _(registerUserWithEmail(register.credentials.email));
+
+            expect(session.user.value).toStrictEqual(
+              User.make({
+                firstName: register.firstName,
+                lastName: register.lastName,
+                email: register.credentials.email,
+                optInMarketing: register.optInMarketing,
+              }),
+            );
+
+            const uppercase = makeEmail(register.credentials.email.toUpperCase());
+            const lowercase = makeEmail(register.credentials.email.toLocaleLowerCase());
+
+            const error0 = yield* _(registerUserWithEmail(register.credentials.email).pipe(Effect.flip));
+            const error1 = yield* _(registerUserWithEmail(lowercase).pipe(Effect.flip));
+            const error2 = yield* _(registerUserWithEmail(uppercase).pipe(Effect.flip));
+
+            expect(error0).toStrictEqual(new EmailAlreadyInUse({ email: register.credentials.email }));
+            expect(error1).toStrictEqual(new EmailAlreadyInUse({ email: lowercase }));
+            expect(error2).toStrictEqual(new EmailAlreadyInUse({ email: uppercase }));
+          }),
+        config,
+      );
+
+      asyncProperty("users can register with a third party provider", Arbs.Users.SocialRegistration, (registration) =>
         Effect.gen(function* (_) {
           const { users } = yield* _(TestBench);
-          const registerUserWithEmail = (email: S.EmailAddress) =>
-            registerUser(users, { ...register, credentials: { ...register.credentials, email } });
 
-          const session = yield* _(registerUserWithEmail(register.credentials.email));
+          const session = yield* _(users.register(registration));
 
-          expect(session.user.value).toEqual(
-            User.make({
-              firstName: register.firstName,
-              lastName: register.lastName,
-              email: register.credentials.email,
-              optInMarketing: register.optInMarketing,
-            }),
-          );
+          const user = yield* _(users.getByEmail(registration.credentials.email));
 
-          const uppercase = makeEmail(register.credentials.email.toUpperCase());
-          const lowercase = makeEmail(register.credentials.email.toLocaleLowerCase());
-
-          const error0 = yield* _(registerUserWithEmail(register.credentials.email).pipe(Effect.flip));
-          const error1 = yield* _(registerUserWithEmail(lowercase).pipe(Effect.flip));
-          const error2 = yield* _(registerUserWithEmail(uppercase).pipe(Effect.flip));
-
-          expect(error0).toEqual(new EmailAlreadyInUse({ email: register.credentials.email }));
-          expect(error1).toEqual(new EmailAlreadyInUse({ email: lowercase }));
-          expect(error2).toEqual(new EmailAlreadyInUse({ email: uppercase }));
+          expect(user).toStrictEqual(session.user);
         }),
-      config,
-    );
+      );
+    });
 
-    asyncProperty(
-      "users can be identifed by a session",
-      Arbs.Users.Register,
-      (registration) =>
-        Effect.gen(function* (_) {
-          const { users } = yield* _(TestBench);
-          const session = yield* _(registerUser(users, registration));
-          const identified = yield* _(users.identify(session.token));
-          expect(identified.user).toEqual(session.user);
-        }),
-      config,
-    );
+    describe("Users.identify", () => {
+      asyncProperty(
+        "users can be identifed by a session",
+        Arbs.Users.EmailRegistration,
+        (registration) =>
+          Effect.gen(function* (_) {
+            const { users } = yield* _(TestBench);
+            const session = yield* _(registerUser(users, registration));
+            const identified = yield* _(users.identify(session.token));
+            expect(identified.user).toStrictEqual(session.user);
+          }),
+        config,
+      );
+    });
 
-    asyncProperty(
-      "users can log out of a session",
-      Arbs.Users.Register,
-      (registration) =>
-        Effect.gen(function* (_) {
-          const { users } = yield* _(TestBench);
-          const session = yield* _(registerUser(users, registration));
-          yield* _(users.logout(session.token));
-          const noSuchTokenError = yield* _(users.identify(session.token).pipe(Effect.flip));
-          expect(noSuchTokenError).toEqual(new Token.NoSuchToken());
-        }),
-      config,
-    );
+    describe("Users.logout", () => {
+      asyncProperty(
+        "users can log out of a session",
+        Arbs.Users.EmailRegistration,
+        (registration) =>
+          Effect.gen(function* (_) {
+            const { users } = yield* _(TestBench);
+            const session = yield* _(registerUser(users, registration));
+            yield* _(users.logout(session.token));
+            const noSuchTokenError = yield* _(users.identify(session.token).pipe(Effect.flip));
+            expect(noSuchTokenError).toStrictEqual(new Token.NoSuchToken());
+          }),
+        config,
+      );
+    });
 
-    asyncProperty(
-      "users can authenticate many sessions with their credentials (case insensitive)",
-      Arbs.Users.Register,
-      (registration) =>
-        Effect.gen(function* (_) {
-          const { users } = yield* _(TestBench);
-          const session = yield* _(registerUser(users, registration));
-          const plain = makePlainCredentials(registration.credentials);
+    describe("Users.authenticate", () => {
+      asyncProperty(
+        "users can authenticate many sessions with their email credential (case insensitive)",
+        Arbs.Users.EmailRegistration,
+        (registration) =>
+          Effect.gen(function* (_) {
+            const { users } = yield* _(TestBench);
+            const session = yield* _(registerUser(users, registration));
+            const plain = makePlainCredentials(registration.credentials);
 
-          const authed = yield* _(users.authenticate(plain.credentials));
+            const authed = yield* _(users.authenticate(plain.credentials));
 
-          const authed1 = yield* _(users.authenticate(plain.lowercase));
-          const authed2 = yield* _(users.authenticate(plain.uppercase));
-          const badCredentials = new EmailPassword.Plain({
-            email: plain.credentials.email,
-            password: Password.Plaintext(`bad-${plain.credentials.password}`),
-          });
-          const credentialsNotRecognisedError = yield* _(users.authenticate(badCredentials).pipe(Effect.flip));
+            const authed1 = yield* _(users.authenticate(plain.lowercase));
+            const authed2 = yield* _(users.authenticate(plain.uppercase));
+            const badCredentials = new EmailPassword.Plain({
+              email: plain.credentials.email,
+              password: Password.Plaintext(`bad-${plain.credentials.password}`),
+            });
+            const credentialsNotRecognisedError = yield* _(users.authenticate(badCredentials).pipe(Effect.flip));
 
-          expect(authed.user).toEqual(session.user);
-          expect(authed1.user).toEqual(session.user);
-          expect(authed2.user).toEqual(session.user);
-          expect(credentialsNotRecognisedError).toEqual(new Credential.NotRecognised());
-        }),
-      config,
-    );
+            expect(authed.user).toStrictEqual(session.user);
+            expect(authed1.user).toStrictEqual(session.user);
+            expect(authed2.user).toStrictEqual(session.user);
+            expect(credentialsNotRecognisedError).toStrictEqual(new Credential.NotRecognised());
+          }),
+        config,
+      );
 
-    asyncProperty(
-      "users can't authenticate via a third party identity provider after already registering with the same email",
-      Arbs.Users.Register,
-      (registration) =>
-        Effect.gen(function* (_) {
-          const { users } = yield* _(TestBench);
-          const session0 = yield* _(registerUser(users, registration));
+      asyncProperty(
+        "users can authenticate with a third party provider credential",
+        Arbs.Users.SocialRegistration,
+        (registration) =>
+          Effect.gen(function* (_) {
+            const { users } = yield* _(TestBench);
 
-          const credential = new Credential.Social({
-            id: Credential.SocialId("googleId"),
-            provider: "google",
-            email: registration.credentials.email,
-          });
+            yield* _(users.register(registration));
 
-          const emailAlreadyInUseError = yield* _(users.authenticate(credential), Effect.flip);
+            const session = yield* _(users.authenticate(registration.credentials));
+            const user = yield* _(users.getByEmail(registration.credentials.email));
 
-          const foundUserById = yield* _(users.getById(session0.user.id));
+            expect(session.user).toStrictEqual(user);
+          }),
+      );
+    });
 
-          expect(foundUserById).toEqual(session0.user);
-          expect(emailAlreadyInUseError).toEqual(new EmailAlreadyInUse({ email: registration.credentials.email }));
-        }),
-      config,
-    );
+    describe("Users.getBy*", () => {
+      asyncProperty(
+        "users can be found by id or email (case insensitive)",
+        Arbs.Users.EmailRegistration,
+        (registration) =>
+          Effect.gen(function* (_) {
+            const { users } = yield* _(TestBench);
+            const session = yield* _(registerUser(users, registration));
+            const foundUserById = yield* _(users.getById(session.user.id));
+            const foundUserByEmail = yield* _(users.getByEmail(registration.credentials.email));
+            const foundUserByEmail1 = yield* _(
+              users.getByEmail(makeEmail(registration.credentials.email.toLocaleLowerCase())),
+            );
+            const foundUserByEmail2 = yield* _(
+              users.getByEmail(makeEmail(registration.credentials.email.toUpperCase())),
+            );
 
-    asyncProperty(
-      "users can be found by id or email (case insensitive)",
-      Arbs.Users.Register,
-      (registration) =>
-        Effect.gen(function* (_) {
-          const { users } = yield* _(TestBench);
-          const session = yield* _(registerUser(users, registration));
-          const foundUserById = yield* _(users.getById(session.user.id));
-          const foundUserByEmail = yield* _(users.getByEmail(registration.credentials.email));
-          const foundUserByEmail1 = yield* _(
-            users.getByEmail(makeEmail(registration.credentials.email.toLocaleLowerCase())),
-          );
-          const foundUserByEmail2 = yield* _(users.getByEmail(makeEmail(registration.credentials.email.toUpperCase())));
+            expect(foundUserById).toStrictEqual(session.user);
+            expect(foundUserByEmail).toStrictEqual(session.user);
+            expect(foundUserByEmail1).toStrictEqual(session.user);
+            expect(foundUserByEmail2).toStrictEqual(session.user);
+          }),
+        config,
+      );
+    });
 
-          expect(foundUserById).toEqual(session.user);
-          expect(foundUserByEmail).toEqual(session.user);
-          expect(foundUserByEmail1).toEqual(session.user);
-          expect(foundUserByEmail2).toEqual(session.user);
-        }),
-      config,
-    );
+    describe("Users.updateEmail", () => {
+      asyncProperty(
+        "users can update their email to a unique email",
+        fc.tuple(Arbs.Users.EmailRegistration, Arbs.Email),
+        ([registration, newEmail]) =>
+          Effect.gen(function* (_) {
+            const { users } = yield* _(TestBench);
+            const session = yield* _(registerUser(users, registration));
+            const plain = makePlainCredentials(registration.credentials);
 
-    describe("Update", () => {
+            const authed = yield* _(users.authenticate(plain.credentials));
+            expect(authed.user).toStrictEqual(session.user);
+
+            const updated = yield* _(users.updateEmail(session.user.id, newEmail));
+
+            expect(updated.value.email).toStrictEqual(newEmail);
+
+            const credentialsNotRecognisedError = yield* _(users.authenticate(plain.credentials).pipe(Effect.flip));
+            expect(credentialsNotRecognisedError).toStrictEqual(new Credential.NotRecognised());
+
+            const authed2 = yield* _(
+              users.authenticate(new EmailPassword.Plain({ email: newEmail, password: plain.credentials.password })),
+            );
+            expect(authed2.user.id).toStrictEqual(session.user.id);
+          }),
+        config,
+      );
+
+      asyncProperty(
+        "users cannot update their email to an exisitng email (case insensitive)",
+        fc.tuple(Arbs.Users.EmailRegistration, Arbs.Users.EmailRegistration),
+        ([register1, register2]) =>
+          Effect.gen(function* (_) {
+            const { users } = yield* _(TestBench);
+            const user1 = yield* _(registerUser(users, register1));
+
+            const user2 = yield* _(registerUser(users, register2));
+
+            const lowercase = makeEmail(user1.user.value.email.toLocaleLowerCase());
+            const uppercase = makeEmail(user1.user.value.email.toUpperCase());
+
+            const error0 = yield* _(users.updateEmail(user2.user.id, user1.user.value.email).pipe(Effect.flip));
+            const error1 = yield* _(users.updateEmail(user2.user.id, lowercase).pipe(Effect.flip));
+            const error2 = yield* _(users.updateEmail(user2.user.id, uppercase).pipe(Effect.flip));
+
+            expect(error0).toStrictEqual(new EmailAlreadyInUse({ email: user1.user.value.email }));
+            expect(error1).toStrictEqual(new EmailAlreadyInUse({ email: lowercase }));
+            expect(error2).toStrictEqual(new EmailAlreadyInUse({ email: uppercase }));
+          }),
+        config,
+      );
+    });
+
+    describe("Users.updatePassword", () => {
+      asyncProperty(
+        "users can update their password",
+        fc.tuple(Arbs.Users.EmailRegistration, Arbs.Passwords.Strong),
+        ([register, newPassword]) =>
+          Effect.gen(function* (_) {
+            const { users } = yield* _(TestBench);
+            const session = yield* _(registerUser(users, register));
+            const plain = makePlainCredentials(register.credentials);
+            const hashedNewPassword = yield* _(hash(newPassword));
+
+            const authed = yield* _(users.authenticate(plain.credentials));
+            expect(authed.user).toStrictEqual(session.user);
+
+            yield* _(users.updatePassword(session.token, plain.credentials.password, hashedNewPassword));
+
+            const credentialsNotRecognisedError = yield* _(users.authenticate(plain.credentials).pipe(Effect.flip));
+            expect(credentialsNotRecognisedError).toStrictEqual(new Credential.NotRecognised());
+
+            const authed2 = yield* _(
+              users.authenticate(
+                new EmailPassword.Plain({
+                  email: register.credentials.email,
+                  password: Password.Plaintext(newPassword),
+                }),
+              ),
+            );
+            expect(authed2.user).toStrictEqual(session.user);
+          }),
+
+        config,
+      );
+
+      asyncProperty(
+        "users cannot update their password with an expired session or invalid current password",
+        fc.tuple(Arbs.Users.EmailRegistration, Arbs.Passwords.Strong),
+        ([register, newPassword]) =>
+          Effect.gen(function* (_) {
+            const { users } = yield* _(TestBench);
+            const session = yield* _(registerUser(users, register));
+            const plain = makePlainCredentials(register.credentials);
+            const hashedPassword = yield* _(hash(newPassword));
+
+            const error0 = yield* _(
+              users.updatePassword(session.token, Password.Plaintext("whatever"), hashedPassword).pipe(Effect.flip),
+            );
+            expect(error0).toStrictEqual(new Credential.NotRecognised());
+
+            yield* _(users.logout(session.token));
+
+            const error1 = yield* _(
+              users.updatePassword(session.token, plain.credentials.password, hashedPassword).pipe(Effect.flip),
+            );
+            expect(error1).toStrictEqual(new Token.NoSuchToken());
+          }),
+        config,
+      );
+
+      asyncProperty(
+        "existing sessions expire when password is updated excluding the current session",
+        fc.tuple(Arbs.Users.EmailRegistration, Arbs.Passwords.Strong),
+        ([register, newPassword]) =>
+          Effect.gen(function* (_) {
+            const { users } = yield* _(TestBench);
+            const session0 = yield* _(registerUser(users, register));
+
+            const plain = makePlainCredentials(register.credentials);
+            const hashedPassword = yield* _(hash(newPassword));
+
+            const session1 = yield* _(users.authenticate(plain.credentials));
+
+            yield* _(users.updatePassword(session1.token, plain.credentials.password, hashedPassword));
+
+            const error = yield* _(users.identify(session0.token).pipe(Effect.flip));
+            const session2 = yield* _(users.identify(session1.token));
+
+            expect(error).toStrictEqual(new Token.NoSuchToken());
+            expect(session1.user).toStrictEqual(session0.user);
+            expect(session2.user).toStrictEqual(session1.user);
+          }),
+        config,
+      );
+    });
+
+    describe("Users.update", () => {
       asyncProperty(
         "users can update their first name / last name, and opt-in marketing status",
-        fc.tuple(Arbs.Users.Register, Arbs.Users.PartialUser),
+        fc.tuple(Arbs.Users.EmailRegistration, Arbs.Users.PartialUser),
         ([registration, draft]) =>
           Effect.gen(function* (_) {
             const { users } = yield* _(TestBench);
@@ -158,154 +311,18 @@ export namespace UsersSpec {
             const foundById = yield* _(users.getById(session.user.id));
             yield* _(users.update(session.user.id, draft));
             const foundById2 = yield* _(users.getById(session.user.id));
-            expect(foundById).toEqual(session.user);
+
+            expect(foundById).toStrictEqual(session.user);
             expect(foundById2.value).toMatchObject(draft);
           }),
         config,
       );
-
-      describe("Email", () => {
-        asyncProperty(
-          "users can update their email to a unique email",
-          fc.tuple(Arbs.Users.Register, Arbs.Email),
-          ([registration, newEmail]) =>
-            Effect.gen(function* (_) {
-              const { users } = yield* _(TestBench);
-              const session = yield* _(registerUser(users, registration));
-              const plain = makePlainCredentials(registration.credentials);
-
-              const authed = yield* _(users.authenticate(plain.credentials));
-              expect(authed.user).toEqual(session.user);
-
-              const updated = yield* _(users.updateEmail(session.user.id, newEmail));
-
-              expect(updated.value.email).toEqual(newEmail);
-
-              const credentialsNotRecognisedError = yield* _(users.authenticate(plain.credentials).pipe(Effect.flip));
-              expect(credentialsNotRecognisedError).toEqual(new Credential.NotRecognised());
-
-              const authed2 = yield* _(
-                users.authenticate(new EmailPassword.Plain({ email: newEmail, password: plain.credentials.password })),
-              );
-              expect(authed2.user.id).toEqual(session.user.id);
-            }),
-          config,
-        );
-
-        asyncProperty(
-          "users cannot update their email to an exisitng email (case insensitive)",
-          fc.tuple(Arbs.Users.Register, Arbs.Users.Register),
-          ([register1, register2]) =>
-            Effect.gen(function* (_) {
-              const { users } = yield* _(TestBench);
-              const user1 = yield* _(registerUser(users, register1));
-
-              const user2 = yield* _(registerUser(users, register2));
-
-              const lowercase = makeEmail(user1.user.value.email.toLocaleLowerCase());
-              const uppercase = makeEmail(user1.user.value.email.toUpperCase());
-
-              const error0 = yield* _(users.updateEmail(user2.user.id, user1.user.value.email).pipe(Effect.flip));
-              const error1 = yield* _(users.updateEmail(user2.user.id, lowercase).pipe(Effect.flip));
-              const error2 = yield* _(users.updateEmail(user2.user.id, uppercase).pipe(Effect.flip));
-
-              expect(error0).toEqual(new EmailAlreadyInUse({ email: user1.user.value.email }));
-              expect(error1).toEqual(new EmailAlreadyInUse({ email: lowercase }));
-              expect(error2).toEqual(new EmailAlreadyInUse({ email: uppercase }));
-            }),
-          config,
-        );
-      });
-
-      describe("Password", () => {
-        asyncProperty(
-          "users can update their password",
-          fc.tuple(Arbs.Users.Register, Arbs.Passwords.Strong),
-          ([register, newPassword]) =>
-            Effect.gen(function* (_) {
-              const { users } = yield* _(TestBench);
-              const session = yield* _(registerUser(users, register));
-              const plain = makePlainCredentials(register.credentials);
-              const hashedNewPassword = yield* _(hash(newPassword));
-
-              const authed = yield* _(users.authenticate(plain.credentials));
-              expect(authed.user).toEqual(session.user);
-
-              yield* _(users.updatePassword(session.token, plain.credentials.password, hashedNewPassword));
-
-              const credentialsNotRecognisedError = yield* _(users.authenticate(plain.credentials).pipe(Effect.flip));
-              expect(credentialsNotRecognisedError).toEqual(new Credential.NotRecognised());
-
-              const authed2 = yield* _(
-                users.authenticate(
-                  new EmailPassword.Plain({
-                    email: register.credentials.email,
-                    password: Password.Plaintext(newPassword),
-                  }),
-                ),
-              );
-              expect(authed2.user).toEqual(session.user);
-            }),
-
-          config,
-        );
-
-        asyncProperty(
-          "users cannot update their password with an expired session or invalid current password",
-          fc.tuple(Arbs.Users.Register, Arbs.Passwords.Strong),
-          ([register, newPassword]) =>
-            Effect.gen(function* (_) {
-              const { users } = yield* _(TestBench);
-              const session = yield* _(registerUser(users, register));
-              const plain = makePlainCredentials(register.credentials);
-              const hashedPassword = yield* _(hash(newPassword));
-
-              const error0 = yield* _(
-                users.updatePassword(session.token, Password.Plaintext("whatever"), hashedPassword).pipe(Effect.flip),
-              );
-              expect(error0).toEqual(new Credential.NotRecognised());
-
-              yield* _(users.logout(session.token));
-
-              const error1 = yield* _(
-                users.updatePassword(session.token, plain.credentials.password, hashedPassword).pipe(Effect.flip),
-              );
-              expect(error1).toEqual(new UserNotFound());
-            }),
-          config,
-        );
-
-        asyncProperty(
-          "existing sessions expire when password is updated excluding the current session",
-          fc.tuple(Arbs.Users.Register, Arbs.Passwords.Strong),
-          ([register, newPassword]) =>
-            Effect.gen(function* (_) {
-              const { users } = yield* _(TestBench);
-              const session0 = yield* _(registerUser(users, register));
-
-              const plain = makePlainCredentials(register.credentials);
-              const hashedPassword = yield* _(hash(newPassword));
-
-              const session1 = yield* _(users.authenticate(plain.credentials));
-
-              yield* _(users.updatePassword(session1.token, plain.credentials.password, hashedPassword));
-
-              const error = yield* _(users.identify(session0.token).pipe(Effect.flip));
-              const session2 = yield* _(users.identify(session1.token));
-
-              expect(error).toEqual(new Token.NoSuchToken());
-              expect(session1.user).toEqual(session0.user);
-              expect(session2.user).toEqual(session1.user);
-            }),
-          config,
-        );
-      });
     });
 
-    describe("Password reset", () => {
+    describe("Users.resetPassword", () => {
       asyncProperty(
         "users can reset their password",
-        fc.tuple(Arbs.Users.Register, Arbs.Passwords.Strong),
+        fc.tuple(Arbs.Users.EmailRegistration, Arbs.Passwords.Strong),
         ([register, newPassword]) =>
           Effect.gen(function* (_) {
             const { users } = yield* _(TestBench);
@@ -327,15 +344,15 @@ export namespace UsersSpec {
               ),
             );
 
-            expect(error).toEqual(new Credential.NotRecognised());
-            expect(session1.user).toEqual(session0.user);
+            expect(error).toStrictEqual(new Credential.NotRecognised());
+            expect(session1.user).toStrictEqual(session0.user);
           }),
         config,
       );
 
       asyncProperty(
         "existing sessions expire when password is reset",
-        fc.tuple(Arbs.Users.Register, Arbs.Passwords.Strong),
+        fc.tuple(Arbs.Users.EmailRegistration, Arbs.Passwords.Strong),
         ([register, newPassword]) =>
           Effect.gen(function* (_) {
             const { users } = yield* _(TestBench);
@@ -351,15 +368,15 @@ export namespace UsersSpec {
             const error0 = yield* _(users.identify(session0.token).pipe(Effect.flip));
             const error1 = yield* _(users.identify(session1.token).pipe(Effect.flip));
 
-            expect(error0).toEqual(new Token.NoSuchToken());
-            expect(error1).toEqual(new Token.NoSuchToken());
+            expect(error0).toStrictEqual(new Token.NoSuchToken());
+            expect(error1).toStrictEqual(new Token.NoSuchToken());
           }),
         config,
       );
 
       asyncProperty(
         "password reset tokens are single-use",
-        fc.tuple(Arbs.Users.Register, Arbs.Passwords.Strong),
+        fc.tuple(Arbs.Users.EmailRegistration, Arbs.Passwords.Strong),
         ([register, newPassword]) =>
           Effect.gen(function* (_) {
             const { users } = yield* _(TestBench);
@@ -369,7 +386,7 @@ export namespace UsersSpec {
             yield* _(users.resetPassword(token, hashedNewPassword));
             const error = yield* _(users.resetPassword(token, hashedNewPassword).pipe(Effect.flip));
 
-            expect(error).toEqual(new Token.NoSuchToken());
+            expect(error).toStrictEqual(new Token.NoSuchToken());
           }),
         config,
       );
@@ -381,159 +398,159 @@ export namespace UsersSpec {
           Effect.gen(function* (_) {
             const { users } = yield* _(TestBench);
             const error = yield* _(users.requestPasswordReset(email).pipe(Effect.flip));
-            expect(error).toEqual(new Credential.NotRecognised());
+            expect(error).toStrictEqual(new Credential.NotRecognised());
           }),
         config,
       );
     });
 
-    // describe("Identities", () => {
-    //   asyncProperty(
-    //     "users can add many social identities",
-    //     fc.tuple(Arbs.Users.Register, Arbs.Credentials.SocialCredential, Arbs.Credentials.SocialCredential),
-    //     ([registration, socialCredential0, socialCredential1]) =>
-    //       Effect.gen(function* (_) {
-    //         const { users } = yield* _(TestBench);
-    //         const session = yield* _(registerUser(users, registration));
-    //         yield* _(users.addIdentity(session.user.id, socialCredential0));
-    //         yield* _(users.addIdentity(session.user.id, socialCredential1));
+    describe("Users.linkCredential", () => {
+      asyncProperty(
+        "users can link many credentials",
+        fc.tuple(Arbs.Users.EmailRegistration, Arbs.Credentials.SocialCredential, Arbs.Credentials.SocialCredential),
+        ([emailRegistration, credential1, credential2]) =>
+          Effect.gen(function* (_) {
+            const { users } = yield* _(TestBench);
 
-    //         const identities = yield* _(users.findIdentitiesById(session.user.id));
+            const session = yield* _(registerUser(users, emailRegistration));
 
-    //         expect(identities.length).toBe(3);
-    //         expect(identities).toContainEqual(User.identity.Email({ email: registration.credentials.email }));
-    //         expect(identities).toContainEqual(
-    //           User.identity.Social({ email: socialCredential0.email, provider: socialCredential0.provider }),
-    //         );
-    //         expect(identities).toContainEqual(
-    //           User.identity.Social({ email: socialCredential1.email, provider: socialCredential1.provider }),
-    //         );
-    //       }),
-    //     config,
-    //   );
+            yield* _(users.linkCredential(session.token, credential1));
+            yield* _(users.linkCredential(session.token, credential2));
 
-    //   asyncProperty(
-    //     "users can only have a single EmailPassword identity",
-    //     fc.tuple(Arbs.Users.Register, Arbs.Passwords.Strong),
-    //     ([registration, password]) =>
-    //       Effect.gen(function* (_) {
-    //         const { users } = yield* _(TestBench);
-    //         const session = yield* _(registerUser(users, registration));
+            const identities = yield* _(users.identities(session.user.id));
 
-    //         const plain = makePlainCredentials(registration.credentials);
-    //         const hashedPassword = yield* _(hash(password));
-    //         const newCredentials = new EmailPassword.Secure({
-    //           email: plain.credentials.email,
-    //           password: hashedPassword,
-    //         });
+            expect(identities[0]).toStrictEqual(
+              Option.some(User.identity.EmailPassword({ email: emailRegistration.credentials.email })),
+            );
+            expect(identities[1].length).toBe(2);
+            expect(identities[1]).toContainEqual(User.identity.fromCredential(credential1));
+            expect(identities[1]).toContainEqual(User.identity.fromCredential(credential2));
+          }),
+      );
 
-    //         const credentialInUseError = yield* _(users.addIdentity(session.user.id, newCredentials), Effect.flip);
+      asyncProperty(
+        "users can link a single email credential",
+        fc.tuple(Arbs.Credentials.StrongEmailPassword, Arbs.Users.SocialRegistration),
+        ([emailPassword, socialRegistration]) =>
+          Effect.gen(function* (_) {
+            const { users } = yield* _(TestBench);
 
-    //         expect(credentialInUseError).toEqual(new User.CredentialInUse());
-    //       }),
-    //     config,
-    //   );
+            const session = yield* _(users.register(socialRegistration));
 
-    //   asyncProperty(
-    //     "users can add another identity and authenticate with it",
-    //     fc.tuple(Arbs.Users.Register, Arbs.Credentials.SocialCredential),
-    //     ([registration, socialCredential]) =>
-    //       Effect.gen(function* (_) {
-    //         const { users } = yield* _(TestBench);
-    //         const session0 = yield* _(registerUser(users, registration));
-    //         const plain = makePlainCredentials(registration.credentials);
+            const emailCredential = yield* _(makeSecureCredential(emailPassword));
+            const identities = yield* _(users.linkCredential(session.token, emailCredential));
 
-    //         yield* _(users.addIdentity(session0.user.id, socialCredential));
+            expect(Option.isSome(identities[0])).toBeTruthy();
+            expect(identities[1].length).toBe(1);
+          }),
+      );
 
-    //         const session1 = yield* _(users.authenticate(plain.credentials));
-    //         const session2 = yield* _(users.authenticate(socialCredential));
+      asyncProperty(
+        "users cannot link a credential that already exists",
+        fc.tuple(Arbs.Users.SocialRegistration, Arbs.Users.SocialRegistration),
+        ([socialRegistration1, socialRegistration2]) =>
+          Effect.gen(function* (_) {
+            const { users } = yield* _(TestBench);
 
-    //         expect(session1.user).toEqual(session2.user);
-    //       }),
-    //     config,
-    //   );
+            yield* _(users.register(socialRegistration1));
+            const session = yield* _(users.register(socialRegistration2));
 
-    //   asyncProperty(
-    //     "users can remove a social identity if they have more than one identity",
-    //     fc.tuple(Arbs.Users.Register, Arbs.Credentials.SocialCredential),
-    //     ([registration, socialCredential]) =>
-    //       Effect.gen(function* (_) {
-    //         const { users } = yield* _(TestBench);
-    //         const session = yield* _(registerUser(users, registration));
+            const alreadyExistsError = yield* _(
+              users.linkCredential(session.token, socialRegistration1.credentials),
+              Effect.flip,
+            );
 
-    //         const twoIdentities = yield* _(users.addIdentity(session.user.id, socialCredential));
+            expect(alreadyExistsError).toStrictEqual(new Credential.AlreadyExists());
+          }),
+      );
+    });
 
-    //         const socialIdentity = User.identity.fromCredential(socialCredential);
-    //         const emailIdentity = User.identity.Email({ email: registration.credentials.email });
+    describe("Users.unlinkCredential", () => {
+      asyncProperty(
+        "users can unlink their email credential",
+        fc.tuple(Arbs.Credentials.StrongEmailPassword, Arbs.Users.SocialRegistration),
+        ([emailPassword, socialRegistration]) =>
+          Effect.gen(function* (_) {
+            const { users } = yield* _(TestBench);
 
-    //         const oneIdentity = yield* _(users.removeIdentity(session.user.id, socialIdentity));
-    //         const lastCredentialsError = yield* _(users.removeIdentity(session.user.id, emailIdentity), Effect.flip);
+            const session = yield* _(users.register(socialRegistration));
 
-    //         expect(twoIdentities.length).toEqual(2);
-    //         expect(oneIdentity).not.toContainEqual(socialIdentity);
+            const emailCredential = yield* _(makeSecureCredential(emailPassword));
+            const identities1 = yield* _(users.linkCredential(session.token, emailCredential));
+            const identities2 = yield* _(users.unlinkCredential(session.token, "email"));
 
-    //         expect(oneIdentity[0]).toEqual(emailIdentity);
+            expect(Option.isSome(identities1[0])).toBeTruthy();
+            expect(Option.isSome(identities2[0])).toBeFalsy();
+          }),
+      );
 
-    //         expect(lastCredentialsError).toEqual(new User.LastCredentialError());
-    //       }),
-    //     config,
-    //   );
+      asyncProperty(
+        "users can unlink their third party provider credential if they have an email credential",
+        fc.tuple(Arbs.Users.EmailRegistration, Arbs.Credentials.SocialCredential),
+        ([registration, credential]) =>
+          Effect.gen(function* (_) {
+            const { users } = yield* _(TestBench);
 
-    //   asyncProperty(
-    //     "users can remove an email identity if they have more than one identity",
-    //     fc.tuple(Arbs.Users.Register, Arbs.Credentials.SocialCredential),
-    //     ([registration, socialCredential]) =>
-    //       Effect.gen(function* (_) {
-    //         const { users } = yield* _(TestBench);
-    //         const session = yield* _(registerUser(users, registration));
+            const session = yield* _(registerUser(users, registration));
 
-    //         yield* _(users.addIdentity(session.user.id, socialCredential));
+            const identities1 = yield* _(users.linkCredential(session.token, credential));
+            const identities2 = yield* _(users.unlinkCredential(session.token, credential.provider));
 
-    //         const emailIdentity = User.identity.Email({ email: registration.credentials.email });
-    //         const socialIdentity = User.identity.fromCredential(socialCredential);
+            expect(Option.isSome(identities1[0])).toBeTruthy();
+            expect(identities2[1].length).toBe(0);
+          }),
+      );
 
-    //         const oneIdentity = yield* _(users.removeIdentity(session.user.id, emailIdentity));
-    //         const lastCredentialsError = yield* _(users.removeIdentity(session.user.id, socialIdentity), Effect.flip);
+      asyncProperty(
+        "users cannot unlink their email credential if they have no fallback credential",
+        Arbs.Users.EmailRegistration,
+        (registration) =>
+          Effect.gen(function* (_) {
+            const { users } = yield* _(TestBench);
 
-    //         expect(oneIdentity).toContainEqual(User.identity.fromCredential(socialCredential));
-    //         expect(oneIdentity).not.toContainEqual(emailIdentity);
-    //         expect(lastCredentialsError).toEqual(new User.LastCredentialError());
-    //       }),
-    //     config,
-    //   );
+            const session = yield* _(registerUser(users, registration));
+            const noFallbackError = yield* _(users.unlinkCredential(session.token, "email"), Effect.flip);
 
-    //   asyncProperty(
-    //     "users cannot add an email belonging to another user",
-    //     fc.tuple(Arbs.Users.Register, Arbs.Users.Register),
-    //     ([register1, register2]) =>
-    //       Effect.gen(function* (_) {
-    //         const { users } = yield* _(TestBench);
+            expect(noFallbackError).toStrictEqual(new Credential.NoFallbackAvailable());
+          }),
+      );
 
-    //         yield* _(registerUser(users, register1));
+      asyncProperty(
+        "users cannot unlink their third party provider credential if they have no email or other third party provider credential",
+        Arbs.Users.SocialRegistration,
+        (socialRegistration) =>
+          Effect.gen(function* (_) {
+            const { users } = yield* _(TestBench);
 
-    //         const user2 = yield* _(registerUser(users, register2));
+            const provider = socialRegistration.credentials.provider;
+            const session = yield* _(users.register(socialRegistration));
 
-    //         const socialCredential = new Credential.Social({
-    //           email: register1.credentials.email,
-    //           provider: "google",
-    //           id: Credential.SocialId("googleId"),
-    //         });
+            const noFallbackError = yield* _(users.unlinkCredential(session.token, provider), Effect.flip);
 
-    //         const error = yield* _(users.addIdentity(user2.user.id, socialCredential), Effect.flip);
+            expect(noFallbackError).toStrictEqual(new Credential.NoFallbackAvailable());
+          }),
+      );
 
-    //         expect(error).toEqual(new User.CredentialInUse());
-    //       }),
-    //     config,
-    //   );
-    // });
+      asyncProperty(
+        "users cannot unlink a credential if it does not exist",
+        Arbs.Users.SocialRegistration,
+        (socialRegistration) =>
+          Effect.gen(function* (_) {
+            const { users } = yield* _(TestBench);
+
+            const session = yield* _(users.register(socialRegistration));
+
+            const notRecognisedError = yield* _(users.unlinkCredential(session.token, "email"), Effect.flip);
+
+            expect(notRecognisedError).toStrictEqual(new Credential.NotRecognised());
+          }),
+      );
+    });
   };
-  const registerUser = (users: Users, register: Arbs.Users.Register) =>
+
+  const registerUser = (users: Users, register: Arbs.Users.EmailRegistration) =>
     Effect.gen(function* (_) {
-      const hashed = yield* _(hash(register.credentials.password));
-      const credential = new EmailPassword.Secure({
-        email: register.credentials.email,
-        password: hashed,
-      });
+      const credential = yield* _(makeSecureCredential(register.credentials));
 
       return yield* _(
         users.register({
@@ -560,6 +577,16 @@ export namespace UsersSpec {
         password: Password.Plaintext(credentials.password),
       }),
     };
+  };
+
+  const makeSecureCredential = (credential: EmailPassword.Strong) => {
+    return Effect.gen(function* (_) {
+      const hashed = yield* _(hash(credential.password));
+      return new EmailPassword.Secure({
+        email: credential.email,
+        password: hashed,
+      });
+    });
   };
 }
 

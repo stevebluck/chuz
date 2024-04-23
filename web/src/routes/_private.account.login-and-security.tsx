@@ -1,4 +1,4 @@
-import { Password, User } from "@chuz/domain";
+import { Credential, Password, User } from "@chuz/domain";
 import { Effect, Match, Option, S, Tuple } from "@chuz/prelude";
 import { useLoaderData } from "@remix-run/react";
 import { ShieldIcon } from "lucide-react";
@@ -42,10 +42,14 @@ export const action = Remix.action(
                   (form) => Password.strongEquals(form.password)(form.password2),
                   () => new Password.PasswordsDoNotMatch(),
                 ),
-                Effect.bind("hashed", (form) => Hasher.hash(form.password)),
-                Effect.flatMap(({ hashed }) => Users.setPassword(session.token, hashed)),
+                Effect.flatMap((form) => Hasher.hash(form.password)),
+                Effect.map(
+                  (password) => new Credential.EmailPassword.Secure({ email: session.user.value.email, password }),
+                ),
+                Effect.flatMap((credential) => Users.linkCredential(session.token, credential)),
                 Effect.zipRight(Http.response.redirect(Routes.account.loginAndSecurity)),
                 Effect.catchTags({
+                  CredentialAlareadyExists: Http.response.badRequest,
                   PasswordsDoNotMatch: Http.response.badRequest,
                   PasswordAlreadySet: Http.response.badRequest,
                 }),
@@ -88,7 +92,7 @@ export default function LoginAndSecurity() {
     socialIdentities: User.identity.Social[];
   }>();
 
-  const { isActive, setActive, isOtherActive } = useActiveState(Section);
+  const { isActive, isOtherActive } = useActiveState(Section);
 
   return (
     <AccountSettingsLayout title="Login & security">
@@ -99,8 +103,8 @@ export default function LoginAndSecurity() {
             activateButtonLabel={hasPassword ? "Update" : "Add"}
             isActive={isActive(Section.updatePassword)}
             isDisabled={isOtherActive(Section.updatePassword)}
-            onActivate={() => setActive(Section.updatePassword, true)}
-            onCancel={() => setActive(Section.updatePassword, false)}
+            activateRoute={Routes.account.loginAndSecurityError(Section.updatePassword)}
+            cancelRoute={Routes.account.loginAndSecurity}
             preview={
               <p className="text-muted-foreground">
                 {hasPassword ? "Password last updated (TBC)" : "No password is currently set"}

@@ -20,9 +20,17 @@ export namespace Arbs {
     export const LastName = Arbitrary.make(_User.LastName);
     export const OptInMarketing = Arbitrary.make(_User.OptInMarketing);
 
-    export type Register = typeof Register extends fc.Arbitrary<infer A> ? A : never;
-    export const Register = fc.record({
+    export type EmailRegistration = typeof EmailRegistration extends fc.Arbitrary<infer A> ? A : never;
+    export const EmailRegistration = fc.record({
       credentials: Credentials.StrongEmailPassword,
+      firstName: FirstName.map(Option.fromNullable),
+      lastName: LastName.map(Option.fromNullable),
+      optInMarketing: OptInMarketing,
+    });
+
+    export type SocialRegistration = typeof SocialRegistration extends fc.Arbitrary<infer A> ? A : never;
+    export const SocialRegistration = fc.record({
+      credentials: Credentials.SocialCredential,
       firstName: FirstName.map(Option.fromNullable),
       lastName: LastName.map(Option.fromNullable),
       optInMarketing: OptInMarketing,
