@@ -68,13 +68,22 @@ export const asyncProperty = <A, E>(
   );
 };
 
-asyncProperty.skip = <A>(
+asyncProperty.skip = <A, E>(
   title: string,
   arbs: fc.Arbitrary<fc.RecordValue<A>>,
-  predicate: (a: A) => Promise<boolean | void>,
+  predicate: (a: A) => Effect.Effect<boolean | void, E>,
   config: Config = defaultConfig,
 ) => {
   test.skip(title, () => {});
+};
+
+asyncProperty.todo = <A, E>(
+  title: string,
+  arbs: fc.Arbitrary<fc.RecordValue<A>>,
+  predicate: (a: A) => Effect.Effect<boolean | void, E>,
+  config: Config = defaultConfig,
+) => {
+  test.todo(title, () => {});
 };
 
 asyncProperty.only = <A, E>(

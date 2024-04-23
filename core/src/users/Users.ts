@@ -3,26 +3,8 @@ import { User } from "@chuz/domain";
 import { Data, Effect, S } from "@chuz/prelude";
 import { EmailAddress } from "@chuz/prelude/src/Schema";
 
-// TODO: remove ability to login with multiple emails/pass
 // TODO: restrict one social auth to one provider
-// TODO: if register first with social, infer email from whats given to me
-// TODO: that email is the email on the user ^ - send notifications etc
-// TODO: If they want to add a password, they can do that later
-
-/**
-  User logs in with email/password
-  User goes to profile section of dashboard and clicks “link github account”
-  User is redirected to sign in with github credentials
-  dashboard backend links the two accounts via management API
-
-  Or
-
-  User signs in with email/password.
-  Some time later: user signs in with github credentials
-  Auth0 rule detects that the two accounts share the same email address
-  Rule asks user to sign in with email/password
-  Rule then links the two accounts.
- */
+// TODO: auto link accounts with same email
 
 export interface Users {
   register(registration: Registration): Effect.Effect<User.Session, EmailAlreadyInUse>;
@@ -65,7 +47,7 @@ export interface Users {
 
   unlinkCredential(
     token: User.Token,
-    provider: Credential.Provider,
+    provider: Credential.ProviderId,
   ): Effect.Effect<User.identity.Identities, UnlinkCredentialError>;
 }
 

@@ -10,7 +10,7 @@ import { SocialAuth } from "src/server/auth/SocialAuth";
 import { AppCookies } from "src/server/cookies/AppCookies";
 
 const SearchParams = S.Struct({
-  _tag: Credential.SocialProvider,
+  _tag: Credential.AuthProvider.fields.providerId,
   code: Auth.Code,
   state: Auth.State,
 });

@@ -1,4 +1,4 @@
-import { EmailPassword, Password, Session, User } from "@chuz/domain";
+import { Credential, EmailPassword, Password, Session, User } from "@chuz/domain";
 import { Clock, Effect, Option, S } from "@chuz/prelude";
 import * as Core from "core/index";
 
@@ -23,6 +23,7 @@ export namespace TestBench {
 
       const password = yield* _(hash(userRegistration.credentials.password));
       const credential = new EmailPassword.Secure({
+        providerId: Credential.ProviderId.email,
         email: userRegistration.credentials.email,
         password,
       });

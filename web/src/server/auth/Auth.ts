@@ -16,15 +16,16 @@ export type Code = string & Brand.Brand<"AuthCode">;
 export type State = string & Brand.Brand<"AuthState">;
 export type Intent = "login" | "register";
 
-export type ProviderCode = { _tag: Credential.SocialProvider; code: Code; state: State };
+export type ProviderCode = { _tag: Credential.ProviderId; code: Code; state: State };
 
-export type ProviderState = { _tag: Credential.SocialProvider; state: State };
+export type ProviderState = { _tag: Credential.ProviderId; state: State };
 
 export const Code = S.String.pipe(S.brand("AuthCode"));
 
 export const Intent = S.Literal("login", "register");
 
 export const State = S.NonEmpty.pipe(S.brand("AuthState"));
+
 export const makeState = (intent: Intent) =>
   makeUuid.pipe(
     Effect.map((uuid) => [intent, uuid].join("+")),

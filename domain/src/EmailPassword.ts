@@ -12,6 +12,7 @@ export class Strong extends S.TaggedClass<Strong>()("Strong", {
 }) {}
 
 export class Secure extends S.TaggedClass<Secure>()("Secure", {
+  providerId: S.Literal("email"),
   email: S.EmailAddress,
   password: Password.Hashed,
 }) {}

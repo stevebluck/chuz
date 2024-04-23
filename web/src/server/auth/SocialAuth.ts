@@ -14,10 +14,12 @@ export class SocialAuth extends Effect.Tag("@app/Social")<SocialAuth, SocialAuth
         exchangeCodeForSession: Match.typeTags<ProviderCode>()({
           google: google.exchangeCodeForSession,
           apple: () => Effect.die("Apple not implemented"),
+          email: () => Effect.die("Email not implemented"),
         }),
         generateAuthUrl: Match.typeTags<ProviderState>()({
           google: google.generateAuthUrl,
           apple: () => Effect.die("Apple not implemented"),
+          email: () => Effect.die("Email not implemented"),
         }),
       });
     }),

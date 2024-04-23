@@ -1,29 +1,23 @@
-import { Data, Option, S } from "@chuz/prelude";
+import { Array, Data, Option, Record, S } from "@chuz/prelude";
 import * as Credential from "./Credential";
 
-export type Identities = [Option.Option<EmailPassword>, Array<Social>];
+export type Identities = Record<Credential.ProviderId, Option.Option<Identity>>;
 
-type EmailPassword = {
-  _tag: "Email";
+export type Identity = {
   email: S.EmailAddress;
+  providerId: Credential.ProviderId;
 };
 
-export type Social = {
-  _tag: "Social";
-  email: S.EmailAddress;
-  provider: Credential.SocialProvider;
+export const Identity = Data.case<Identity>();
+
+export const hasSocialIdentity = (identities: Identities): boolean => {
+  const authProviderCredentials = Record.filter(identities, (_, id) => Credential.isAuthProviderId(id));
+  return Array.findFirst(Record.values(authProviderCredentials), Option.isSome).pipe(Option.isSome);
 };
 
-export const Social = Data.tagged<Social>("Social");
-export const EmailPassword = Data.tagged<EmailPassword>("Email");
+export const hasEmailIdentity = (identities: Identities): boolean => {
+  return Option.isSome(identities.email);
+};
 
-export const fromEmailCredential = (credential: Credential.EmailPassword.Secure): EmailPassword =>
-  EmailPassword({ email: credential.email });
-
-export const fromSocialCredential = (credential: Credential.Social): Social =>
-  Social({ email: credential.email, provider: credential.provider });
-
-export const fromCredential = Credential.matchSecure({
-  Secure: fromEmailCredential,
-  Social: fromSocialCredential,
-});
+export const fromCredential = (credential: Credential.Secure): Identity =>
+  Identity({ email: credential.email, providerId: credential.providerId });

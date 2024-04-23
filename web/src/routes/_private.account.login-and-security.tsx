@@ -1,5 +1,5 @@
 import { Credential, Password, User } from "@chuz/domain";
-import { Effect, Match, Option, S, Tuple } from "@chuz/prelude";
+import { Effect, Match, S } from "@chuz/prelude";
 import { useLoaderData } from "@remix-run/react";
 import { ShieldIcon } from "lucide-react";
 import { Routes } from "src/Routes";
@@ -17,12 +17,7 @@ import * as Remix from "src/server/Remix";
 export const loader = Remix.loader(
   Session.authenticated.pipe(
     Effect.flatMap((session) => Users.identities(session.user.id)),
-    Effect.flatMap((identities) =>
-      Http.response.ok({
-        hasPassword: Option.isSome(Tuple.getFirst(identities)),
-        identities: Tuple.getSecond(identities),
-      }),
-    ),
+    Effect.flatMap((identities) => Http.response.ok(identities)),
     Effect.catchTags({ Unauthorised: () => Http.response.unauthorized }),
   ),
 );
@@ -44,14 +39,18 @@ export const action = Remix.action(
                 ),
                 Effect.flatMap((form) => Hasher.hash(form.password)),
                 Effect.map(
-                  (password) => new Credential.EmailPassword.Secure({ email: session.user.value.email, password }),
+                  (password) =>
+                    new Credential.EmailPassword.Secure({
+                      providerId: Credential.ProviderId.email,
+                      email: session.user.value.email,
+                      password,
+                    }),
                 ),
                 Effect.flatMap((credential) => Users.linkCredential(session.token, credential)),
                 Effect.zipRight(Http.response.redirect(Routes.account.loginAndSecurity)),
                 Effect.catchTags({
                   CredentialAlareadyExists: Http.response.badRequest,
                   PasswordsDoNotMatch: Http.response.badRequest,
-                  PasswordAlreadySet: Http.response.badRequest,
                 }),
               ),
             UpdatePasswordForm: (form) =>
@@ -87,10 +86,10 @@ const Section = {
 } as const;
 
 export default function LoginAndSecurity() {
-  const { hasPassword } = useLoaderData<{
-    hasPassword: boolean;
-    socialIdentities: User.identity.Social[];
-  }>();
+  const identities = useLoaderData<User.identity.Identities>();
+
+  // @ts-ignore
+  const hasPassword = identities.email["email"]._tag === "Some";
 
   const { isActive, isOtherActive } = useActiveState(Section);
 

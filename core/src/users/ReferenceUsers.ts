@@ -1,5 +1,6 @@
 import { Credential, Identified, Password, Session, Token, User } from "@chuz/domain";
-import { Duration, Effect, Either, HashMap, Option, Predicate, Array, Ref, S, Tuple, identity } from "@chuz/prelude";
+import { ProviderId } from "@chuz/domain/src/Credential";
+import { Duration, Effect, Either, HashMap, Option, Predicate, Ref, S, identity } from "@chuz/prelude";
 import { Passwords } from "core/auth/Passwords";
 import { AutoIncrement } from "core/persistence/AutoIncrement";
 import { Tokens } from "core/tokens/Tokens";
@@ -45,7 +46,7 @@ export class ReferenceUsers implements Users {
           Effect.flatMap(() => this.getByEmail(credential.email)),
           Effect.mapError(() => new Credential.NotRecognised()),
         ),
-      Social: (credential) =>
+      AuthProvider: (credential) =>
         Ref.get(this.state).pipe(
           Effect.flatMap((state) => state.findByCredential(credential)),
           Effect.mapError(() => new Credential.NotRecognised()),
@@ -184,21 +185,24 @@ export class ReferenceUsers implements Users {
 
   unlinkCredential = (
     token: User.Token,
-    provider: Credential.Provider,
+    providerId: Credential.ProviderId,
   ): Effect.Effect<User.identity.Identities, UnlinkCredentialError> => {
     return Effect.all([this.userTokens.lookup(token), Ref.get(this.state)]).pipe(
       Effect.filterOrFail(
-        ([userId, state]) => Option.isSome(state.findCredentialByProvider(userId, provider)),
+        ([userId, state]) => Option.isSome(state.findCredentialByProvider(userId, providerId)),
         () => new Credential.NotRecognised(),
       ),
       Effect.map(([id, state]) => [id, state.identities(id)] as const),
       Effect.filterOrFail(
-        ([, identities]) =>
-          (provider === "email" && Array.isNonEmptyArray(identities[1])) ||
-          (provider !== "email" && Option.isSome(identities[0])),
+        ([, identities]) => {
+          return (
+            (Credential.isEmailProvider(providerId) && User.identity.hasSocialIdentity(identities)) ||
+            (Credential.isAuthProviderId(providerId) && User.identity.hasEmailIdentity(identities))
+          );
+        },
         () => new Credential.NoFallbackAvailable(),
       ),
-      Effect.flatMap(([userId]) => Ref.modify(this.state, (s) => s.unlinkCredential(userId, provider))),
+      Effect.flatMap(([userId]) => Ref.modify(this.state, (s) => s.unlinkCredential(userId, providerId))),
     );
   };
 }
@@ -207,9 +211,49 @@ class State {
   constructor(
     private readonly users: HashMap.HashMap<User.Id, User.Identified>,
     private readonly passwords: HashMap.HashMap<User.Id, Credential.EmailPassword.Secure>,
-    private readonly socials: HashMap.HashMap<Credential.Social, User.Id>,
+    private readonly socials: HashMap.HashMap<Credential.AuthProvider, User.Id>,
     private readonly ids: AutoIncrement<User.User>,
   ) {}
+
+  private toIdentities = (
+    id: User.Id,
+    passwords: HashMap.HashMap<User.Id, Credential.EmailPassword.Secure>,
+    socials: HashMap.HashMap<Credential.AuthProvider, User.Id>,
+  ): readonly [User.identity.Identities, State] => {
+    const _passwords = HashMap.get(passwords, id);
+    const _socials = HashMap.filter(socials, (userId) => User.eqId(userId, id)).pipe(
+      HashMap.map((_, credential) => credential),
+    );
+
+    const users = HashMap.modifyAt(
+      this.users,
+      id,
+      Option.flatMap((user) =>
+        _passwords.pipe(
+          Option.map(
+            ({ email }) =>
+              new Identified({
+                id: user.id,
+                value: { ...user.value, email },
+              }),
+          ),
+        ),
+      ),
+    );
+
+    return [
+      {
+        [ProviderId.email]: Option.map(HashMap.get(passwords, id), User.identity.fromCredential),
+        [ProviderId.google]: HashMap.findFirst(_socials, Credential.isGoogle).pipe(
+          Option.map(([credential]) => User.identity.fromCredential(credential)),
+        ),
+        [ProviderId.apple]: HashMap.findFirst(_socials, Credential.isApple).pipe(
+          Option.map(([credential]) => User.identity.fromCredential(credential)),
+        ),
+      },
+      new State(users, passwords, socials, this.ids),
+    ] as const;
+  };
 
   findById = (id: User.Id): Option.Option<User.Identified> => {
     return HashMap.get(this.users, id);
@@ -220,14 +264,19 @@ class State {
   };
 
   identities = (id: User.Id): User.identity.Identities => {
-    return Tuple.make(
-      HashMap.get(this.passwords, id).pipe(Option.map(User.identity.fromEmailCredential)),
-      HashMap.filter(this.socials, (userId) => User.eqId(id, userId)).pipe(
-        HashMap.keys,
-        Array.fromIterable,
-        Array.map(User.identity.fromSocialCredential),
-      ),
+    const socialCredentials = HashMap.filter(this.socials, (userId) => User.eqId(userId, id)).pipe(
+      HashMap.map((_, credential) => credential),
     );
+
+    return {
+      [ProviderId.email]: Option.map(HashMap.get(this.passwords, id), User.identity.fromCredential),
+      [ProviderId.google]: HashMap.findFirst(socialCredentials, Credential.isGoogle).pipe(
+        Option.map(([credential]) => User.identity.fromCredential(credential)),
+      ),
+      [ProviderId.apple]: HashMap.findFirst(socialCredentials, Credential.isApple).pipe(
+        Option.map(([credential]) => User.identity.fromCredential(credential)),
+      ),
+    };
   };
 
   findEmailCredential = (email: S.EmailAddress): Option.Option<Credential.EmailPassword.Secure> => {
@@ -241,19 +290,19 @@ class State {
       HashMap.findFirst(this.passwords, ({ email }) => email === credential.email).pipe(
         Option.flatMap(([id]) => this.findById(id)),
       ),
-    Social: (credential) =>
+    AuthProvider: (credential) =>
       HashMap.findFirst(this.socials, (_, { email }) => email === credential.email).pipe(
         Option.flatMap(([, id]) => this.findById(id)),
       ),
   });
 
-  findCredentialByProvider = (id: User.Id, provider: Credential.Provider): Option.Option<Credential.Secure> => {
-    if (provider === "email") {
+  findCredentialByProvider = (id: User.Id, providerId: Credential.ProviderId): Option.Option<Credential.Secure> => {
+    if (providerId === ProviderId.email) {
       return HashMap.get(this.passwords, id);
     }
 
     return this.socials.pipe(
-      HashMap.findFirst((userId, credential) => User.eqId(userId, id) && credential.provider === provider),
+      HashMap.findFirst((userId, credential) => User.eqId(userId, id) && credential.providerId === providerId),
       Option.map(([credential]) => credential),
     );
   };
@@ -277,7 +326,7 @@ class State {
         const passwords = HashMap.set(this.passwords, id, credential);
         return new State(users, passwords, this.socials, ids);
       },
-      Social: (credential) => {
+      AuthProvider: (credential) => {
         const socials = HashMap.set(this.socials, credential, id);
         return new State(users, this.passwords, socials, ids);
       },
@@ -323,7 +372,12 @@ class State {
     const passwords = HashMap.modify(
       this.passwords,
       id,
-      (credential) => new Credential.EmailPassword.Secure({ email, password: credential.password }),
+      (credential) =>
+        new Credential.EmailPassword.Secure({
+          email,
+          password: credential.password,
+          providerId: ProviderId.email,
+        }),
     );
 
     const user = HashMap.get(users, id);
@@ -341,7 +395,12 @@ class State {
     const passwords = HashMap.modify(
       this.passwords,
       id,
-      (credential) => new Credential.EmailPassword.Secure({ email: credential.email, password }),
+      (credential) =>
+        new Credential.EmailPassword.Secure({
+          email: credential.email,
+          password,
+          providerId: ProviderId.email,
+        }),
     );
 
     const user = this.findById(id);
@@ -359,66 +418,26 @@ class State {
     Credential.matchSecure({
       Secure: (credential) => {
         const passwords = HashMap.set(this.passwords, id, credential);
-
-        return [
-          Tuple.make(
-            HashMap.get(passwords, id).pipe(Option.map(User.identity.fromEmailCredential)),
-            HashMap.filter(this.socials, (userId) => User.eqId(userId, id)).pipe(
-              HashMap.keys,
-              Array.fromIterable,
-              Array.map(User.identity.fromSocialCredential),
-            ),
-          ),
-          new State(this.users, passwords, this.socials, this.ids),
-        ] as const;
+        return this.toIdentities(id, passwords, this.socials);
       },
-      Social: (credential) => {
+      AuthProvider: (credential) => {
         const socials = HashMap.set(this.socials, credential, id);
-
-        return [
-          Tuple.make(
-            HashMap.findFirst(this.passwords, (_, userId) => User.eqId(userId, id)).pipe(
-              Option.map(([, credential]) => User.identity.fromEmailCredential(credential)),
-            ),
-            HashMap.filter(socials, (userId) => User.eqId(userId, id)).pipe(
-              HashMap.keys,
-              Array.fromIterable,
-              Array.map(User.identity.fromSocialCredential),
-            ),
-          ),
-          new State(this.users, this.passwords, socials, this.ids),
-        ] as const;
+        return this.toIdentities(id, this.passwords, socials);
       },
     })(credential);
 
-  unlinkCredential = (id: User.Id, provider: Credential.Provider): [User.identity.Identities, State] => {
-    if (provider === "email") {
+  unlinkCredential = (id: User.Id, providerId: Credential.ProviderId): readonly [User.identity.Identities, State] => {
+    if (providerId === ProviderId.email) {
       const passwords = HashMap.remove(this.passwords, id);
-
-      const socialIdentities = this.socials.pipe(
-        HashMap.filter((userId) => User.eqId(userId, id)),
-        HashMap.map((_, credential) => User.identity.fromSocialCredential(credential)),
-        HashMap.keys,
-        Array.fromIterable,
-      );
-
-      return [Tuple.make(Option.none(), socialIdentities), new State(this.users, passwords, this.socials, this.ids)];
+      return this.toIdentities(id, passwords, this.socials);
     }
 
     const socials = this.socials.pipe(
-      HashMap.findFirst((userId, credential) => credential.provider === provider && User.eqId(userId, id)),
+      HashMap.findFirst((userId, credential) => credential.providerId === providerId && User.eqId(userId, id)),
       Option.map(([credential]) => HashMap.remove(this.socials, credential)),
       Option.getOrElse(() => this.socials),
     );
 
-    const emailIdentity = HashMap.get(this.passwords, id).pipe(Option.map(User.identity.fromEmailCredential));
-
-    const socialIdentities = HashMap.filter(socials, (userId) => User.eqId(userId, id)).pipe(
-      HashMap.map((_, credential) => User.identity.fromSocialCredential(credential)),
-      HashMap.keys,
-      Array.fromIterable,
-    );
-
-    return [Tuple.make(emailIdentity, socialIdentities), new State(this.users, this.passwords, socials, this.ids)];
+    return this.toIdentities(id, this.passwords, socials);
   };
 }

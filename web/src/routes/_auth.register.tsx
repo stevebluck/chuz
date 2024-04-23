@@ -1,4 +1,4 @@
-import { EmailPassword, Password, User } from "@chuz/domain";
+import { Credential, EmailPassword, Password, User } from "@chuz/domain";
 import { Effect, Match, S } from "@chuz/prelude";
 import { Routes } from "src/Routes";
 import { AuthContent } from "src/auth/AuthContent";
@@ -42,7 +42,11 @@ export const action = Remix.action(
             Passwords.Hasher.hash(registration.password).pipe(
               Effect.flatMap((hashed) =>
                 Users.register({
-                  credentials: new EmailPassword.Secure({ email: registration.email, password: hashed }),
+                  credentials: new EmailPassword.Secure({
+                    email: registration.email,
+                    password: hashed,
+                    providerId: Credential.ProviderId.email,
+                  }),
                   firstName: registration.firstName,
                   lastName: registration.lastName,
                   optInMarketing: registration.optInMarketing,
