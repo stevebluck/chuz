@@ -1,7 +1,7 @@
 import { Credential, Password, User } from "@chuz/domain";
 import { Effect, Match, S } from "@chuz/prelude";
+import { fromCheckboxInput, optionalTextInput } from "src/FormSchema";
 import { Routes } from "src/Routes";
-import { fromCheckboxInput, optionalTextInput } from "src/Schema";
 import { AuthContent } from "src/auth/AuthContent";
 import { RegisterForm } from "src/auth/RegisterForm";
 import { useActionData } from "src/hooks/useActionData";
