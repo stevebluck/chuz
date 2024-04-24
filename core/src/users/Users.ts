@@ -1,6 +1,6 @@
 import { Credential, Password, Token } from "@chuz/domain";
 import { User } from "@chuz/domain";
-import { Data, Effect, S } from "@chuz/prelude";
+import { Data, Effect, Option, S } from "@chuz/prelude";
 import { EmailAddress } from "@chuz/prelude/src/Schema";
 
 // TODO: restrict one social auth to one provider
@@ -59,11 +59,9 @@ export type UpdatePasswordError = Token.NoSuchToken | Credential.NotRecognised;
 export type UnlinkCredentialError = Token.NoSuchToken | Credential.NoFallbackAvailable | Credential.NotRecognised;
 export type LinkCredentialError = Token.NoSuchToken | Credential.AlreadyExists;
 
-export interface Registration extends S.Schema.Type<typeof Registration> {}
-
-export const Registration = S.Struct({
-  credentials: Credential.Secure,
-  firstName: S.Option(User.FirstName),
-  lastName: S.Option(User.LastName),
-  optInMarketing: User.OptInMarketing,
-});
+export interface Registration {
+  credentials: Credential.Secure;
+  firstName: Option.Option<User.FirstName>;
+  lastName: Option.Option<User.LastName>;
+  optInMarketing: User.OptInMarketing;
+}

@@ -1,4 +1,4 @@
-import { EmailPassword, Password, User as _User, Credential as _Credentials, Credential } from "@chuz/domain";
+import { Password, User as _User, Credential as _Credentials, Credential } from "@chuz/domain";
 import { Arbitrary, Option, S } from "@chuz/prelude";
 import * as fc from "fast-check";
 
@@ -11,13 +11,19 @@ export namespace Arbs {
   export const Email = Arbitrary.make(S.EmailAddress);
 
   export namespace Credentials {
-    export const Email = Arbitrary.make(EmailPassword.Strong);
-    export const Google = Arbitrary.make(_Credentials.AuthProvider).map(
-      (provider) => new _Credentials.AuthProvider({ ...provider, providerId: Credential.ProviderId.google }),
-    );
-    export const Apple = Arbitrary.make(_Credentials.AuthProvider).map(
-      (provider) => new _Credentials.AuthProvider({ ...provider, providerId: Credential.ProviderId.apple }),
-    );
+    export const EmailPassword = Arbitrary.make(Credential.EmailPassword.Strong);
+
+    export type Apple = typeof Apple extends fc.Arbitrary<infer A> ? A : never;
+    export const Apple: fc.Arbitrary<Credential.Apple> = fc.record({
+      _tag: fc.constant(Credential.ProviderId.Apple),
+      email: Email,
+    });
+
+    export type Google = typeof Google extends fc.Arbitrary<infer A> ? A : never;
+    export const Google = fc.record({
+      _tag: fc.constant(Credential.ProviderId.Google),
+      email: Email,
+    });
   }
 
   export namespace Registration {
@@ -25,29 +31,27 @@ export namespace Arbs {
     const lastName = Arbitrary.make(_User.LastName).map(Option.fromNullable);
     const optInMarketing = Arbitrary.make(_User.OptInMarketing);
 
-    export type Email = typeof Email extends fc.Arbitrary<infer A> ? A : never;
-    export const Email = fc.record({
-      credentials: Credentials.Email,
+    const make = <A>(credentials: fc.Arbitrary<A>) =>
+      fc.record({
+        credentials,
+        firstName,
+        lastName,
+        optInMarketing,
+      });
+
+    export type EmailPassword = typeof EmailPassword extends fc.Arbitrary<infer A> ? A : never;
+    export const EmailPassword = fc.record({
+      credentials: Credentials.EmailPassword,
       firstName,
       lastName,
       optInMarketing,
     });
 
     export type Google = typeof Google extends fc.Arbitrary<infer A> ? A : never;
-    export const Google = fc.record({
-      credentials: Credentials.Google,
-      firstName,
-      lastName,
-      optInMarketing,
-    });
+    export const Google = make(Credentials.Google);
 
     export type Apple = typeof Apple extends fc.Arbitrary<infer A> ? A : never;
-    export const Apple = fc.record({
-      credentials: Credentials.Google,
-      firstName,
-      lastName,
-      optInMarketing,
-    });
+    export const Apple = make(Credentials.Apple);
   }
 
   export namespace Users {

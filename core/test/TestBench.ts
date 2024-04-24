@@ -22,11 +22,7 @@ export namespace TestBench {
       const bench = yield* _(TestBench.make);
 
       const password = yield* _(hash(userRegistration.credentials.password));
-      const credential = new EmailPassword.Secure({
-        providerId: Credential.ProviderId.email,
-        email: userRegistration.credentials.email,
-        password,
-      });
+      const credential = Credential.Secure.Email({ email: userRegistration.credentials.email, password });
 
       const registration: Core.Registration = {
         credentials: credential,

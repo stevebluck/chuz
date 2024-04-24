@@ -1,43 +1,50 @@
-import { Data, Equal, Match } from "@chuz/prelude";
+import { Data, Equal, Equivalence, Match } from "@chuz/prelude";
 import { S } from "@chuz/prelude";
 import * as EmailPassword from "./EmailPassword";
 
 export { EmailPassword };
 
-export type Plain = EmailPassword.Plain | AuthProvider;
+export type Plain = Data.TaggedEnum<{
+  Email: EmailPassword.Plain;
+  Google: { email: S.EmailAddress };
+  Apple: { email: S.EmailAddress };
+}>;
 
-export type Secure = EmailPassword.Secure | AuthProvider;
+export type Secure = Data.TaggedEnum<{
+  Email: EmailPassword.Secure;
+  Google: { email: S.EmailAddress };
+  Apple: { email: S.EmailAddress };
+}>;
 
-export type ProviderId = (typeof ProviderId)[keyof typeof ProviderId];
-
+export type ProviderId = Secure["_tag"];
 export const ProviderId = {
-  email: "email",
-  google: "google",
-  apple: "apple",
+  Email: "Email",
+  Google: "Google",
+  Apple: "Apple",
 } as const;
 
-export class AuthProvider extends S.TaggedClass<AuthProvider>()("AuthProvider", {
-  providerId: S.Literal(ProviderId.email, ProviderId.apple, ProviderId.google),
-  email: S.EmailAddress,
-}) {}
+export type PlainEmail = Data.TaggedEnum.Value<Plain, "Email">;
+export type Email = Data.TaggedEnum.Value<Secure, "Email">;
+export type Google = Data.TaggedEnum.Value<Secure, "Google">;
+export type Apple = Data.TaggedEnum.Value<Secure, "Apple">;
 
-export const Plain = S.Union(EmailPassword.Plain, AuthProvider);
+export const Secure = Data.taggedEnum<Secure>();
 
-export const Secure = S.Union(EmailPassword.Secure, AuthProvider);
+export const Plain = Data.taggedEnum<Plain>();
 
 export const matchPlain = Match.typeTags<Plain>();
 
 export const matchSecure = Match.typeTags<Secure>();
 
-export const equals = Equal.equals<Secure>;
+export const eqv = Equivalence.strict<ProviderId>();
 
-export const isEmailProvider = (id: ProviderId): boolean => id === ProviderId.email;
+export const is = (
+  id: ProviderId,
+  credential: Secure | Plain,
+): credential is Data.TaggedEnum.Value<Secure | Plain, ProviderId> => Equal.equals(credential._tag, id);
 
-export const isAuthProviderId = (id: ProviderId): boolean => id !== ProviderId.email;
-
-export const isGoogle = (credential: AuthProvider) => credential.providerId === ProviderId.google;
-
-export const isApple = (credential: AuthProvider) => credential.providerId === ProviderId.apple;
+export const isEmail = (credential: Secure): credential is Email => is(ProviderId.Email, credential);
+export const isEmailPlain = (credential: Plain): credential is PlainEmail => is(ProviderId.Email, credential);
 
 export class AlreadyExists extends Data.TaggedError("CredentialAlareadyExists") {}
 export class NotRecognised extends Data.TaggedError("CredentialNotRecognised") {}
