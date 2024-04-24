@@ -31,12 +31,7 @@ export class GoogleAuth extends Effect.Tag("@app/auth/GoogleAuth")<GoogleAuth, A
             ),
             Effect.flatMap(({ tokens }) => getUserInfo(tokens.access_token!)),
             Effect.flatMap(GoogleUser.fromUnknown),
-            Effect.flatMap((user) =>
-              registerOrAuthenticate(
-                new Credential.AuthProvider({ email: user.email, providerId: Credential.ProviderId.google }),
-                user,
-              ),
-            ),
+            Effect.flatMap((user) => registerOrAuthenticate(Credential.Secure.Google({ email: user.email }), user)),
             Effect.catchTags({
               UnknownException: (e) => new Auth.ExchangeCodeError({ error: e }),
               GetUserInfoError: (e) => new Auth.ExchangeCodeError({ error: e }),
@@ -85,7 +80,7 @@ const getUserInfo = (token: string): Effect.Effect<unknown, GetUserInfoError> =>
   });
 
 const registerOrAuthenticate = (
-  credential: Credential.AuthProvider,
+  credential: Credential.Secure.Google,
   user: GoogleUser,
 ): Effect.Effect<User.Session, EmailAlreadyInUse | Credential.NotRecognised, Users> =>
   Users.getByEmail(user.email).pipe(

@@ -1,10 +1,9 @@
-import { EmailPassword } from "@chuz/domain";
+import { Credential, Password } from "@chuz/domain";
 import { Effect, Match } from "@chuz/prelude";
 import { S } from "@chuz/prelude";
 import { Routes } from "src/Routes";
 import { AuthContent } from "src/auth/AuthContent";
 import { LoginForm } from "src/auth/LoginForm";
-import { SocialProvider } from "src/auth/SocialProviders";
 import { useActionData } from "src/hooks/useActionData";
 import { Users, Session, Http } from "src/server";
 import * as Remix from "src/server/Remix";
@@ -13,7 +12,14 @@ import { SocialAuth } from "src/server/auth/SocialAuth";
 import { AppCookies } from "src/server/cookies/AppCookies";
 
 type LoginFormFields = S.Schema.Type<typeof LoginFormFields>;
-const LoginFormFields = S.Union(EmailPassword.Plain, SocialProvider);
+const LoginFormFields = S.Union(
+  S.Struct({
+    _tag: S.Literal(Credential.ProviderId.Email),
+    email: S.EmailAddress,
+    password: Password.Plaintext,
+  }),
+  S.Struct({ _tag: S.Literal(Credential.ProviderId.Google) }),
+);
 
 export const action = Remix.action(
   Effect.flatMap(AppCookies.authState, (stateCookie) =>
@@ -21,14 +27,14 @@ export const action = Remix.action(
       Effect.zipRight(Http.request.formData(LoginFormFields)),
       Effect.flatMap(
         Match.typeTags<LoginFormFields>()({
-          Provider: ({ provider }) =>
+          Google: ({ _tag }) =>
             Effect.flatMap(Auth.makeState("login"), (state) =>
-              SocialAuth.generateAuthUrl({ _tag: provider, state }).pipe(
+              SocialAuth.generateAuthUrl({ _tag, state }).pipe(
                 Effect.flatMap(Http.response.redirect),
                 Effect.flatMap(stateCookie.save(state)),
               ),
             ),
-          Plain: (credential) =>
+          Email: (credential) =>
             Users.authenticate(credential).pipe(
               Effect.flatMap(Session.mint),
               Effect.flatMap(() => Http.response.redirectToAccount),

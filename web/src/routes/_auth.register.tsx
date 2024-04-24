@@ -1,9 +1,9 @@
-import { Credential, EmailPassword, Password, User } from "@chuz/domain";
+import { Credential, Password, User } from "@chuz/domain";
 import { Effect, Match, S } from "@chuz/prelude";
 import { Routes } from "src/Routes";
+import { fromCheckboxInput, optionalTextInput } from "src/Schema";
 import { AuthContent } from "src/auth/AuthContent";
 import { RegisterForm } from "src/auth/RegisterForm";
-import { SocialProvider } from "src/auth/SocialProviders";
 import { useActionData } from "src/hooks/useActionData";
 import { Session, Users, Http } from "src/server";
 import * as Passwords from "src/server/Passwords";
@@ -15,14 +15,14 @@ import { AppCookies } from "src/server/cookies/AppCookies";
 type RegisterFormFields = S.Schema.Type<typeof RegisterFormFields>;
 const RegisterFormFields = S.Union(
   S.Struct({
-    _tag: S.Literal("Strong"),
+    _tag: S.Literal(Credential.ProviderId.Email),
     email: S.EmailAddress,
     password: Password.Strong,
-    firstName: S.optionalTextInput(User.FirstName),
-    lastName: S.optionalTextInput(User.LastName),
-    optInMarketing: S.fromCheckboxInput(User.OptInMarketing),
+    firstName: optionalTextInput(User.FirstName),
+    lastName: optionalTextInput(User.LastName),
+    optInMarketing: fromCheckboxInput(User.OptInMarketing),
   }),
-  SocialProvider,
+  S.Struct({ _tag: S.Literal(Credential.ProviderId.Google) }),
 );
 
 export const action = Remix.action(
@@ -31,22 +31,19 @@ export const action = Remix.action(
       Effect.zipRight(Http.request.formData(RegisterFormFields)),
       Effect.flatMap(
         Match.typeTags<RegisterFormFields>()({
-          Provider: ({ provider }) =>
+          Google: ({ _tag }) =>
             Effect.flatMap(Auth.makeState("register"), (state) =>
-              SocialAuth.generateAuthUrl({ _tag: provider, state }).pipe(
+              SocialAuth.generateAuthUrl({ _tag, state }).pipe(
                 Effect.flatMap(Http.response.redirect),
                 Effect.flatMap(stateCookie.save(state)),
               ),
             ),
-          Strong: (registration) =>
+          Email: (registration) =>
+            // TODO: Rename to Passwords.hash
             Passwords.Hasher.hash(registration.password).pipe(
               Effect.flatMap((hashed) =>
                 Users.register({
-                  credentials: new EmailPassword.Secure({
-                    email: registration.email,
-                    password: hashed,
-                    providerId: Credential.ProviderId.email,
-                  }),
+                  credentials: Credential.Secure.Email({ email: registration.email, password: hashed }),
                   firstName: registration.firstName,
                   lastName: registration.lastName,
                   optInMarketing: registration.optInMarketing,

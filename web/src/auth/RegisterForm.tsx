@@ -12,7 +12,7 @@ export function RegisterForm({ error }: { error: Record<string, string[]> }) {
   return (
     <div className={"grid gap-6"}>
       <Form method="POST" action={Routes.register}>
-        <Input name="_tag" type="hidden" value="Strong" />
+        <Input name="_tag" type="hidden" value="Email" />
         <div className="grid gap-6">
           <div className="grid gap-2">
             <Label htmlFor="email">Email</Label>

@@ -38,14 +38,7 @@ export const action = Remix.action(
                   () => new Password.PasswordsDoNotMatch(),
                 ),
                 Effect.flatMap((form) => Hasher.hash(form.password)),
-                Effect.map(
-                  (password) =>
-                    new Credential.EmailPassword.Secure({
-                      providerId: Credential.ProviderId.email,
-                      email: session.user.value.email,
-                      password,
-                    }),
-                ),
+                Effect.map((password) => Credential.Secure.Email({ email: session.user.value.email, password })),
                 Effect.flatMap((credential) => Users.linkCredential(session.token, credential)),
                 Effect.zipRight(Http.response.redirect(Routes.account.loginAndSecurity)),
                 Effect.catchTags({
