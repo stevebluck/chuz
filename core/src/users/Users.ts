@@ -52,6 +52,7 @@ export interface Users {
 }
 
 export class UserNotFound extends Data.TaggedError("UserNotFound") {}
+
 export class EmailAlreadyInUse extends Data.TaggedError("EmailAlreadyInUse")<{ email: S.EmailAddress }> {}
 
 export type UpdateEmailError = UserNotFound | EmailAlreadyInUse;

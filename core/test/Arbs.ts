@@ -14,7 +14,7 @@ export namespace Arbs {
     export const EmailPassword = Arbitrary.make(Credential.EmailPassword.Strong);
 
     export type Apple = typeof Apple extends fc.Arbitrary<infer A> ? A : never;
-    export const Apple: fc.Arbitrary<Credential.Apple> = fc.record({
+    export const Apple: fc.Arbitrary<Credential.Secure.Apple> = fc.record({
       _tag: fc.constant(Credential.ProviderId.Apple),
       email: Email,
     });

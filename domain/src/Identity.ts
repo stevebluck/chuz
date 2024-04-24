@@ -23,7 +23,7 @@ export const hasEmailIdentity = (identities: Identities): boolean => {
   return Option.isSome(identities.Email);
 };
 
-export const fromCredential: (credential: Credential.Secure) => Identity = Credential.matchSecure({
+export const fromCredential: (credential: Credential.Secure) => Identity = Credential.Secure.match({
   Email: ({ email }) => Identity.Email({ email }),
   Google: ({ email }) => Identity.Google({ email }),
   Apple: ({ email }) => Identity.Apple({ email }),
