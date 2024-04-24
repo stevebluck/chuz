@@ -1,5 +1,5 @@
-import { Credential, Identified, Password, Session, Token, User } from "@chuz/domain";
-import { Array, Duration, Effect, Either, HashMap, Option, Predicate, Ref, S, identity } from "@chuz/prelude";
+import { Credential, Email, Identified, Password, Session, Token, User } from "@chuz/domain";
+import { Array, Duration, Effect, Either, HashMap, Option, Predicate, Ref, identity } from "@chuz/prelude";
 import { Passwords } from "core/auth/Passwords";
 import { AutoIncrement } from "core/persistence/AutoIncrement";
 import { Tokens } from "core/tokens/Tokens";
@@ -98,7 +98,7 @@ export class ReferenceUsers implements Users {
     );
   };
 
-  getByEmail = (email: S.EmailAddress): Effect.Effect<User.Identified, UserNotFound> => {
+  getByEmail = (email: Email): Effect.Effect<User.Identified, UserNotFound> => {
     return Ref.get(this.state).pipe(
       Effect.flatMap((s) => s.findByEmail(email)),
       Effect.mapError(() => new UserNotFound()),
@@ -109,10 +109,7 @@ export class ReferenceUsers implements Users {
     return this.getById(id).pipe(Effect.tap(() => Ref.modify(this.state, (s) => s.update(id, draft))));
   };
 
-  updateEmail = (
-    id: User.Id,
-    email: S.EmailAddress,
-  ): Effect.Effect<User.Identified, UserNotFound | EmailAlreadyInUse> => {
+  updateEmail = (id: User.Id, email: Email): Effect.Effect<User.Identified, UserNotFound | EmailAlreadyInUse> => {
     return this.getByEmail(email).pipe(
       Effect.flatMap(() => new EmailAlreadyInUse({ email })),
       Effect.catchTag("UserNotFound", () =>
@@ -144,9 +141,7 @@ export class ReferenceUsers implements Users {
     );
   };
 
-  requestPasswordReset = (
-    email: S.EmailAddress,
-  ): Effect.Effect<Token.Token<[S.EmailAddress, User.Id]>, Credential.NotRecognised> => {
+  requestPasswordReset = (email: Email): Effect.Effect<Token.Token<[Email, User.Id]>, Credential.NotRecognised> => {
     return this.getByEmail(email).pipe(
       Effect.flatMap((user) =>
         this.passwordResetTokens.issue([email, user.id], new Token.TimeToLive({ duration: ONE_DAY })),
@@ -156,7 +151,7 @@ export class ReferenceUsers implements Users {
   };
 
   resetPassword = (
-    token: Token.Token<[S.EmailAddress, User.Id]>,
+    token: Token.Token<[Email, User.Id]>,
     password: Password.Hashed,
   ): Effect.Effect<User.Identified, Token.NoSuchToken> => {
     return this.passwordResetTokens.lookup(token).pipe(
@@ -235,7 +230,7 @@ class State {
     return HashMap.get(this.users, id);
   };
 
-  findByEmail = (email: S.EmailAddress): Option.Option<User.Identified> => {
+  findByEmail = (email: Email): Option.Option<User.Identified> => {
     return HashMap.findFirst(this.users, (user) => user.value.email === email).pipe(Option.map(([_, user]) => user));
   };
 
@@ -297,7 +292,7 @@ class State {
     ];
   };
 
-  updateEmail = (id: User.Id, email: S.EmailAddress): [Option.Option<User.Identified>, State] => {
+  updateEmail = (id: User.Id, email: Email): [Option.Option<User.Identified>, State] => {
     const users = HashMap.modify(
       this.users,
       id,

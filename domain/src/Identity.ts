@@ -1,12 +1,13 @@
-import { Array, Data, Option, Record, S } from "@chuz/prelude";
+import { Array, Data, Option, Record } from "@chuz/prelude";
 import * as Credential from "./Credential";
+import { Email } from "./Email";
 
-export type Identities = Record<Identity["_tag"], Option.Option<{ email: S.EmailAddress }>>;
+export type Identities = Record<Identity["_tag"], Option.Option<{ email: Email }>>;
 
 export type Identity = Data.TaggedEnum<{
-  Email: { email: S.EmailAddress };
-  Google: { email: S.EmailAddress };
-  Apple: { email: S.EmailAddress };
+  Email: { email: Email };
+  Google: { email: Email };
+  Apple: { email: Email };
 }>;
 
 export const Identity = Data.taggedEnum<Identity>();

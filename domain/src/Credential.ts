@@ -1,15 +1,13 @@
 import { Data, Equal, Equivalence, Match } from "@chuz/prelude";
-import { S } from "@chuz/prelude";
+import { Email } from "./Email";
 import * as EmailPassword from "./EmailPassword";
 
 export { EmailPassword };
 
-// TODO: Make my own TaggedEnum with support for match, is and as
-
 export type Plain = Data.TaggedEnum<{
   Email: EmailPassword.Plain;
-  Google: { email: S.EmailAddress };
-  Apple: { email: S.EmailAddress };
+  Google: { email: Email };
+  Apple: { email: Email };
 }>;
 
 export namespace Plain {
@@ -20,8 +18,8 @@ export namespace Plain {
 
 export type Secure = Data.TaggedEnum<{
   Email: EmailPassword.Secure;
-  Google: { email: S.EmailAddress };
-  Apple: { email: S.EmailAddress };
+  Google: { email: Email };
+  Apple: { email: Email };
 }>;
 
 export namespace Secure {

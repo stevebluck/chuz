@@ -1,12 +1,13 @@
 import { Data, Equal, Option } from "@chuz/prelude";
 import { S } from "@chuz/prelude";
-import * as Domain from ".";
+import { Email } from "./Email";
 import * as identity from "./Identity";
+import type * as Domain from "./index";
 
 export { identity };
 
 export interface User {
-  email: S.EmailAddress;
+  email: Email;
   firstName: Option.Option<FirstName>;
   lastName: Option.Option<LastName>;
   optInMarketing: OptInMarketing;
@@ -29,16 +30,14 @@ export const FirstName = S.String100.pipe(S.brand("FirstName"));
 export const LastName = S.String100.pipe(S.brand("LastName"));
 
 export const User = S.Struct({
-  email: S.EmailAddress,
-  firstName: S.OptionFromNullOr(FirstName),
-  lastName: S.OptionFromNullOr(LastName),
+  email: Email,
+  firstName: S.Option(FirstName),
+  lastName: S.Option(LastName),
   optInMarketing: OptInMarketing,
 });
 
 export const eqId = Equal.equals<Id, Id>;
 
 export const make = Data.case<User>();
-
-export const from = S.decode(User);
 
 export const Partial = User.pipe(S.omit("email"));

@@ -31,7 +31,7 @@ export const redirectToAccount = AppCookies.returnTo.pipe(
   Effect.catchTags({ CookieNotPresent: () => redirect(Routes.dashboard) }),
 );
 
-export const exception = Http.response.empty({ status: 500 });
+export const serverError = Http.response.empty({ status: 500 });
 
 export const notFound = Http.response.empty({ status: 404 });
 

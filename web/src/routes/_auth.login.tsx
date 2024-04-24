@@ -1,4 +1,4 @@
-import { Credential, Password } from "@chuz/domain";
+import { Credential, Email, Password } from "@chuz/domain";
 import { Effect, Match } from "@chuz/prelude";
 import { S } from "@chuz/prelude";
 import { Routes } from "src/Routes";
@@ -15,7 +15,7 @@ type LoginFormFields = S.Schema.Type<typeof LoginFormFields>;
 const LoginFormFields = S.Union(
   S.Struct({
     _tag: S.Literal(Credential.ProviderId.Email),
-    email: S.EmailAddress,
+    email: Email,
     password: Password.Plaintext,
   }),
   S.Struct({ _tag: S.Literal(Credential.ProviderId.Google) }),
@@ -44,8 +44,8 @@ export const action = Remix.action(
       Effect.catchTags({
         CredentialNotRecognised: Http.response.badRequest,
         AlreadyAuthenticated: () => Http.response.redirectToAccount,
-        CookieError: () => Http.response.exception,
-        GenerateUrlError: () => Http.response.exception,
+        CookieError: () => Http.response.serverError,
+        GenerateUrlError: () => Http.response.serverError,
         InvalidFormData: Http.response.validationError,
       }),
     ),

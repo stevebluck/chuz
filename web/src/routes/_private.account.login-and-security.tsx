@@ -82,7 +82,7 @@ export default function LoginAndSecurity() {
   const identities = useLoaderData<User.identity.Identities>();
 
   // @ts-ignore
-  const hasPassword = identities.email["email"]._tag === "Some";
+  const hasPassword = identities.Email._tag === "Some";
 
   const { isActive, isOtherActive } = useActiveState(Section);
 

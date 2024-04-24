@@ -1,4 +1,4 @@
-import { Credential, EmailPassword, Password, Session, User } from "@chuz/domain";
+import { Credential, Email, Password, User } from "@chuz/domain";
 import { Clock, Effect, Option, S } from "@chuz/prelude";
 import * as Core from "core/index";
 
@@ -15,7 +15,7 @@ export namespace TestBench {
     return { users };
   });
 
-  export type Seeded = Core.Capabilities & { seed: { session: Session<User.User> } };
+  export type Seeded = Core.Capabilities & { seed: { session: User.Session } };
 
   export namespace Seeded {
     export const make: Effect.Effect<Seeded> = Effect.gen(function* (_) {
@@ -42,8 +42,8 @@ const userRegistration = {
   firstName: User.FirstName("Toby"),
   lastName: User.LastName("Lerone"),
   optInMarketing: User.OptInMarketing(true),
-  credentials: new EmailPassword.Strong({
-    email: S.decodeSync(S.EmailAddress)("lonestar@an.com"),
+  credentials: new Credential.EmailPassword.Strong({
+    email: S.decodeSync(Email)("lonestar@an.com"),
     password: Password.Strong("password"),
   }),
 };

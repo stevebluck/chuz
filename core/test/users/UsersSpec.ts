@@ -1,4 +1,4 @@
-import { Credential, EmailPassword, Password, Token, User } from "@chuz/domain";
+import { Credential, Email, Password, Token, User } from "@chuz/domain";
 import { Effect, Option } from "@chuz/prelude";
 import { S } from "@chuz/prelude";
 import { EmailAlreadyInUse, Passwords, Users } from "core/index";
@@ -20,7 +20,7 @@ export namespace UsersSpec {
         (register) =>
           Effect.gen(function* (_) {
             const { users } = yield* _(TestBench);
-            const registerUserWithEmail = (email: S.EmailAddress) =>
+            const registerUserWithEmail = (email: Email) =>
               registerUser(users, { ...register, credentials: { ...register.credentials, email } });
 
             const session = yield* _(registerUserWithEmail(register.credentials.email));
@@ -552,7 +552,7 @@ export namespace UsersSpec {
       );
     });
 
-  const makePlainCredentials = (credentials: EmailPassword.Strong) => {
+  const makePlainCredentials = (credentials: Credential.EmailPassword.Strong) => {
     return {
       credentials: Credential.Plain.Email({
         email: credentials.email,
@@ -569,13 +569,13 @@ export namespace UsersSpec {
     };
   };
 
-  const makeSecureCredential = (credential: EmailPassword.Strong) => {
+  const makeSecureCredential = (credential: Credential.EmailPassword.Strong) => {
     return Effect.gen(function* (_) {
       const password = yield* _(hash(credential.password));
-      return Credential.Secure.Email(EmailPassword.Secure({ email: credential.email, password }));
+      return Credential.Secure.Email({ email: credential.email, password });
     });
   };
 }
 
-const makeEmail = S.decodeSync(S.EmailAddress);
+const makeEmail = S.decodeSync(Email);
 const hash = Passwords.hasher({ N: 2 });

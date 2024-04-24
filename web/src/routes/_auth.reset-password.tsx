@@ -1,4 +1,5 @@
 import { Password, Token, User } from "@chuz/domain";
+import { Reset } from "@chuz/domain/src/Password";
 import { Effect } from "@chuz/prelude";
 import { S } from "@chuz/prelude";
 import { useSearchParams } from "@remix-run/react";
@@ -18,9 +19,7 @@ export const action = Remix.action(
     Effect.zipRight(
       Effect.all({
         password: Effect.flatMap(Http.request.formData(FormFields), ({ password }) => Hasher.hash(password)),
-        token: Effect.map(Http.request.searchParams(SearchParams), ({ token }) =>
-          Token.make<[S.EmailAddress, User.Id]>(token),
-        ),
+        token: Effect.map(Http.request.searchParams(SearchParams), ({ token }) => Token.make<Reset<User.User>>(token)),
       }),
     ),
     Effect.flatMap(({ token, password }) => Users.resetPassword(token, password)),

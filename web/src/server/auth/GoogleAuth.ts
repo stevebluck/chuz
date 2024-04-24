@@ -1,4 +1,4 @@
-import { Credential, User } from "@chuz/domain";
+import { Credential, Email, User } from "@chuz/domain";
 import { Context, Data, Effect, Layer } from "@chuz/prelude";
 import { S } from "@chuz/prelude";
 import { EmailAlreadyInUse } from "core/index";
@@ -23,12 +23,13 @@ export class GoogleAuth extends Effect.Tag("@app/auth/GoogleAuth")<GoogleAuth, A
     Effect.map(GoogleAuthConfig, (config) => {
       const client = new google.auth.OAuth2(config.clientId, config.clientSecret);
 
+      const redirectUri = (intent: Auth.Intent) =>
+        `${config.redirectUrl}/${intent}?_tag=${Credential.ProviderId.Google.toLowerCase()}`;
+
       return GoogleAuth.of({
         exchangeCodeForSession: ({ code, state }) =>
           Auth.intentFromState(state).pipe(
-            Effect.andThen((intent) =>
-              client.getToken({ code, redirect_uri: `${config.redirectUrl}/${intent}?_tag=google` }),
-            ),
+            Effect.andThen((intent) => client.getToken({ code, redirect_uri: redirectUri(intent) })),
             Effect.flatMap(({ tokens }) => getUserInfo(tokens.access_token!)),
             Effect.flatMap(GoogleUser.fromUnknown),
             Effect.flatMap((user) => registerOrAuthenticate(Credential.Secure.Google({ email: user.email }), user)),
@@ -44,7 +45,7 @@ export class GoogleAuth extends Effect.Tag("@app/auth/GoogleAuth")<GoogleAuth, A
               client.generateAuthUrl({
                 access_type: "offline",
                 state,
-                redirect_uri: `${config.redirectUrl}/${intent}?_tag=google`,
+                redirect_uri: redirectUri(intent),
                 scope: [
                   "https://www.googleapis.com/auth/userinfo.email",
                   "https://www.googleapis.com/auth/userinfo.profile",
@@ -60,7 +61,7 @@ export class GoogleAuth extends Effect.Tag("@app/auth/GoogleAuth")<GoogleAuth, A
 }
 
 class GoogleUser extends S.Class<GoogleUser>("GoogleUser")({
-  email: S.EmailAddress,
+  email: Email,
   verified_email: S.Boolean,
   name: S.OptionFromNullishOr(S.String, null),
   given_name: S.OptionFromNullishOr(User.FirstName, null),

@@ -1,4 +1,4 @@
-import { Credential, Password, User } from "@chuz/domain";
+import { Credential, Email, Password, User } from "@chuz/domain";
 import { Effect, Match, S } from "@chuz/prelude";
 import { fromCheckboxInput, optionalTextInput } from "src/FormSchema";
 import { Routes } from "src/Routes";
@@ -16,7 +16,7 @@ type RegisterFormFields = S.Schema.Type<typeof RegisterFormFields>;
 const RegisterFormFields = S.Union(
   S.Struct({
     _tag: S.Literal(Credential.ProviderId.Email),
-    email: S.EmailAddress,
+    email: Email,
     password: Password.Strong,
     firstName: optionalTextInput(User.FirstName),
     lastName: optionalTextInput(User.LastName),
@@ -58,8 +58,8 @@ export const action = Remix.action(
         AlreadyAuthenticated: () => Http.response.redirectToAccount,
         InvalidFormData: Http.response.validationError,
         EmailAlreadyInUse: Http.response.badRequest,
-        CookieError: () => Http.response.exception,
-        GenerateUrlError: () => Http.response.exception,
+        CookieError: () => Http.response.serverError,
+        GenerateUrlError: () => Http.response.serverError,
       }),
     ),
   ),

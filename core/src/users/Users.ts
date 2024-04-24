@@ -1,7 +1,6 @@
-import { Credential, Password, Token } from "@chuz/domain";
+import { Credential, Email, Password, Token } from "@chuz/domain";
 import { User } from "@chuz/domain";
-import { Data, Effect, Option, S } from "@chuz/prelude";
-import { EmailAddress } from "@chuz/prelude/src/Schema";
+import { Data, Effect, Option } from "@chuz/prelude";
 
 // TODO: restrict one social auth to one provider
 // TODO: auto link accounts with same email
@@ -19,11 +18,11 @@ export interface Users {
 
   getById(id: User.Id): Effect.Effect<User.Identified, UserNotFound>;
 
-  getByEmail(email: EmailAddress): Effect.Effect<User.Identified, UserNotFound>;
+  getByEmail(email: Email): Effect.Effect<User.Identified, UserNotFound>;
 
   update(id: User.Id, partial: User.Partial): Effect.Effect<User.Identified, UserNotFound>;
 
-  updateEmail(id: User.Id, email: EmailAddress): Effect.Effect<User.Identified, UpdateEmailError>;
+  updateEmail(id: User.Id, email: Email): Effect.Effect<User.Identified, UpdateEmailError>;
 
   updatePassword(
     token: User.Token,
@@ -31,12 +30,10 @@ export interface Users {
     updatedPasword: Password.Hashed,
   ): Effect.Effect<void, UpdatePasswordError>;
 
-  requestPasswordReset(
-    email: EmailAddress,
-  ): Effect.Effect<Token.Token<[EmailAddress, User.Id]>, Credential.NotRecognised>;
+  requestPasswordReset(email: Email): Effect.Effect<Token.Token<[Email, User.Id]>, Credential.NotRecognised>;
 
   resetPassword(
-    token: Token.Token<[EmailAddress, User.Id]>,
+    token: Token.Token<[Email, User.Id]>,
     password: Password.Hashed,
   ): Effect.Effect<User.Identified, Token.NoSuchToken>;
 
@@ -53,7 +50,7 @@ export interface Users {
 
 export class UserNotFound extends Data.TaggedError("UserNotFound") {}
 
-export class EmailAlreadyInUse extends Data.TaggedError("EmailAlreadyInUse")<{ email: S.EmailAddress }> {}
+export class EmailAlreadyInUse extends Data.TaggedError("EmailAlreadyInUse")<{ email: Email }> {}
 
 export type UpdateEmailError = UserNotFound | EmailAlreadyInUse;
 export type UpdatePasswordError = Token.NoSuchToken | Credential.NotRecognised;

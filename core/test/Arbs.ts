@@ -1,5 +1,5 @@
-import { Password, User as _User, Credential as _Credentials, Credential } from "@chuz/domain";
-import { Arbitrary, Option, S } from "@chuz/prelude";
+import { Password, User as _User, Credential as _Credentials, Credential, Email as _Email } from "@chuz/domain";
+import { Arbitrary, Option } from "@chuz/prelude";
 import * as fc from "fast-check";
 
 export namespace Arbs {
@@ -8,7 +8,7 @@ export namespace Arbs {
     export const Strong = Arbitrary.make(Password.Strong);
   }
 
-  export const Email = Arbitrary.make(S.EmailAddress);
+  export const Email = Arbitrary.make(_Email);
 
   export namespace Credentials {
     export const EmailPassword = Arbitrary.make(Credential.EmailPassword.Strong);

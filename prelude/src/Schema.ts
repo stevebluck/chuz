@@ -31,12 +31,3 @@ export const OptionFromString: S.Schema<Option.Option<string>, string> = S.trans
   decode: (a) => (a.length > 0 ? { _tag: "Some" as const, value: a } : { _tag: "None" as const }),
   encode: (a) => (a._tag === "Some" ? a.value : ""),
 });
-
-// TODO: Move to domain
-export type EmailAddress = S.Schema.Type<typeof EmailAddress>;
-export const EmailAddress: S.Schema<string & Brand.Brand<"EmailAddress">, string> = S.compose(S.Lowercase, S.Trim)
-  .pipe(S.minLength(5), S.includes("@"), S.includes("."), S.brand("EmailAddress"))
-  .annotations({
-    arbitrary: () => (fc) => fc.emailAddress().map(S.decodeSync(EmailAddress)),
-    message: () => "Looks like you have a typo in your email address.",
-  });

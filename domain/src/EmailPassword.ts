@@ -1,18 +1,19 @@
 import { Data, S } from "@chuz/prelude";
+import { Email } from "./Email";
 import * as Password from "./Password";
 
-export class Plain extends S.Class<Plain>("Plain")({
-  email: S.EmailAddress,
+export class Plain extends S.Class<Plain>("PlainEmailPassword")({
+  email: Email,
   password: Password.Plaintext,
 }) {}
 
-export class Strong extends S.Class<Strong>("Strong")({
-  email: S.EmailAddress,
+export class Strong extends S.Class<Strong>("StrongEmailPassword")({
+  email: Email,
   password: Password.Strong,
 }) {}
 
 export interface Secure {
-  email: S.EmailAddress;
+  email: Email;
   password: Password.Hashed;
 }
 

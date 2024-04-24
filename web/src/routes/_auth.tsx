@@ -1,5 +1,4 @@
-import { Credential } from "@chuz/domain";
-import { Effect } from "@chuz/prelude";
+import { Effect, Match } from "@chuz/prelude";
 import { S } from "@chuz/prelude";
 import { Outlet } from "@remix-run/react";
 import { AuthLayout } from "src/auth/AuthLayout";
@@ -10,7 +9,7 @@ import { SocialAuth } from "src/server/auth/SocialAuth";
 import { AppCookies } from "src/server/cookies/AppCookies";
 
 const SearchParams = S.Struct({
-  _tag: S.Literal(Credential.ProviderId.Google),
+  _tag: S.Literal("google"),
   code: Auth.Code,
   state: Auth.State,
 });
@@ -25,7 +24,7 @@ export const loader = Remix.loader(
           () => new Auth.StateDoesNotMatch(),
         ),
         Effect.map(([, search]) => search),
-        Effect.flatMap(SocialAuth.exchangeCodeForSession),
+        Effect.flatMap(Match.valueTags({ google: (s) => SocialAuth.exchangeCodeForSession({ ...s, _tag: "Google" }) })),
         Effect.flatMap(Session.mint),
         Effect.flatMap(() => Http.response.redirectToAccount),
         Effect.catchTags({
@@ -33,8 +32,8 @@ export const loader = Remix.loader(
           SearchParamsError: () => Http.response.ok(),
           EmailAlreadyInUse: Http.response.badRequest,
           CredentialNotRecognised: Http.response.badRequest,
-          ExchangeCodeError: () => Http.response.exception,
-          StateDoesNotMatch: () => Http.response.exception,
+          ExchangeCodeError: () => Http.response.serverError,
+          StateDoesNotMatch: () => Http.response.serverError,
         }),
         Effect.flatMap(stateCookie.remove),
       ),
