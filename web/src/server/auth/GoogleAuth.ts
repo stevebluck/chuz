@@ -1,11 +1,11 @@
 import { Credential, Email, User } from "@chuz/domain";
-import { Context, Data, Effect, Layer } from "@chuz/prelude";
+import { Context, Data, Effect, Layer, Tuple } from "@chuz/prelude";
 import { S } from "@chuz/prelude";
 import { EmailAlreadyInUse } from "core/index";
 import { google } from "googleapis";
+import { Auth } from "..";
 import { LayerUtils } from "../LayerUtils";
 import { Users } from "../Users";
-import * as Auth from "./Auth";
 
 interface Config {
   redirectUrl: string;
@@ -13,21 +13,21 @@ interface Config {
   clientSecret: string;
 }
 
-export class GoogleAuthConfig extends Context.Tag("@app/auth/GoogleAuthConfig")<GoogleAuthConfig, Config>() {
+export class GoogleConfig extends Context.Tag("@app/auth/GoogleConfig")<Config, Config>() {
   static layer = LayerUtils.config(this);
 }
 
-export class GoogleAuth extends Effect.Tag("@app/auth/GoogleAuth")<GoogleAuth, Auth.SocialAuths>() {
+export class Google extends Effect.Tag("@app/auth/Google")<Google, Auth.Auth>() {
   static layer = Layer.effect(
-    GoogleAuth,
-    Effect.map(GoogleAuthConfig, (config) => {
+    Google,
+    Effect.map(GoogleConfig, (config) => {
       const client = new google.auth.OAuth2(config.clientId, config.clientSecret);
 
       const redirectUri = (intent: Auth.Intent) =>
         `${config.redirectUrl}/${intent}?_tag=${Credential.ProviderId.Google.toLowerCase()}`;
 
-      return GoogleAuth.of({
-        exchangeCodeForSession: ({ code, state }) =>
+      return Google.of({
+        exchangeCodeForSession: (code, state) =>
           Auth.intentFromState(state).pipe(
             Effect.andThen((intent) => client.getToken({ code, redirect_uri: redirectUri(intent) })),
             Effect.flatMap(({ tokens }) => getUserInfo(tokens.access_token!)),
@@ -39,10 +39,10 @@ export class GoogleAuth extends Effect.Tag("@app/auth/GoogleAuth")<GoogleAuth, A
               ParseError: (e) => new Auth.ExchangeCodeError({ error: e }),
             }),
           ),
-        generateAuthUrl: ({ state }) => {
-          return Auth.intentFromState(state).pipe(
-            Effect.map((intent) =>
-              client.generateAuthUrl({
+        generateAuthUrl: (intent) => {
+          return Auth.makeState(intent).pipe(
+            Effect.map((state) => {
+              const url = client.generateAuthUrl({
                 access_type: "offline",
                 state,
                 redirect_uri: redirectUri(intent),
@@ -50,8 +50,10 @@ export class GoogleAuth extends Effect.Tag("@app/auth/GoogleAuth")<GoogleAuth, A
                   "https://www.googleapis.com/auth/userinfo.email",
                   "https://www.googleapis.com/auth/userinfo.profile",
                 ],
-              }),
-            ),
+              });
+
+              return Tuple.make(url, state);
+            }),
             Effect.mapError((error) => new Auth.GenerateUrlError({ error })),
           );
         },
@@ -88,7 +90,7 @@ const registerOrAuthenticate = (
     Effect.zipRight(Users.authenticate(credential)),
     Effect.catchAll(() =>
       Users.register({
-        credentials: credential,
+        credential: credential,
         firstName: user.given_name,
         lastName: user.family_name,
         optInMarketing: User.OptInMarketing(false),

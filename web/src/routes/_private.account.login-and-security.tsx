@@ -67,7 +67,7 @@ export const action = Remix.action(
       ),
     ),
     Effect.catchTags({
-      InvalidFormData: Http.response.validationError,
+      InvalidFormData: Http.response.badRequest,
       NoSuchToken: () => Http.response.unauthorized,
       Unauthorised: () => Http.response.unauthorized,
     }),

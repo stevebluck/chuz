@@ -6,7 +6,7 @@ import { createHmac, timingSafeEqual } from "crypto";
 
 export class Cookie<A> {
   constructor(
-    private readonly name: string,
+    public readonly name: string,
     private readonly schema: S.Schema<A, string>,
     public readonly options: HttpCookie["options"] & { secret: string },
   ) {}
@@ -35,11 +35,10 @@ export class Cookie<A> {
       Effect.orElseSucceed(() => res),
     );
 
-  save = (value: A) => (res: Http.response.ServerResponse) =>
+  encode = (value: A) =>
     Effect.succeed(value).pipe(
       Effect.flatMap(S.encode(this.schema)),
       Effect.flatMap(this.sign),
-      Effect.flatMap((str) => Http.response.setCookie(this.name, str, this.options)(res)),
       Effect.catchTag("ParseError", (e) => Effect.die(e)),
     );
 

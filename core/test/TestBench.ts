@@ -25,7 +25,7 @@ export namespace TestBench {
       const credential = Credential.Secure.Email({ email: userRegistration.credentials.email, password });
 
       const registration: Core.Registration = {
-        credentials: credential,
+        credential: credential,
         firstName: Option.some(userRegistration.firstName),
         lastName: Option.some(userRegistration.lastName),
         optInMarketing: userRegistration.optInMarketing,

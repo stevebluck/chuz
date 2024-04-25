@@ -18,7 +18,7 @@ export const action = Remix.action(
     Effect.flatMap(Http.response.ok),
     Effect.catchTags({
       CredentialNotRecognised: Http.response.badRequest,
-      InvalidFormData: Http.response.validationError,
+      InvalidFormData: Http.response.badRequest,
       AlreadyAuthenticated: () => Http.response.unauthorized,
     }),
   ),

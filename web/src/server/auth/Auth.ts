@@ -1,32 +1,31 @@
 import { Credential, User } from "@chuz/domain";
 import { Brand, makeUuid } from "@chuz/prelude";
-import { Data, Effect, Equal, Equivalence, Array, String } from "@chuz/prelude";
+import { Data, Effect, Equal, Array, String } from "@chuz/prelude";
 import { S } from "@chuz/prelude";
 import { EmailAlreadyInUse } from "core/index";
 import { Users } from "../Users";
 
-export interface SocialAuths {
+export { Google, GoogleConfig } from "./GoogleAuth";
+
+export interface Auth {
   exchangeCodeForSession: (
-    provider: ProviderCode,
+    code: Code,
+    state: State,
   ) => Effect.Effect<User.Session, ExchangeCodeError | EmailAlreadyInUse | Credential.NotRecognised, Users>;
-  generateAuthUrl: (provider: ProviderState) => Effect.Effect<string, GenerateUrlError>;
+  generateAuthUrl: (intent: Intent) => Effect.Effect<[string, State], GenerateUrlError>;
 }
 
-export type Code = string & Brand.Brand<"AuthCode">;
-export type State = string & Brand.Brand<"AuthState">;
+export type Code = string & Brand.Brand<"Code">;
+export type State = string & Brand.Brand<"State">;
 export type Intent = "login" | "register";
 
-export type ProviderCode = { _tag: Credential.ProviderId; code: Code; state: State };
+export const Code = S.String.pipe(S.brand("Code"));
 
-export type ProviderState = { _tag: Credential.ProviderId; state: State };
-
-export const Code = S.String.pipe(S.brand("AuthCode"));
+export const State = S.String.pipe(S.brand("State"));
 
 export const Intent = S.Literal("login", "register");
 
-export const State = S.NonEmpty.pipe(S.brand("AuthState"));
-
-export const makeState = (intent: Intent) =>
+export const makeState = (intent: Intent): Effect.Effect<State> =>
   makeUuid.pipe(
     Effect.map((uuid) => [intent, uuid].join("+")),
     Effect.map(State),
@@ -39,7 +38,7 @@ export const intentFromState = (state: State): Effect.Effect<Intent> =>
     Effect.orElseSucceed(() => "login" as const),
   );
 
-export const stateEquals: Equivalence.Equivalence<S.Schema.Type<typeof State>> = Equal.equals;
+export const stateEquals = Equal.equivalence<State>();
 
 export class StateDoesNotMatch extends Data.TaggedError("StateDoesNotMatch") {}
 export class ExchangeCodeError extends Data.TaggedError("ExchangeCodeError")<{ error: unknown }> {}

@@ -27,7 +27,7 @@ export const action = Remix.action(
     Effect.catchTags({
       SearchParamsError: Http.response.badRequest,
       NoSuchToken: Http.response.badRequest,
-      InvalidFormData: Http.response.validationError,
+      InvalidFormData: Http.response.badRequest,
       AlreadyAuthenticated: () => Http.response.unauthorized,
     }),
   ),

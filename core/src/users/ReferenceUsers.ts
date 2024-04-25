@@ -54,8 +54,8 @@ export class ReferenceUsers implements Users {
   };
 
   register = (registration: Registration): Effect.Effect<User.Session, EmailAlreadyInUse> => {
-    return this.getByEmail(registration.credentials.email).pipe(
-      Effect.flatMap(() => new EmailAlreadyInUse({ email: registration.credentials.email })),
+    return this.getByEmail(registration.credential.email).pipe(
+      Effect.flatMap(() => new EmailAlreadyInUse({ email: registration.credential.email })),
       Effect.catchTag("UserNotFound", () => Ref.modify(this.state, (state) => state.register(registration))),
       Effect.flatMap((user) =>
         this.userTokens
@@ -252,7 +252,7 @@ class State {
     const user = new Identified({
       id,
       value: User.make({
-        email: input.credentials.email,
+        email: input.credential.email,
         firstName: input.firstName,
         lastName: input.lastName,
         optInMarketing: input.optInMarketing,
@@ -260,7 +260,7 @@ class State {
     });
 
     const users = HashMap.set(this.users, id, user);
-    const credentials = HashMap.set(this.credentials, input.credentials, id);
+    const credentials = HashMap.set(this.credentials, input.credential, id);
 
     return [user, new State(users, credentials, ids)];
   };

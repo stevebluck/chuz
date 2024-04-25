@@ -2,11 +2,9 @@ import { Effect, Match } from "@chuz/prelude";
 import { S } from "@chuz/prelude";
 import { Outlet } from "@remix-run/react";
 import { AuthLayout } from "src/auth/AuthLayout";
-import { Http, Session } from "src/server";
+import { Cookies, Http, Session } from "src/server";
 import * as Remix from "src/server/Remix";
 import * as Auth from "src/server/auth/Auth";
-import { SocialAuth } from "src/server/auth/SocialAuth";
-import { AppCookies } from "src/server/cookies/AppCookies";
 
 const SearchParams = S.Struct({
   _tag: S.Literal("google"),
@@ -16,7 +14,7 @@ const SearchParams = S.Struct({
 
 export const loader = Remix.loader(
   Session.guest.pipe(
-    Effect.flatMap(() => AppCookies.authState),
+    Effect.flatMap(() => Cookies.AuthState),
     Effect.flatMap((stateCookie) =>
       Effect.all([stateCookie.read, Http.request.searchParams(SearchParams)]).pipe(
         Effect.filterOrFail(
@@ -24,7 +22,7 @@ export const loader = Remix.loader(
           () => new Auth.StateDoesNotMatch(),
         ),
         Effect.map(([, search]) => search),
-        Effect.flatMap(Match.valueTags({ google: (s) => SocialAuth.exchangeCodeForSession({ ...s, _tag: "Google" }) })),
+        Effect.flatMap(Match.valueTags({ google: (s) => Auth.Google.exchangeCodeForSession(s.code, s.state) })),
         Effect.flatMap(Session.mint),
         Effect.flatMap(() => Http.response.redirectToAccount),
         Effect.catchTags({

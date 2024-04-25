@@ -58,7 +58,7 @@ export type UnlinkCredentialError = Token.NoSuchToken | Credential.NoFallbackAva
 export type LinkCredentialError = Token.NoSuchToken | Credential.AlreadyExists;
 
 export interface Registration {
-  credentials: Credential.Secure;
+  credential: Credential.Secure;
   firstName: Option.Option<User.FirstName>;
   lastName: Option.Option<User.LastName>;
   optInMarketing: User.OptInMarketing;

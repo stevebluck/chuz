@@ -1,11 +1,10 @@
 import { Config, Effect, Layer, LogLevel, Logger, Match, Secret } from "@chuz/prelude";
 import { DevTools } from "@effect/experimental";
+import { Auth } from ".";
 import { PostgresConfig } from "./Database";
 import * as Passwords from "./Passwords";
 import { Users } from "./Users";
-import { GoogleAuthConfig } from "./auth/GoogleAuth";
-import { SocialAuth } from "./auth/SocialAuth";
-import { AppCookies, AppCookiesConfig } from "./cookies/AppCookies";
+import * as Cookies from "./cookies/Cookies";
 
 const IsDebug = Config.withDefault(Config.boolean("DEBUG"), false);
 
@@ -13,7 +12,7 @@ const IsProd = Config.map(Config.string("NODE_ENV"), (env) => env === "productio
 
 const AppUrl = Config.withDefault(Config.string("APP_URL"), "http://localhost:5173");
 
-const GoogleAuthConfigLive = GoogleAuthConfig.layer({
+const GoogleConfigLive = Auth.GoogleConfig.layer({
   clientId: Config.string("GOOGLE_CLIENT_ID"),
   clientSecret: Config.string("GOOGLE_CLIENT_SECRET"),
   redirectUrl: AppUrl,
@@ -24,7 +23,7 @@ const PostgresConfigLive = PostgresConfig.layer({ connectionString: Config.strin
 const PasswordHasherConfigLive = Passwords.HasherConfig.layer({ N: Config.succeed(16384) });
 const PasswordHasherConfigDev = Passwords.HasherConfig.layer({ N: Config.succeed(4) });
 
-const AppCookiesConfigLive = AppCookiesConfig.layer({
+const AppCookiesConfigLive = Cookies.Config.layer({
   secure: IsProd,
   secrets: Config.array(Config.secret("COOKIE_SECRET")).pipe(Config.withDefault([Secret.fromString("chuzwozza")])),
 });
@@ -37,15 +36,15 @@ const LogLevelLive = Layer.unwrapEffect(
   }),
 );
 
-const Configs = Layer.mergeAll(AppCookiesConfigLive, GoogleAuthConfigLive, PasswordHasherConfigLive, LogLevelLive);
+const Configs = Layer.mergeAll(AppCookiesConfigLive, GoogleConfigLive, PasswordHasherConfigLive, LogLevelLive);
 
-const Dev = Layer.mergeAll(Users.dev, SocialAuth.layer, AppCookies.layer, Passwords.Hasher.layer).pipe(
+const Dev = Layer.mergeAll(Users.dev, Cookies.layer, Auth.Google.layer, Passwords.Hasher.layer).pipe(
   Layer.provide(Configs),
   Layer.provide(PasswordHasherConfigDev),
   Layer.provide(DevTools.layer()),
 );
 
-const Live = Layer.mergeAll(Users.dev, SocialAuth.layer, AppCookies.layer, Passwords.Hasher.layer).pipe(
+const Live = Layer.mergeAll(Users.dev, Cookies.layer, Auth.Google.layer, Passwords.Hasher.layer).pipe(
   Layer.provide(Configs),
   Layer.provide(PostgresConfigLive),
 );

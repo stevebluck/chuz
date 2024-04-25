@@ -3,6 +3,7 @@ import { Password, User } from "@chuz/domain";
 import { Clock, Effect, Layer } from "@chuz/prelude";
 import { HasherConfig } from "./Passwords";
 
+// TODO: move to core
 export class Users extends Effect.Tag("@app/Users")<Users, Core.Users>() {
   static dev = Layer.effect(
     this,

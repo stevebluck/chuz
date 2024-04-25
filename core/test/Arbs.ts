@@ -31,9 +31,9 @@ export namespace Arbs {
     const lastName = Arbitrary.make(_User.LastName).map(Option.fromNullable);
     const optInMarketing = Arbitrary.make(_User.OptInMarketing);
 
-    const make = <A>(credentials: fc.Arbitrary<A>) =>
+    const make = <A>(credential: fc.Arbitrary<A>) =>
       fc.record({
-        credentials,
+        credential,
         firstName,
         lastName,
         optInMarketing,
@@ -41,7 +41,7 @@ export namespace Arbs {
 
     export type EmailPassword = typeof EmailPassword extends fc.Arbitrary<infer A> ? A : never;
     export const EmailPassword = fc.record({
-      credentials: Credentials.EmailPassword,
+      credential: Credentials.EmailPassword,
       firstName,
       lastName,
       optInMarketing,
