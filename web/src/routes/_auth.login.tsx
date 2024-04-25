@@ -25,11 +25,11 @@ export const action = Remix.action(
     Effect.flatMap(
       Match.typeTags<LoginFormFields>()({
         Google: () =>
-          Effect.gen(function* (_) {
-            const cookie = yield* _(Cookies.AuthState);
-            const [url, state] = yield* _(Api.generateGoogleAuthUrl("register"));
+          Effect.gen(function* () {
+            const cookie = yield* Cookies.AuthState;
+            const [url, state] = yield* Api.generateGoogleAuthUrl("register");
 
-            return yield* _(Http.response.redirect(url).pipe(Effect.flatMap(Http.response.setCookie(cookie, state))));
+            return yield* Effect.flatMap(Http.response.redirect(url), Http.response.setCookie(cookie, state));
           }),
         Email: (credential) =>
           Api.authenticate(credential).pipe(
@@ -46,8 +46,6 @@ export const action = Remix.action(
     }),
   ),
 );
-
-//Users | Cookies.ReturnTo | Cookies.AuthState | ServerRequest | FileSystem | Session | Scope | Path | Auth.Google
 
 export default function LoginPage() {
   const result = useActionData();

@@ -29,8 +29,8 @@ const AppCookiesConfigLive = Cookies.Config.layer({
 });
 
 const LogLevelLive = Layer.unwrapEffect(
-  Effect.gen(function* (_) {
-    const isDebug = yield* _(IsDebug);
+  Effect.gen(function* () {
+    const isDebug = yield* IsDebug;
     const level = isDebug ? LogLevel.All : LogLevel.Info;
     return Logger.minimumLogLevel(level);
   }),

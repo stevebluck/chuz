@@ -16,17 +16,15 @@ export class Cookie<A> {
   };
 
   private unsign = (input: string) =>
-    Effect.gen(this, function* (_) {
-      const tentativeValue = input.slice(0, input.lastIndexOf(".")),
-        expectedInput = yield* _(this.sign(tentativeValue)),
-        expectedBuffer = Buffer.from(expectedInput),
-        inputBuffer = Buffer.from(input);
+    Effect.gen(this, function* () {
+      const tentativeValue = input.slice(0, input.lastIndexOf("."));
+      const expectedInput = yield* this.sign(tentativeValue);
+      const expectedBuffer = Buffer.from(expectedInput);
+      const inputBuffer = Buffer.from(input);
 
-      return yield* _(
-        expectedBuffer.length === inputBuffer.length && timingSafeEqual(expectedBuffer, inputBuffer)
-          ? Effect.succeed(tentativeValue)
-          : Effect.fail(new UnsignError()),
-      );
+      return yield* expectedBuffer.length === inputBuffer.length && timingSafeEqual(expectedBuffer, inputBuffer)
+        ? Effect.succeed(tentativeValue)
+        : Effect.fail(new UnsignError());
     });
 
   remove = (res: Http.response.ServerResponse) =>

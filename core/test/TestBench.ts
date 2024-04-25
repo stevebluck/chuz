@@ -5,12 +5,12 @@ import * as Core from "core/index";
 export type TestBench = Core.Capabilities;
 
 export namespace TestBench {
-  export const make: Effect.Effect<Core.Capabilities> = Effect.gen(function* (_) {
+  export const make: Effect.Effect<Core.Capabilities> = Effect.gen(function* () {
     const clock = Clock.make();
-    const userTokens = yield* _(Core.ReferenceTokens.create(clock, User.eqId));
-    const passwordResetTokens = yield* _(Core.ReferenceTokens.create(clock, Password.resetEquals));
+    const userTokens = yield* Core.ReferenceTokens.create(clock, User.eqId);
+    const passwordResetTokens = yield* Core.ReferenceTokens.create(clock, Password.resetEquals);
 
-    const users = yield* _(Core.ReferenceUsers.make(userTokens, passwordResetTokens, match));
+    const users = yield* Core.ReferenceUsers.make(userTokens, passwordResetTokens, match);
 
     return { users };
   });
@@ -18,10 +18,10 @@ export namespace TestBench {
   export type Seeded = Core.Capabilities & { seed: { session: User.Session } };
 
   export namespace Seeded {
-    export const make: Effect.Effect<Seeded> = Effect.gen(function* (_) {
-      const bench = yield* _(TestBench.make);
+    export const make: Effect.Effect<Seeded> = Effect.gen(function* () {
+      const bench = yield* TestBench.make;
 
-      const password = yield* _(hash(userRegistration.credentials.password));
+      const password = yield* hash(userRegistration.credentials.password);
       const credential = Credential.Secure.Email({ email: userRegistration.credentials.email, password });
 
       const registration: Core.Registration = {
@@ -31,7 +31,7 @@ export namespace TestBench {
         optInMarketing: userRegistration.optInMarketing,
       };
 
-      const session = yield* _(bench.users.register(registration));
+      const session = yield* bench.users.register(registration);
 
       return { seed: { session }, ...bench };
     }).pipe(Effect.orDie);

@@ -16,8 +16,8 @@ export class Config extends Context.Tag("@app/cookies/Config")<Config, CookieCon
 export class Token extends Context.Tag("@app/cookies/Token")<Token, Cookie<string>>() {
   static layer = Layer.effect(
     Token,
-    Effect.gen(function* (_) {
-      const { secure, secrets } = yield* _(Config);
+    Effect.gen(function* () {
+      const { secure, secrets } = yield* Config;
 
       // TODO: support multiple secrets
       const secret = Secret.value(secrets[0]);
@@ -37,8 +37,8 @@ export class Token extends Context.Tag("@app/cookies/Token")<Token, Cookie<strin
 export class ReturnTo extends Context.Tag("@app/cookies/ReturnTo")<ReturnTo, Cookie<string>>() {
   static layer = Layer.effect(
     ReturnTo,
-    Effect.gen(function* (_) {
-      const { secure, secrets } = yield* _(Config);
+    Effect.gen(function* () {
+      const { secure, secrets } = yield* Config;
 
       // TODO: support multiple secrets
       const secret = Secret.value(secrets[0]);
@@ -57,8 +57,8 @@ export class ReturnTo extends Context.Tag("@app/cookies/ReturnTo")<ReturnTo, Coo
 export class AuthState extends Context.Tag("@app/cookies/AuthState")<AuthState, Cookie<Auth.State>>() {
   static layer = Layer.effect(
     AuthState,
-    Effect.gen(function* (_) {
-      const { secure, secrets } = yield* _(Config);
+    Effect.gen(function* () {
+      const { secure, secrets } = yield* Config;
 
       // TODO: support multiple secrets
       const secret = Secret.value(secrets[0]);

@@ -12,12 +12,12 @@ export const unauthorized: Effect.Effect<
   Http.response.ServerResponse,
   never,
   Cookies.ReturnTo | Http.request.ServerRequest
-> = Effect.gen(function* (_) {
-  const returnToCookie = yield* _(Cookies.ReturnTo);
-  const request = yield* _(Http.request.ServerRequest);
+> = Effect.gen(function* () {
+  const returnToCookie = yield* Cookies.ReturnTo;
+  const request = yield* Http.request.ServerRequest;
   const url = new URL(request.url);
 
-  return yield* _(redirect(Routes.login), Effect.flatMap(setCookie(returnToCookie, url.pathname)));
+  return yield* Effect.flatMap(redirect(Routes.login), setCookie(returnToCookie, url.pathname));
 });
 
 export const redirectToAccount: Effect.Effect<

@@ -9,17 +9,17 @@ export namespace PasswordSpec {
   export const run = () => {
     describe("Passwords", () => {
       asyncProperty("Passwords are hashed with random salt", Arbs.Passwords.Strong, (password: Password.Strong) =>
-        Effect.gen(function* (_) {
-          const hashes = yield* _(Effect.all(Array.from({ length: 5 }, () => password).map(hash)));
+        Effect.gen(function* () {
+          const hashes = yield* Effect.all(Array.from({ length: 5 }, () => password).map(hash));
           expect(new Set(hashes).size).toBe(hashes.length);
         }),
       );
 
       asyncProperty("Passwords only match against their hashes", Arbs.Passwords.Strong, (password: Password.Strong) =>
-        Effect.gen(function* (_) {
-          const hashed = yield* _(hash(password));
-          const matches = yield* _(match(Password.Plaintext(password), hashed));
-          const doesNotMatch = yield* _(match(Password.Plaintext(`mutate-${password}`), hashed));
+        Effect.gen(function* () {
+          const hashed = yield* hash(password);
+          const matches = yield* match(Password.Plaintext(password), hashed);
+          const doesNotMatch = yield* match(Password.Plaintext(`mutate-${password}`), hashed);
           expect(matches).toBe(true);
           expect(doesNotMatch).toBe(false);
         }),

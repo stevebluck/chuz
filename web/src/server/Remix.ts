@@ -55,20 +55,17 @@ const makeServerContext = (args: LoaderFunctionArgs | ActionFunctionArgs) =>
   );
 
 const setSessionCookie = (response: HttpServer.response.ServerResponse) =>
-  Effect.gen(function* (_) {
-    const cookie = yield* _(Cookies.Token);
-    const requestSession = yield* _(Session.get);
+  Effect.gen(function* () {
+    const cookie = yield* Cookies.Token;
+    const requestSession = yield* Session.get;
 
-    return yield* _(
-      requestSession,
-      RequestSession.match({
-        Set: ({ session }) => Http.response.setCookie(cookie, session.token.value)(response),
-        Unset: () => cookie.remove(response),
-        InvalidToken: () => cookie.remove(response),
-        NotProvided: () => Effect.succeed(response),
-        Provided: () => Effect.succeed(response),
-      }),
-    );
+    return yield* RequestSession.match({
+      Set: ({ session }) => Http.response.setCookie(cookie, session.token.value)(response),
+      Unset: () => cookie.remove(response),
+      InvalidToken: () => cookie.remove(response),
+      NotProvided: () => Effect.succeed(response),
+      Provided: () => Effect.succeed(response),
+    })(requestSession);
   });
 
 export const loader =

@@ -1,6 +1,5 @@
 import { Password, User as _User, Credential as _Credentials, Credential, Email as _Email } from "@chuz/domain";
-import { Arbitrary, Option } from "@chuz/prelude";
-import * as fc from "fast-check";
+import { Arbitrary, Option, fc } from "@chuz/prelude";
 
 export namespace Arbs {
   export namespace Passwords {

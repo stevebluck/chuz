@@ -21,8 +21,8 @@ export class ReferenceUsers implements Users {
     passwordResetTokens: Tokens<Password.Reset<User.User>>,
     match: Passwords.Match,
   ): Effect.Effect<Users> =>
-    Effect.gen(function* (_) {
-      const state = yield* _(Ref.make(new State(HashMap.empty(), HashMap.empty(), AutoIncrement.empty())));
+    Effect.gen(function* () {
+      const state = yield* Ref.make(new State(HashMap.empty(), HashMap.empty(), AutoIncrement.empty()));
       return new ReferenceUsers(state, userTokens, passwordResetTokens, match);
     });
 

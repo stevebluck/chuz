@@ -7,15 +7,13 @@ import { HasherConfig } from "./Passwords";
 export class Users extends Effect.Tag("@app/Users")<Users, Core.Users>() {
   static dev = Layer.effect(
     this,
-    Effect.gen(function* (_) {
+    Effect.gen(function* () {
       const clock = Clock.make();
-      const userTokens = yield* _(Core.ReferenceTokens.create(clock, User.eqId));
-      const passwordResetTokens = yield* _(Core.ReferenceTokens.create(clock, Password.resetEquals));
-      const passwordsConfig = yield* _(HasherConfig);
+      const userTokens = yield* Core.ReferenceTokens.create(clock, User.eqId);
+      const passwordResetTokens = yield* Core.ReferenceTokens.create(clock, Password.resetEquals);
+      const passwordsConfig = yield* HasherConfig;
 
-      return yield* _(
-        Core.ReferenceUsers.make(userTokens, passwordResetTokens, Core.Passwords.matcher(passwordsConfig)),
-      );
+      return yield* Core.ReferenceUsers.make(userTokens, passwordResetTokens, Core.Passwords.matcher(passwordsConfig));
     }),
   );
 }
