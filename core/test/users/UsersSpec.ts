@@ -1,8 +1,9 @@
-import { Credential, Email, Password, Token, User } from "@chuz/domain";
-import { Effect, Option } from "@chuz/prelude";
+import { Credential, Email, Password, User } from "@chuz/domain";
+import { Effect, Option, fc } from "@chuz/prelude";
 import { S } from "@chuz/prelude";
-import { EmailAlreadyInUse, Passwords, Users } from "core/index";
-import * as fc from "fast-check";
+import { NoSuchToken } from "core/Errors";
+import { Passwords, Users } from "core/index";
+import * as Errors from "core/users/Errors";
 import { afterAll, describe, expect } from "vitest";
 import { Arbs } from "../Arbs";
 import { asyncProperty } from "../Property";
@@ -10,7 +11,7 @@ import { SpecConfig, defaultSpecConfig } from "../SpecConfig";
 import { TestBench } from "../TestBench";
 
 export namespace UsersSpec {
-  export const run = (TestBench: Effect.Effect<TestBench.Seeded>, config: SpecConfig = defaultSpecConfig) => {
+  export const run = <E>(TestBench: Effect.Effect<TestBench.Seeded, E>, config: SpecConfig = defaultSpecConfig) => {
     afterAll(config.afterAll);
 
     describe("Users.register", () => {
@@ -41,9 +42,9 @@ export namespace UsersSpec {
             const error1 = yield* Effect.flip(registerUserWithEmail(lowercase));
             const error2 = yield* Effect.flip(registerUserWithEmail(uppercase));
 
-            expect(error0).toStrictEqual(new EmailAlreadyInUse({ email: register.credential.email }));
-            expect(error1).toStrictEqual(new EmailAlreadyInUse({ email: lowercase }));
-            expect(error2).toStrictEqual(new EmailAlreadyInUse({ email: uppercase }));
+            expect(error0).toStrictEqual(new Errors.EmailAlreadyInUse({ email: register.credential.email }));
+            expect(error1).toStrictEqual(new Errors.EmailAlreadyInUse({ email: lowercase }));
+            expect(error2).toStrictEqual(new Errors.EmailAlreadyInUse({ email: uppercase }));
           }),
         config,
       );
@@ -86,7 +87,7 @@ export namespace UsersSpec {
             const session = yield* registerUser(users, registration);
             yield* users.logout(session.token);
             const noSuchTokenError = yield* Effect.flip(users.identify(session.token));
-            expect(noSuchTokenError).toStrictEqual(new Token.NoSuchToken());
+            expect(noSuchTokenError).toStrictEqual(new NoSuchToken());
           }),
         config,
       );
@@ -115,7 +116,7 @@ export namespace UsersSpec {
             expect(authed.user).toStrictEqual(session.user);
             expect(authed1.user).toStrictEqual(session.user);
             expect(authed2.user).toStrictEqual(session.user);
-            expect(credentialsNotRecognisedError).toStrictEqual(new Credential.NotRecognised());
+            expect(credentialsNotRecognisedError).toStrictEqual(new Errors.CredentialNotRecognised());
           }),
         config,
       );
@@ -181,7 +182,7 @@ export namespace UsersSpec {
             expect(updated.value.email).toStrictEqual(newEmail);
 
             const credentialsNotRecognisedError = yield* Effect.flip(users.authenticate(plain.credentials));
-            expect(credentialsNotRecognisedError).toStrictEqual(new Credential.NotRecognised());
+            expect(credentialsNotRecognisedError).toStrictEqual(new Errors.CredentialNotRecognised());
 
             const authed2 = yield* users.authenticate(
               Credential.Plain.Email({ email: newEmail, password: plain.credentials.password }),
@@ -208,9 +209,9 @@ export namespace UsersSpec {
             const error1 = yield* Effect.flip(users.updateEmail(user2.user.id, lowercase));
             const error2 = yield* Effect.flip(users.updateEmail(user2.user.id, uppercase));
 
-            expect(error0).toStrictEqual(new EmailAlreadyInUse({ email: user1.user.value.email }));
-            expect(error1).toStrictEqual(new EmailAlreadyInUse({ email: lowercase }));
-            expect(error2).toStrictEqual(new EmailAlreadyInUse({ email: uppercase }));
+            expect(error0).toStrictEqual(new Errors.EmailAlreadyInUse({ email: user1.user.value.email }));
+            expect(error1).toStrictEqual(new Errors.EmailAlreadyInUse({ email: lowercase }));
+            expect(error2).toStrictEqual(new Errors.EmailAlreadyInUse({ email: uppercase }));
           }),
         config,
       );
@@ -223,9 +224,10 @@ export namespace UsersSpec {
         ([register, newPassword]) =>
           Effect.gen(function* () {
             const { users } = yield* TestBench;
+            const passwords = yield* Passwords;
             const session = yield* registerUser(users, register);
             const plain = makePlainCredentials(register.credential);
-            const hashedNewPassword = yield* hash(newPassword);
+            const hashedNewPassword = yield* passwords.hash(newPassword);
 
             const authed = yield* users.authenticate(plain.credentials);
             expect(authed.user).toStrictEqual(session.user);
@@ -233,7 +235,7 @@ export namespace UsersSpec {
             yield* users.updatePassword(session.token, plain.credentials.password, hashedNewPassword);
 
             const credentialsNotRecognisedError = yield* Effect.flip(users.authenticate(plain.credentials));
-            expect(credentialsNotRecognisedError).toStrictEqual(new Credential.NotRecognised());
+            expect(credentialsNotRecognisedError).toStrictEqual(new Errors.CredentialNotRecognised());
 
             const credential = Credential.Plain.Email({
               email: register.credential.email,
@@ -242,7 +244,7 @@ export namespace UsersSpec {
             const authed2 = yield* users.authenticate(credential);
 
             expect(authed2.user).toStrictEqual(session.user);
-          }),
+          }).pipe(Effect.provide(Passwords.layer)),
 
         config,
       );
@@ -253,22 +255,23 @@ export namespace UsersSpec {
         ([register, newPassword]) =>
           Effect.gen(function* () {
             const { users } = yield* TestBench;
+            const passwords = yield* Passwords;
             const session = yield* registerUser(users, register);
             const plain = makePlainCredentials(register.credential);
-            const hashedPassword = yield* hash(newPassword);
+            const hashedPassword = yield* passwords.hash(newPassword);
 
             const error0 = yield* Effect.flip(
               users.updatePassword(session.token, Password.Plaintext("whatever"), hashedPassword),
             );
-            expect(error0).toStrictEqual(new Credential.NotRecognised());
+            expect(error0).toStrictEqual(new Errors.CredentialNotRecognised());
 
             yield* users.logout(session.token);
 
             const error1 = yield* Effect.flip(
               users.updatePassword(session.token, plain.credentials.password, hashedPassword),
             );
-            expect(error1).toStrictEqual(new Token.NoSuchToken());
-          }),
+            expect(error1).toStrictEqual(new NoSuchToken());
+          }).pipe(Effect.provide(Passwords.layer)),
         config,
       );
 
@@ -278,10 +281,11 @@ export namespace UsersSpec {
         ([register, newPassword]) =>
           Effect.gen(function* () {
             const { users } = yield* TestBench;
+            const passwords = yield* Passwords;
             const session0 = yield* registerUser(users, register);
 
             const plain = makePlainCredentials(register.credential);
-            const hashedPassword = yield* hash(newPassword);
+            const hashedPassword = yield* passwords.hash(newPassword);
 
             const session1 = yield* users.authenticate(plain.credentials);
 
@@ -290,10 +294,10 @@ export namespace UsersSpec {
             const error = yield* Effect.flip(users.identify(session0.token));
             const session2 = yield* users.identify(session1.token);
 
-            expect(error).toStrictEqual(new Token.NoSuchToken());
+            expect(error).toStrictEqual(new NoSuchToken());
             expect(session1.user).toStrictEqual(session0.user);
             expect(session2.user).toStrictEqual(session1.user);
-          }),
+          }).pipe(Effect.provide(Passwords.layer)),
         config,
       );
     });
@@ -324,9 +328,11 @@ export namespace UsersSpec {
         ([registration, password]) =>
           Effect.gen(function* () {
             const { users } = yield* TestBench;
+            const passwords = yield* Passwords;
+
             const session0 = yield* registerUser(users, registration);
             const plain = makePlainCredentials(registration.credential);
-            const hashedPassword = yield* hash(password);
+            const hashedPassword = yield* passwords.hash(password);
 
             const token = yield* users.requestPasswordReset(registration.credential.email);
 
@@ -337,9 +343,9 @@ export namespace UsersSpec {
               Credential.Plain.Email({ email: plain.credentials.email, password: Password.Plaintext(password) }),
             );
 
-            expect(error).toStrictEqual(new Credential.NotRecognised());
+            expect(error).toStrictEqual(new Errors.CredentialNotRecognised());
             expect(session1.user).toStrictEqual(session0.user);
-          }),
+          }).pipe(Effect.provide(Passwords.layer)),
         config,
       );
 
@@ -349,9 +355,11 @@ export namespace UsersSpec {
         ([register, password]) =>
           Effect.gen(function* () {
             const { users } = yield* TestBench;
+            const passwords = yield* Passwords;
+
             const session0 = yield* registerUser(users, register);
             const plain = makePlainCredentials(register.credential);
-            const hashedPassword = yield* hash(password);
+            const hashedPassword = yield* passwords.hash(password);
 
             const session1 = yield* users.authenticate(plain.credentials);
 
@@ -361,9 +369,9 @@ export namespace UsersSpec {
             const error0 = yield* Effect.flip(users.identify(session0.token));
             const error1 = yield* Effect.flip(users.identify(session1.token));
 
-            expect(error0).toStrictEqual(new Token.NoSuchToken());
-            expect(error1).toStrictEqual(new Token.NoSuchToken());
-          }),
+            expect(error0).toStrictEqual(new NoSuchToken());
+            expect(error1).toStrictEqual(new NoSuchToken());
+          }).pipe(Effect.provide(Passwords.layer)),
         config,
       );
 
@@ -373,14 +381,16 @@ export namespace UsersSpec {
         ([register, password]) =>
           Effect.gen(function* () {
             const { users } = yield* TestBench;
+            const passwords = yield* Passwords;
+
             yield* registerUser(users, register);
             const token = yield* users.requestPasswordReset(register.credential.email);
-            const hashedNewPassword = yield* hash(password);
+            const hashedNewPassword = yield* passwords.hash(password);
             yield* users.resetPassword(token, hashedNewPassword);
             const error = yield* Effect.flip(users.resetPassword(token, hashedNewPassword));
 
-            expect(error).toStrictEqual(new Token.NoSuchToken());
-          }),
+            expect(error).toStrictEqual(new NoSuchToken());
+          }).pipe(Effect.provide(Passwords.layer)),
         config,
       );
 
@@ -391,7 +401,7 @@ export namespace UsersSpec {
           Effect.gen(function* () {
             const { users } = yield* TestBench;
             const error = yield* Effect.flip(users.requestPasswordReset(email));
-            expect(error).toStrictEqual(new Credential.NotRecognised());
+            expect(error).toStrictEqual(new Errors.CredentialNotRecognised());
           }),
         config,
       );
@@ -453,7 +463,7 @@ export namespace UsersSpec {
 
             const alreadyExistsError = yield* Effect.flip(users.linkCredential(session.token, apple.credential));
 
-            expect(alreadyExistsError).toStrictEqual(new Credential.AlreadyExists());
+            expect(alreadyExistsError).toStrictEqual(new Errors.CredentialAlreadyExists());
           }),
       );
     });
@@ -507,7 +517,7 @@ export namespace UsersSpec {
               users.unlinkCredential(session.token, Credential.ProviderId.Email),
             );
 
-            expect(noFallbackError).toStrictEqual(new Credential.NoFallbackAvailable());
+            expect(noFallbackError).toStrictEqual(new Errors.NoFallbackCredential());
           }),
       );
 
@@ -524,12 +534,13 @@ export namespace UsersSpec {
               users.unlinkCredential(session.token, registration.credential._tag),
             );
 
-            expect(noFallbackError).toStrictEqual(new Credential.NoFallbackAvailable());
+            expect(noFallbackError).toStrictEqual(new Errors.NoFallbackCredential());
           }),
       );
     });
   };
 
+  // TODO: move to test bench
   const registerUser = (users: Users, register: Arbs.Registration.EmailPassword) =>
     Effect.gen(function* () {
       const credential = yield* makeSecureCredential(register.credential);
@@ -561,11 +572,11 @@ export namespace UsersSpec {
 
   const makeSecureCredential = (credential: Credential.EmailPassword.Strong) => {
     return Effect.gen(function* () {
-      const password = yield* hash(credential.password);
+      const passwords = yield* Passwords;
+      const password = yield* passwords.hash(credential.password);
       return Credential.Secure.Email({ email: credential.email, password });
-    });
+    }).pipe(Effect.provide(Passwords.layer));
   };
 }
 
 const makeEmail = S.decodeSync(Email);
-const hash = Passwords.hasher({ N: 2 });

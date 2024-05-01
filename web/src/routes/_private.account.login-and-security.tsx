@@ -1,6 +1,7 @@
 import { Credential, Password, User } from "@chuz/domain";
 import { Effect, Match, S } from "@chuz/prelude";
 import { useLoaderData } from "@remix-run/react";
+import { Passwords, PasswordsDoNotMatch, Users } from "core/index";
 import { ShieldIcon } from "lucide-react";
 import { Routes } from "src/Routes";
 import { AccountSettingsLayout } from "src/account/AccountSettingsLayout";
@@ -10,13 +11,12 @@ import { PreviewContent } from "src/components/PreviewContent";
 import { TitledSection } from "src/components/TitledSection";
 import { Card, CardDescription, CardHeader, CardTitle } from "src/components/ui/card";
 import { useActiveState } from "src/hooks/useActiveState";
-import { Http, Session, Users } from "src/server";
-import { Hasher } from "src/server/Passwords";
 import * as Remix from "src/server/Remix";
+import { Http, Session } from "src/server/prelude";
 
 export const loader = Remix.loader(
   Session.authenticated.pipe(
-    Effect.flatMap((session) => Users.identities(session.user.id)),
+    Effect.flatMap((session) => Users.pipe(Effect.flatMap((users) => users.identities(session.user.id)))),
     Effect.flatMap((identities) => Http.response.ok(identities)),
     Effect.catchTags({ Unauthorised: () => Http.response.unauthorized }),
   ),
@@ -35,14 +35,16 @@ export const action = Remix.action(
               Effect.succeed(form).pipe(
                 Effect.filterOrFail(
                   (form) => Password.strongEquals(form.password)(form.password2),
-                  () => new Password.PasswordsDoNotMatch(),
+                  () => new PasswordsDoNotMatch(),
                 ),
-                Effect.flatMap((form) => Hasher.hash(form.password)),
+                Effect.flatMap((form) => Passwords.pipe(Effect.flatMap((passwords) => passwords.hash(form.password)))),
                 Effect.map((password) => Credential.Secure.Email({ email: session.user.value.email, password })),
-                Effect.flatMap((credential) => Users.linkCredential(session.token, credential)),
-                Effect.zipRight(Http.response.redirect(Routes.account.loginAndSecurity)),
+                Effect.flatMap((credential) =>
+                  Users.pipe(Effect.flatMap((users) => users.linkCredential(session.token, credential))),
+                ),
+                Effect.flatMap(() => Http.response.redirect(Routes.account.loginAndSecurity)),
                 Effect.catchTags({
-                  CredentialAlareadyExists: Http.response.badRequest,
+                  CredentialAlreadyExists: Http.response.badRequest,
                   PasswordsDoNotMatch: Http.response.badRequest,
                 }),
               ),
@@ -50,13 +52,15 @@ export const action = Remix.action(
               Effect.succeed(form).pipe(
                 Effect.filterOrFail(
                   (form) => Password.strongEquals(form.password)(form.password2),
-                  () => new Password.PasswordsDoNotMatch(),
+                  () => new PasswordsDoNotMatch(),
                 ),
-                Effect.bind("hashed", (form) => Hasher.hash(form.password)),
+                Effect.bind("hashed", (form) =>
+                  Passwords.pipe(Effect.flatMap((passwords) => passwords.hash(form.password))),
+                ),
                 Effect.flatMap(({ currentPassword, hashed }) =>
-                  Users.updatePassword(session.token, currentPassword, hashed),
+                  Users.pipe(Effect.flatMap((users) => users.updatePassword(session.token, currentPassword, hashed))),
                 ),
-                Effect.zipRight(Http.response.redirect(Routes.account.loginAndSecurity)),
+                Effect.flatMap(() => Http.response.redirect(Routes.account.loginAndSecurity)),
                 Effect.catchTags({
                   CredentialNotRecognised: Http.response.badRequest,
                   PasswordsDoNotMatch: Http.response.badRequest,

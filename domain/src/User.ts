@@ -1,7 +1,7 @@
 import { Data, Equal, Option } from "@chuz/prelude";
 import { S } from "@chuz/prelude";
-import { Email } from "./Email";
 import * as identity from "./Identity";
+import { Email } from "./emails/Email";
 import type * as Domain from "./index";
 
 export { identity };
@@ -13,6 +13,7 @@ export interface User {
   optInMarketing: OptInMarketing;
 }
 
+// TODO: remove
 export type Id = Domain.Id<User>;
 export type Session = Domain.Session<User>;
 export type Token = Domain.Token.Token<Id>;
@@ -29,6 +30,7 @@ export const FirstName = S.String100.pipe(S.brand("FirstName"));
 
 export const LastName = S.String100.pipe(S.brand("LastName"));
 
+// TODO: change to class and put methods here
 export const User = S.Struct({
   email: Email,
   firstName: S.Option(FirstName),
@@ -36,8 +38,7 @@ export const User = S.Struct({
   optInMarketing: OptInMarketing,
 });
 
-export const eqId = Equal.equals<Id, Id>;
-
 export const make = Data.case<User>();
+export const eqId = Equal.equivalence<Id>();
 
 export const Partial = User.pipe(S.omit("email"));

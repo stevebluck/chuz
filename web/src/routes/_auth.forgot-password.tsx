@@ -1,12 +1,13 @@
 import { Email } from "@chuz/domain";
 import { Effect } from "@chuz/prelude";
 import { S } from "@chuz/prelude";
+import { Users } from "core/index";
 import { Routes } from "src/Routes";
 import { AuthContent } from "src/auth/AuthContent";
 import { RequestResetPasswordForm } from "src/auth/RequestResetPasswordForm";
 import { useActionData } from "src/hooks/useActionData";
-import { Session, Http, Users } from "src/server";
 import * as Remix from "src/server/Remix";
+import { Session, Http } from "src/server/prelude";
 
 type FormFields = S.Schema.Type<typeof FormFields>;
 const FormFields = S.Struct({ email: Email });
@@ -14,7 +15,7 @@ const FormFields = S.Struct({ email: Email });
 export const action = Remix.action(
   Session.guest.pipe(
     Effect.zipRight(Http.request.formData(FormFields)),
-    Effect.flatMap(({ email }) => Users.requestPasswordReset(email)),
+    Effect.flatMap(({ email }) => Users.pipe(Effect.flatMap((users) => users.requestPasswordReset(email)))),
     Effect.flatMap(Http.response.ok),
     Effect.catchTags({
       CredentialNotRecognised: Http.response.badRequest,

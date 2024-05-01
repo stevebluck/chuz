@@ -1,7 +1,7 @@
 import { Password } from "@chuz/domain";
 import { Effect, Either } from "@chuz/prelude";
 import { describe, expect, test } from "vitest";
-import { Passwords } from "../../src/auth/Passwords";
+import { Passwords, PasswordsDoNotMatch } from "../../src";
 import { Arbs } from "../Arbs";
 import { asyncProperty } from "../Property";
 
@@ -10,19 +10,28 @@ export namespace PasswordSpec {
     describe("Passwords", () => {
       asyncProperty("Passwords are hashed with random salt", Arbs.Passwords.Strong, (password: Password.Strong) =>
         Effect.gen(function* () {
-          const hashes = yield* Effect.all(Array.from({ length: 5 }, () => password).map(hash));
+          const passwords = yield* Passwords;
+          const hashes = yield* Effect.all(Array.from({ length: 5 }, () => password).map(passwords.hash));
           expect(new Set(hashes).size).toBe(hashes.length);
-        }),
+        }).pipe(Effect.provide(Passwords.layer)),
       );
 
-      asyncProperty("Passwords only match against their hashes", Arbs.Passwords.Strong, (password: Password.Strong) =>
-        Effect.gen(function* () {
-          const hashed = yield* hash(password);
-          const matches = yield* match(Password.Plaintext(password), hashed);
-          const doesNotMatch = yield* match(Password.Plaintext(`mutate-${password}`), hashed);
-          expect(matches).toBe(true);
-          expect(doesNotMatch).toBe(false);
-        }),
+      asyncProperty(
+        "Passwords only validate against their hashes",
+        Arbs.Passwords.Strong,
+        (password: Password.Strong) =>
+          Effect.gen(function* () {
+            const passwords = yield* Passwords;
+            const hashed = yield* passwords.hash(password);
+
+            yield* passwords.validate(Password.Plaintext(password), hashed);
+
+            const doesNotMatch = yield* Effect.flip(
+              passwords.validate(Password.Plaintext(`mutate-${password}`), hashed),
+            );
+
+            expect(doesNotMatch).toStrictEqual(new PasswordsDoNotMatch());
+          }).pipe(Effect.provide(Passwords.layer)),
       );
 
       test("Strong passwords must have a minimum length of 8 characters", () => {
@@ -37,7 +46,3 @@ export namespace PasswordSpec {
     });
   };
 }
-
-const config = { N: 2 };
-const hash = Passwords.hasher(config);
-const match = Passwords.matcher(config);

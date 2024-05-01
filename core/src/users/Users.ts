@@ -1,61 +1,68 @@
-import { Credential, Email, Password, Token } from "@chuz/domain";
+import { OAuth, Credential, Email, Password, Token } from "@chuz/domain";
 import { User } from "@chuz/domain";
-import { Data, Effect, Option } from "@chuz/prelude";
-
-// TODO: restrict one social auth to one provider
-// TODO: auto link accounts with same email
+import { Context, Effect, Option } from "@chuz/prelude";
+import { GenerateUrlFailure, NoSuchToken } from "../Errors";
+import * as Errors from "./Errors";
 
 export interface Users {
-  register(registration: Registration): Effect.Effect<User.Session, EmailAlreadyInUse>;
+  // TODO: Take a crednetial and a partial user
+  register: (registration: Registration) => Effect.Effect<User.Session, Errors.EmailAlreadyInUse>;
 
-  identify(token: User.Token): Effect.Effect<User.Session, Token.NoSuchToken>;
+  identify: (token: User.Token) => Effect.Effect<User.Session, NoSuchToken>;
 
-  authenticate(credential: Credential.Plain): Effect.Effect<User.Session, Credential.NotRecognised>;
+  authenticate: (credential: Credential.Plain) => Effect.Effect<User.Session, Errors.CredentialNotRecognised>;
 
-  logout(token: User.Token): Effect.Effect<void>;
+  logout: (token: User.Token) => Effect.Effect<void>;
 
-  identities(id: User.Id): Effect.Effect<User.identity.Identities>;
+  generateAuthUrl: (state: OAuth.State) => Effect.Effect<OAuth.ProviderUrl, GenerateUrlFailure>;
 
-  getById(id: User.Id): Effect.Effect<User.Identified, UserNotFound>;
+  exchangeAuthCodeForSession: (
+    code: OAuth.Code,
+    state: OAuth.ValidatedState,
+  ) => Effect.Effect<
+    User.Session,
+    Errors.EmailAlreadyInUse | Errors.CredentialNotRecognised | Errors.OAuthProviderError
+  >;
 
-  getByEmail(email: Email): Effect.Effect<User.Identified, UserNotFound>;
+  identities: (id: User.Id) => Effect.Effect<User.identity.Identities>;
 
-  update(id: User.Id, partial: User.Partial): Effect.Effect<User.Identified, UserNotFound>;
+  getById: (id: User.Id) => Effect.Effect<User.Identified, Errors.UserNotFound>;
 
-  updateEmail(id: User.Id, email: Email): Effect.Effect<User.Identified, UpdateEmailError>;
+  getByEmail: (email: Email) => Effect.Effect<User.Identified, Errors.UserNotFound>;
 
-  updatePassword(
+  update: (id: User.Id, partial: User.Partial) => Effect.Effect<User.Identified, Errors.UserNotFound>;
+
+  updateEmail: (
+    id: User.Id,
+    email: Email,
+  ) => Effect.Effect<User.Identified, Errors.UserNotFound | Errors.EmailAlreadyInUse>;
+
+  updatePassword: (
     token: User.Token,
     currentPassword: Password.Plaintext,
     updatedPasword: Password.Hashed,
-  ): Effect.Effect<void, UpdatePasswordError>;
+  ) => Effect.Effect<void, NoSuchToken | Errors.CredentialNotRecognised>;
 
-  requestPasswordReset(email: Email): Effect.Effect<Token.Token<[Email, User.Id]>, Credential.NotRecognised>;
+  requestPasswordReset: (email: Email) => Effect.Effect<Token.Token<[Email, User.Id]>, Errors.CredentialNotRecognised>;
 
-  resetPassword(
+  resetPassword: (
     token: Token.Token<[Email, User.Id]>,
     password: Password.Hashed,
-  ): Effect.Effect<User.Identified, Token.NoSuchToken>;
+  ) => Effect.Effect<User.Identified, NoSuchToken>;
 
-  linkCredential(
+  linkCredential: (
     token: User.Token,
     credential: Credential.Secure,
-  ): Effect.Effect<User.identity.Identities, LinkCredentialError>;
+  ) => Effect.Effect<User.identity.Identities, NoSuchToken | Errors.CredentialAlreadyExists>;
 
-  unlinkCredential(
+  unlinkCredential: (
     token: User.Token,
     provider: Credential.ProviderId,
-  ): Effect.Effect<User.identity.Identities, UnlinkCredentialError>;
+  ) => Effect.Effect<
+    User.identity.Identities,
+    NoSuchToken | Errors.NoFallbackCredential | Errors.CredentialNotRecognised
+  >;
 }
-
-export class UserNotFound extends Data.TaggedError("UserNotFound") {}
-
-export class EmailAlreadyInUse extends Data.TaggedError("EmailAlreadyInUse")<{ email: Email }> {}
-
-export type UpdateEmailError = UserNotFound | EmailAlreadyInUse;
-export type UpdatePasswordError = Token.NoSuchToken | Credential.NotRecognised;
-export type UnlinkCredentialError = Token.NoSuchToken | Credential.NoFallbackAvailable | Credential.NotRecognised;
-export type LinkCredentialError = Token.NoSuchToken | Credential.AlreadyExists;
 
 export interface Registration {
   credential: Credential.Secure;
@@ -63,3 +70,9 @@ export interface Registration {
   lastName: Option.Option<User.LastName>;
   optInMarketing: User.OptInMarketing;
 }
+
+interface UsersId {
+  readonly _: unique symbol;
+}
+
+export const Users = Context.GenericTag<UsersId, Users>("@core/Users");

@@ -1,5 +1,5 @@
 import { Data, Effect, S } from "@chuz/prelude";
-import { Email } from "./Email";
+import { Email } from "../emails/Email";
 import * as Password from "./Password";
 
 export class Plain extends S.Class<Plain>("PlainEmailPassword")({

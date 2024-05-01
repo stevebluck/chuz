@@ -1,12 +1,14 @@
 import { Array, Data, Option, Record } from "@chuz/prelude";
-import * as Credential from "./Credential";
-import { Email } from "./Email";
+import * as Credential from "./auth/Credential";
+import { Email } from "./emails/Email";
 
 export type Identities = Record<Identity["_tag"], Option.Option<{ email: Email }>>;
 
 export type Identity = Data.TaggedEnum<{
   Email: { email: Email };
+  // TODO: email can be optional
   Google: { email: Email };
+  // TODO: email can be optional
   Apple: { email: Email };
 }>;
 

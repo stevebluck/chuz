@@ -1,49 +1,28 @@
-import { Credential, Email, Password } from "@chuz/domain";
-import { Effect, Match } from "@chuz/prelude";
-import { S } from "@chuz/prelude";
-import { Api } from "src/Api";
+import { OAuth } from "@chuz/domain";
+import { Effect } from "@chuz/prelude";
 import { Routes } from "src/Routes";
 import { AuthContent } from "src/auth/AuthContent";
 import { LoginForm } from "src/auth/LoginForm";
 import { useActionData } from "src/hooks/useActionData";
-import { Session, Http, Cookies } from "src/server";
+import { LoginFormFields } from "src/server/Auth";
 import * as Remix from "src/server/Remix";
-
-type LoginFormFields = S.Schema.Type<typeof LoginFormFields>;
-const LoginFormFields = S.Union(
-  S.Struct({
-    _tag: S.Literal(Credential.ProviderId.Email),
-    email: Email,
-    password: Password.Plaintext,
-  }),
-  S.Struct({ _tag: S.Literal(Credential.ProviderId.Google) }),
-);
+import { Session, Http, Auth } from "src/server/prelude";
 
 export const action = Remix.action(
   Session.guest.pipe(
     Effect.zipRight(Http.request.formData(LoginFormFields)),
     Effect.flatMap(
-      Match.typeTags<LoginFormFields>()({
-        Google: () =>
-          Effect.gen(function* () {
-            const cookie = yield* Cookies.AuthState;
-            const [url, state] = yield* Api.generateGoogleAuthUrl("register");
-
-            return yield* Effect.flatMap(Http.response.redirect(url), Http.response.setCookie(cookie, state));
-          }),
+      Auth.matchLoginForm({
+        Google: () => Auth.generateAuthUrl(OAuth.Provider.google, OAuth.Intent.login),
+        Apple: () => Auth.generateAuthUrl(OAuth.Provider.apple, OAuth.Intent.login),
         Email: (credential) =>
-          Api.authenticate(credential).pipe(
+          Auth.loginByEmail(credential).pipe(
             Effect.flatMap(Session.mint),
-            Effect.flatMap(() => Http.response.redirectToAccount),
+            Effect.zipRight(Http.response.returnTo(Routes.dashboard)),
           ),
       }),
     ),
-    Effect.catchTags({
-      CredentialNotRecognised: Http.response.badRequest,
-      AlreadyAuthenticated: () => Http.response.redirectToAccount,
-      GenerateUrlError: () => Http.response.serverError,
-      InvalidFormData: Http.response.badRequest,
-    }),
+    Effect.catchAll(Http.response.badRequest),
   ),
 );
 

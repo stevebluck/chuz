@@ -1,5 +1,5 @@
 import { Data, Equal, Equivalence, Match } from "@chuz/prelude";
-import { Email } from "./Email";
+import { Email } from "../emails/Email";
 import * as EmailPassword from "./EmailPassword";
 
 export { EmailPassword };
@@ -49,7 +49,3 @@ export const is = (
 export const isEmailPassword = (credential: Secure): credential is Secure.Email => is(ProviderId.Email, credential);
 
 export const isPlainEmailPassword = (credential: Plain): credential is Plain.Email => is(ProviderId.Email, credential);
-
-export class AlreadyExists extends Data.TaggedError("CredentialAlareadyExists") {}
-export class NotRecognised extends Data.TaggedError("CredentialNotRecognised") {}
-export class NoFallbackAvailable extends Data.TaggedError("NoFallbackCredentialAvailable") {}

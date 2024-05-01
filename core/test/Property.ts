@@ -1,5 +1,4 @@
-import { Effect, NonEmptyIterable, Option } from "@chuz/prelude";
-import fc from "fast-check";
+import { Effect, NonEmptyIterable, Option, fc } from "@chuz/prelude";
 import { test } from "vitest";
 
 type Config = {

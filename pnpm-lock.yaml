@@ -14,9 +14,6 @@ importers:
       '@types/node':
         specifier: ^20.12.7
         version: 20.12.7
-      fast-check:
-        specifier: ^3.17.2
-        version: 3.17.2
       husky:
         specifier: ^9.0.11
         version: 9.0.11
@@ -52,6 +49,9 @@ importers:
       date-fns:
         specifier: ^3.6.0
         version: 3.6.0
+      googleapis:
+        specifier: ^134.0.0
+        version: 134.0.0
       kysely:
         specifier: ^0.27.3
         version: 0.27.3

@@ -15,6 +15,7 @@
     "@chuz/domain": "workspace:*",
     "@chuz/prelude": "workspace:*",
     "date-fns": "^3.6.0",
+    "googleapis": "^134.0.0",
     "kysely": "^0.27.3",
     "pg": "^8.11.5"
   },

@@ -1,8 +1,8 @@
 import { Data, Effect } from "@chuz/prelude";
 import { S } from "@chuz/prelude";
 import { Cookie as HttpCookie } from "@effect/platform/Http/Cookies";
-import * as Http from "@effect/platform/HttpServer";
 import { createHmac, timingSafeEqual } from "crypto";
+import { Http } from "../prelude";
 
 export class Cookie<A> {
   constructor(
@@ -29,15 +29,22 @@ export class Cookie<A> {
 
   remove = (res: Http.response.ServerResponse) =>
     this.read.pipe(
-      Effect.flatMap(() => Http.response.unsafeSetCookie(this.name, "", { ...this.options, maxAge: 0 })(res)),
+      Effect.map(() =>
+        Http.response.unsafeSetCookie(res, this.name, "", {
+          ...this.options,
+          maxAge: 0,
+        }),
+      ),
       Effect.orElseSucceed(() => res),
     );
 
-  encode = (value: A) =>
+  // TODO: change to set
+  set = (value: A) => (res: Http.response.ServerResponse) =>
     Effect.succeed(value).pipe(
       Effect.flatMap(S.encode(this.schema)),
       Effect.flatMap(this.sign),
-      Effect.catchTag("ParseError", (e) => Effect.die(e)),
+      Effect.flatMap((value) => Http.response.setCookie(this.name, value, this.options)(res)),
+      Effect.orElseSucceed(() => res),
     );
 
   read = Effect.suspend(() =>

@@ -2,6 +2,7 @@ import { Token } from "@chuz/domain";
 import { HashMap, Array, Timestamp, makeUuid } from "@chuz/prelude";
 import { Clock, Effect, Equivalence, Option, Ref } from "@chuz/prelude";
 import { addMilliseconds, isAfter } from "date-fns";
+import { NoSuchToken } from "../Errors";
 import { Tokens } from "./Tokens";
 
 export class ReferenceTokens<A> implements Tokens<A> {
@@ -26,13 +27,13 @@ export class ReferenceTokens<A> implements Tokens<A> {
     });
   };
 
-  lookup = (token: Token.Token<A>): Effect.Effect<A, Token.NoSuchToken> => {
+  lookup = (token: Token.Token<A>): Effect.Effect<A, NoSuchToken> => {
     return this.clock.currentTimeMillis.pipe(
       Effect.map((time) => new Date(time)),
       Effect.flatMap((time) =>
         Ref.get(this.state).pipe(Effect.flatMap((s) => s.lookup(token, new Timestamp({ value: time })))),
       ),
-      Effect.catchTag("NoSuchElementException", () => new Token.NoSuchToken()),
+      Effect.catchTag("NoSuchElementException", () => new NoSuchToken()),
     );
   };
 

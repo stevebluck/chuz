@@ -1,23 +1,18 @@
-import { Context, Effect, Layer, Secret } from "@chuz/prelude";
+import { OAuth } from "@chuz/domain";
+import { Config, Context, Effect, Layer, Secret } from "@chuz/prelude";
 import { S } from "@chuz/prelude";
-import { LayerUtils } from "../LayerUtils";
-import * as Auth from "../auth/Auth";
 import { Cookie } from "./Cookie";
 
-interface CookieConfig {
-  secure: boolean;
-  secrets: readonly Secret.Secret[];
-}
-
-export class Config extends Context.Tag("@app/cookies/Config")<Config, CookieConfig>() {
-  static layer = LayerUtils.config(this);
-}
+const CookieConfig = Config.all({
+  secure: Config.map(Config.string("NODE_ENV"), (env) => env === "production"),
+  secrets: Config.array(Config.secret("COOKIE_SECRET")).pipe(Config.withDefault([Secret.fromString("chuzwozza")])),
+});
 
 export class Token extends Context.Tag("@app/cookies/Token")<Token, Cookie<string>>() {
   static layer = Layer.effect(
     Token,
     Effect.gen(function* () {
-      const { secure, secrets } = yield* Config;
+      const { secure, secrets } = yield* CookieConfig;
 
       // TODO: support multiple secrets
       const secret = Secret.value(secrets[0]);
@@ -38,7 +33,7 @@ export class ReturnTo extends Context.Tag("@app/cookies/ReturnTo")<ReturnTo, Coo
   static layer = Layer.effect(
     ReturnTo,
     Effect.gen(function* () {
-      const { secure, secrets } = yield* Config;
+      const { secure, secrets } = yield* CookieConfig;
 
       // TODO: support multiple secrets
       const secret = Secret.value(secrets[0]);
@@ -54,16 +49,16 @@ export class ReturnTo extends Context.Tag("@app/cookies/ReturnTo")<ReturnTo, Coo
   );
 }
 
-export class AuthState extends Context.Tag("@app/cookies/AuthState")<AuthState, Cookie<Auth.State>>() {
+export class AuthState extends Context.Tag("@app/cookies/AuthState")<AuthState, Cookie<OAuth.State>>() {
   static layer = Layer.effect(
     AuthState,
     Effect.gen(function* () {
-      const { secure, secrets } = yield* Config;
+      const { secure, secrets } = yield* CookieConfig;
 
       // TODO: support multiple secrets
       const secret = Secret.value(secrets[0]);
 
-      return new Cookie("_authstate", Auth.State, {
+      return new Cookie("_authstate", OAuth.StateFromString, {
         path: "/",
         maxAge: "30 minutes",
         secure,

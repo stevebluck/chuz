@@ -1,5 +1,5 @@
 {
   "extends": "@chuz/typescript-config/domain.json",
-  "include": ["src/**/*", "test/**/*"],
+  "include": ["src/**/*", "test/**/*", "src/auth/OAuth.ts", "../core/src/users/Errors.ts"],
   "compilerOptions": {}
 }

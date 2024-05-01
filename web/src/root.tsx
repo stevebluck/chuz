@@ -3,8 +3,8 @@ import { LinksFunction } from "@remix-run/node";
 import { Links, Meta, Outlet, Scripts, ScrollRestoration } from "@remix-run/react";
 import { RootLayout } from "./components/RootLayout";
 import { Toaster } from "./components/ui/sonner";
-import { Http, Session } from "./server";
 import * as Remix from "./server/Remix";
+import { Http, Session } from "./server/prelude";
 import { cn } from "./styles/classnames";
 import "./styles/style.css";
 
