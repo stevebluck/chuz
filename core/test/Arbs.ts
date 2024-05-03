@@ -1,59 +1,41 @@
-import { Password, User as _User, Credential as _Credentials, Credential, Email as _Email } from "@chuz/domain";
+import { Password, User, Email } from "@chuz/domain";
 import { Arbitrary, Option, fc } from "@chuz/prelude";
 
-export namespace Arbs {
-  export namespace Passwords {
-    export const Plaintext = Arbitrary.make(Password.Plaintext);
-    export const Strong = Arbitrary.make(Password.Strong);
-  }
+export type EmailPasswordRegistration = typeof EmailPasswordRegistration extends fc.Arbitrary<infer A> ? A : never;
+const EmailPasswordRegistration = fc.record({
+  credential: fc.record({ email: Arbitrary.make(Email), password: Arbitrary.make(Password.Strong) }),
+  firstName: Arbitrary.make(User.FirstName).map(Option.fromNullable),
+  lastName: Arbitrary.make(User.LastName).map(Option.fromNullable),
+  optInMarketing: Arbitrary.make(User.OptInMarketing),
+});
 
-  export const Email = Arbitrary.make(_Email);
-
-  export namespace Credentials {
-    export const EmailPassword = Arbitrary.make(Credential.EmailPassword.Strong);
-
-    export type Apple = typeof Apple extends fc.Arbitrary<infer A> ? A : never;
-    export const Apple: fc.Arbitrary<Credential.Secure.Apple> = fc.record({
-      _tag: fc.constant(Credential.ProviderId.Apple),
-      email: Email,
-    });
-
-    export type Google = typeof Google extends fc.Arbitrary<infer A> ? A : never;
-    export const Google = fc.record({
-      _tag: fc.constant(Credential.ProviderId.Google),
-      email: Email,
-    });
-  }
-
-  export namespace Registration {
-    const firstName = Arbitrary.make(_User.FirstName).map(Option.fromNullable);
-    const lastName = Arbitrary.make(_User.LastName).map(Option.fromNullable);
-    const optInMarketing = Arbitrary.make(_User.OptInMarketing);
-
-    const make = <A>(credential: fc.Arbitrary<A>) =>
-      fc.record({
-        credential,
-        firstName,
-        lastName,
-        optInMarketing,
-      });
-
-    export type EmailPassword = typeof EmailPassword extends fc.Arbitrary<infer A> ? A : never;
-    export const EmailPassword = fc.record({
-      credential: Credentials.EmailPassword,
-      firstName,
-      lastName,
-      optInMarketing,
-    });
-
-    export type Google = typeof Google extends fc.Arbitrary<infer A> ? A : never;
-    export const Google = make(Credentials.Google);
-
-    export type Apple = typeof Apple extends fc.Arbitrary<infer A> ? A : never;
-    export const Apple = make(Credentials.Apple);
-  }
-
-  export namespace Users {
-    export const Partial = Arbitrary.make(_User.Partial);
-  }
-}
+export const Arbs = {
+  Passwords: {
+    Plaintext: Arbitrary.make(Password.Plaintext),
+    Strong: Arbitrary.make(Password.Strong),
+  },
+  Email: Arbitrary.make(Email),
+  Credentials: {
+    EmailPassword: fc.record({ email: Arbitrary.make(Email), password: Arbitrary.make(Password.Strong) }),
+    Apple: fc.record({ _tag: fc.constant("Apple" as const), email: Arbitrary.make(Email) }),
+    Google: fc.record({ _tag: fc.constant("Google" as const), email: Arbitrary.make(Email) }),
+  },
+  Registration: {
+    EmailPassword: EmailPasswordRegistration,
+    Google: fc.record({
+      credential: fc.record({ _tag: fc.constant("Google" as const), email: Arbitrary.make(Email) }),
+      firstName: Arbitrary.make(User.FirstName).map(Option.fromNullable),
+      lastName: Arbitrary.make(User.LastName).map(Option.fromNullable),
+      optInMarketing: Arbitrary.make(User.OptInMarketing),
+    }),
+    Apple: fc.record({
+      credential: fc.record({ _tag: fc.constant("Apple" as const), email: Arbitrary.make(Email) }),
+      firstName: Arbitrary.make(User.FirstName).map(Option.fromNullable),
+      lastName: Arbitrary.make(User.LastName).map(Option.fromNullable),
+      optInMarketing: Arbitrary.make(User.OptInMarketing),
+    }),
+  },
+  Users: {
+    Partial: Arbitrary.make(User.Partial),
+  },
+};

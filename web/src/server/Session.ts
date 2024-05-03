@@ -46,8 +46,8 @@ export class Session extends Effect.Tag("@app/Session")<Session, Sessions<User.U
 
 export type RequestSession = Data.TaggedEnum<{
   NotProvided: {};
-  Provided: { session: User.Session };
-  Set: { session: User.Session };
+  Provided: { session: DomainSession<User.User> };
+  Set: { session: DomainSession<User.User> };
   Unset: {};
   InvalidToken: {};
 }> & {};

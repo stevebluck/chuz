@@ -12,7 +12,7 @@ export function LoginForm() {
   return (
     <div className={"grid gap-6"}>
       <Form method="POST" action={Routes.login}>
-        <Input name="_tag" type="hidden" value="Email" />
+        <Input name="_tag" type="hidden" value="EmailPassword" />
 
         <div className="grid gap-6">
           <div className="grid gap-2">

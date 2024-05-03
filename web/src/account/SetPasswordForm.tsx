@@ -1,18 +1,12 @@
-import { Password } from "@chuz/domain";
-import { S } from "@chuz/prelude";
 import { Form } from "@remix-run/react";
 import { Button } from "src/components/ui/button";
 import { Input } from "src/components/ui/input";
 import { Label } from "src/components/ui/label";
 
-export const SetPasswordFormFields = S.Struct({
-  password: Password.Strong,
-  password2: Password.Strong,
-}).pipe(S.attachPropertySignature("_tag", "SetPasswordForm"));
-
 export const SetPasswordForm = () => {
   return (
     <Form method="POST">
+      <Input name="_tag" type="hidden" value="SetPassword" />
       <div className="grid gap-8">
         <div className="grid gap-6">
           <div className="grid gap-2">

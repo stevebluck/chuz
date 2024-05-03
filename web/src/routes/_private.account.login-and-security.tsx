@@ -1,77 +1,78 @@
+import { Passwords, PasswordsDoNotMatch, Users } from "@chuz/core";
 import { Credential, Password, User } from "@chuz/domain";
-import { Effect, Match, S } from "@chuz/prelude";
-import { useLoaderData } from "@remix-run/react";
+import { Data, Effect, Equal, Match, Option, S } from "@chuz/prelude";
 import { ShieldIcon } from "lucide-react";
 import { Routes } from "src/Routes";
 import { AccountSettingsLayout } from "src/account/AccountSettingsLayout";
-import { SetPasswordForm, SetPasswordFormFields } from "src/account/SetPasswordForm";
-import { UpdatePasswordForm, UpdatePasswordFormFields } from "src/account/UpdatePasswordForm";
+import { SetPasswordForm } from "src/account/SetPasswordForm";
+import { UpdatePasswordForm } from "src/account/UpdatePasswordForm";
 import { PreviewContent } from "src/components/PreviewContent";
 import { TitledSection } from "src/components/TitledSection";
 import { Card, CardDescription, CardHeader, CardTitle } from "src/components/ui/card";
 import { useActiveState } from "src/hooks/useActiveState";
-import { Http, Session, Users } from "src/server";
-import { Hasher } from "src/server/Passwords";
+import { useLoaderData } from "src/hooks/useLoaderData";
 import * as Remix from "src/server/Remix";
+import * as ServerRequest from "src/server/ServerRequest";
+import * as ServerResponse from "src/server/ServerResponse";
+import { Session } from "src/server/Session";
 
 export const loader = Remix.loader(
   Session.authenticated.pipe(
-    Effect.flatMap((session) => Users.identities(session.user.id)),
-    Effect.flatMap((identities) => Http.response.ok(identities)),
-    Effect.catchTags({ Unauthorised: () => Http.response.unauthorized }),
+    Effect.flatMap((session) => Users.pipe(Effect.flatMap((users) => users.identities(session.user.id)))),
+    Effect.flatMap((identities) => ServerResponse.json(identities)),
+    Effect.catchTags({ Unauthorised: () => ServerResponse.unauthorized }),
   ),
 );
 
-const forms = S.Union(UpdatePasswordFormFields, SetPasswordFormFields);
-const matchForm = Match.typeTags<S.Schema.Type<typeof forms>>();
+type Forms = S.Schema.Type<typeof Forms>;
+const Forms = S.Union(
+  S.Struct({
+    _tag: S.Literal("UpdatePassword"),
+    currentPassword: Password.Plaintext,
+    password: Password.Strong,
+    password2: Password.Strong,
+  }),
+  S.Struct({
+    _tag: S.Literal("SetPassword"),
+    password: Password.Strong,
+    password2: Password.Strong,
+  }),
+);
 
-export const action = Remix.action(
-  Session.authenticated.pipe(
-    Effect.flatMap((session) =>
-      Http.request.formData(forms).pipe(
-        Effect.flatMap(
-          matchForm({
-            SetPasswordForm: (form) =>
-              Effect.succeed(form).pipe(
-                Effect.filterOrFail(
-                  (form) => Password.strongEquals(form.password)(form.password2),
-                  () => new Password.PasswordsDoNotMatch(),
-                ),
-                Effect.flatMap((form) => Hasher.hash(form.password)),
-                Effect.map((password) => Credential.Secure.Email({ email: session.user.value.email, password })),
-                Effect.flatMap((credential) => Users.linkCredential(session.token, credential)),
-                Effect.zipRight(Http.response.redirect(Routes.account.loginAndSecurity)),
-                Effect.catchTags({
-                  CredentialAlareadyExists: Http.response.badRequest,
-                  PasswordsDoNotMatch: Http.response.badRequest,
-                }),
-              ),
-            UpdatePasswordForm: (form) =>
-              Effect.succeed(form).pipe(
-                Effect.filterOrFail(
-                  (form) => Password.strongEquals(form.password)(form.password2),
-                  () => new Password.PasswordsDoNotMatch(),
-                ),
-                Effect.bind("hashed", (form) => Hasher.hash(form.password)),
-                Effect.flatMap(({ currentPassword, hashed }) =>
-                  Users.updatePassword(session.token, currentPassword, hashed),
-                ),
-                Effect.zipRight(Http.response.redirect(Routes.account.loginAndSecurity)),
-                Effect.catchTags({
-                  CredentialNotRecognised: Http.response.badRequest,
-                  PasswordsDoNotMatch: Http.response.badRequest,
-                }),
-              ),
-          }),
-        ),
-      ),
-    ),
-    Effect.catchTags({
-      InvalidFormData: Http.response.badRequest,
-      NoSuchToken: () => Http.response.unauthorized,
-      Unauthorised: () => Http.response.unauthorized,
-    }),
-  ),
+export const action = Remix.unwrapAction(
+  Effect.gen(function* () {
+    const passwords = yield* Passwords;
+    const users = yield* Users;
+
+    const match = Match.typeTags<Forms>();
+
+    return Effect.gen(function* () {
+      const session = yield* Session.authenticated;
+
+      const SetPassword = (form: Data.TaggedEnum.Value<Forms, "SetPassword">) =>
+        Effect.succeed(form.password).pipe(
+          Effect.filterOrFail(Equal.equals(form.password2), () => new PasswordsDoNotMatch()),
+          Effect.flatMap(passwords.hash),
+          Effect.map((password) => Credential.Secure.EmailPassword({ email: session.user.value.email, password })),
+          Effect.flatMap((credential) => users.linkCredential(session.token, credential)),
+          Effect.flatMap(() => ServerResponse.redirect(Routes.account.loginAndSecurity)),
+        );
+
+      const UpdatePassword = (form: Data.TaggedEnum.Value<Forms, "UpdatePassword">) =>
+        Effect.succeed(form.password).pipe(
+          Effect.filterOrFail(Equal.equals(form.password2), () => new PasswordsDoNotMatch()),
+          Effect.flatMap(passwords.hash),
+          Effect.flatMap((password) => users.updatePassword(session.token, form.currentPassword, password)),
+          Effect.zipRight(ServerResponse.redirect(Routes.account.loginAndSecurity)),
+        );
+
+      return yield* ServerRequest.formData(Forms).pipe(
+        Effect.flatMap(match({ SetPassword, UpdatePassword })),
+        Effect.zipRight(ServerResponse.redirect(Routes.account.loginAndSecurity)),
+        Effect.catchAll(ServerResponse.badRequest),
+      );
+    });
+  }),
 );
 
 const Section = {
@@ -79,10 +80,9 @@ const Section = {
 } as const;
 
 export default function LoginAndSecurity() {
-  const identities = useLoaderData<User.identity.Identities>();
+  const identities = useLoaderData(User.Identities);
 
-  // @ts-ignore
-  const hasPassword = identities.Email._tag === "Some";
+  const hasPassword = Option.isSome(identities.EmailPassword);
 
   const { isActive, isOtherActive } = useActiveState(Section);
 

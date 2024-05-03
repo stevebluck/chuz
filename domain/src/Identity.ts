@@ -1,31 +1,29 @@
-import { Array, Data, Option, Record } from "@chuz/prelude";
+import { Data, S } from "@chuz/prelude";
 import * as Credential from "./Credential";
 import { Email } from "./Email";
 
-export type Identities = Record<Identity["_tag"], Option.Option<{ email: Email }>>;
+export class EmailPassword extends S.TaggedClass<EmailPassword>()("EmailPassword", {
+  email: Email,
+}) {
+  static make = (email: Email) => new EmailPassword({ email });
+  static fromCredential = (credential: Credential.EmailPasswordSecure): EmailPassword => this.make(credential.email);
+}
 
-export type Identity = Data.TaggedEnum<{
-  Email: { email: Email };
-  Google: { email: Email };
-  Apple: { email: Email };
-}>;
+export class Google extends S.TaggedClass<Google>()("Google", {
+  email: Email,
+}) {
+  static make = (email: Email) => new Google({ email });
+  static fromCredential = (credential: Credential.Google): Google => this.make(credential.email);
+}
 
-export const Identity = Data.taggedEnum<Identity>();
+export class Apple extends S.TaggedClass<Apple>()("Apple", {
+  email: Email,
+}) {
+  static make = (email: Email) => new Apple({ email });
+  static fromCredential = (credential: Credential.Apple): Apple => this.make(credential.email);
+}
 
-export const hasSocialIdentity = (identities: Identities): boolean => {
-  const authProviderCredentials = Record.filter(
-    identities,
-    (_, id) => !Credential.eqv(id, Credential.ProviderId.Email),
-  );
-  return Array.findFirst(Record.values(authProviderCredentials), Option.isSome).pipe(Option.isSome);
-};
+export type Type = EmailPassword | Google | Apple;
+export const Type = S.Union(EmailPassword, Google, Apple);
 
-export const hasEmailIdentity = (identities: Identities): boolean => {
-  return Option.isSome(identities.Email);
-};
-
-export const fromCredential: (credential: Credential.Secure) => Identity = Credential.Secure.match({
-  Email: ({ email }) => Identity.Email({ email }),
-  Google: ({ email }) => Identity.Google({ email }),
-  Apple: ({ email }) => Identity.Apple({ email }),
-});
+export const { $match: match, $is: is } = Data.taggedEnum<Type>();

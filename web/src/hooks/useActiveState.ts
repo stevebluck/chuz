@@ -1,6 +1,6 @@
 import { useSearchParams } from "@remix-run/react";
 
-export const useActiveState = <A extends Record<string, string>>(sections: A) => {
+export const useActiveState = <A extends Record<string, string>>(_: A) => {
   const [searchParams] = useSearchParams();
 
   const isActive = (section: A[keyof A]) => {

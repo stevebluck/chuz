@@ -1,6 +1,7 @@
 import { Token } from "@chuz/domain";
 import { Clock, Duration, Effect, Number, fc } from "@chuz/prelude";
 import { afterAll, expect } from "vitest";
+import { NoSuchToken } from "../../src/Errors";
 import { ReferenceTokens } from "../../src/tokens/ReferenceTokens";
 import { asyncProperty } from "../Property";
 import { SpecConfig, defaultSpecConfig } from "../SpecConfig";
@@ -30,7 +31,7 @@ export namespace TokensSpec {
         yield* Effect.sleep(2);
         const error = yield* tokens.lookup(token).pipe(Effect.flip);
 
-        expect(error).toEqual(new Token.NoSuchToken());
+        expect(error).toEqual(new NoSuchToken());
       }),
     );
 
@@ -39,7 +40,7 @@ export namespace TokensSpec {
         const tokens = yield* makeTokens;
         const token = Token.make<number>(value.toString());
         const error = yield* tokens.lookup(token).pipe(Effect.flip);
-        expect(error).toEqual(new Token.NoSuchToken());
+        expect(error).toEqual(new NoSuchToken());
       }),
     );
 
@@ -51,7 +52,7 @@ export namespace TokensSpec {
         yield* tokens.revoke(token);
         const error = yield* tokens.lookup(token).pipe(Effect.flip);
         expect(found0).toEqual(value);
-        expect(error).toEqual(new Token.NoSuchToken());
+        expect(error).toEqual(new NoSuchToken());
       }),
     );
 

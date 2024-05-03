@@ -1,56 +1,59 @@
+import { Passwords, Users } from "@chuz/core";
 import { Credential, Email, Password, User } from "@chuz/domain";
 import { Effect, Match, S } from "@chuz/prelude";
-import { Api } from "src/Api";
+import { useActionData } from "@remix-run/react";
 import { fromCheckboxInput, optionalTextInput } from "src/FormSchema";
 import { Routes } from "src/Routes";
 import { AuthContent } from "src/auth/AuthContent";
 import { RegisterForm } from "src/auth/RegisterForm";
-import { useActionData } from "src/hooks/useActionData";
-import { Session, Http, Cookies } from "src/server";
 import * as Remix from "src/server/Remix";
+import * as ServerRequest from "src/server/ServerRequest";
+import * as ServerResponse from "src/server/ServerResponse";
+import { Session } from "src/server/Session";
+import { Intent } from "src/server/internals/oauth";
+import * as OAuth from "src/server/oauth/OAuth";
 
 type RegisterFormFields = S.Schema.Type<typeof RegisterFormFields>;
 const RegisterFormFields = S.Union(
   S.Struct({
-    _tag: S.Literal(Credential.ProviderId.Email),
-    email: Email,
+    _tag: S.Literal(Credential.Tag.EmailPassword),
     password: Password.Strong,
+    email: Email,
     firstName: optionalTextInput(User.FirstName),
     lastName: optionalTextInput(User.LastName),
     optInMarketing: fromCheckboxInput(User.OptInMarketing),
   }),
-  S.Struct({ _tag: S.Literal(Credential.ProviderId.Google) }),
+  S.Struct({ _tag: S.Literal(Credential.Tag.Google) }),
+  S.Struct({ _tag: S.Literal(Credential.Tag.Apple) }),
 );
 
-const match = Match.typeTags<RegisterFormFields>();
+export const action = Remix.unwrapAction(
+  Effect.gen(function* () {
+    const users = yield* Users;
+    const oauth = yield* OAuth.OAuth;
+    const passwords = yield* Passwords;
 
-export const action = Remix.action(
-  Session.guest.pipe(
-    Effect.zipRight(Http.request.formData(RegisterFormFields)),
-    Effect.flatMap(
-      match({
-        Google: () =>
-          Effect.gen(function* () {
-            const cookie = yield* Cookies.AuthState;
-            const [url, state] = yield* Api.generateGoogleAuthUrl("register");
+    const matchForm = Match.typeTags<RegisterFormFields>();
 
-            return yield* Effect.flatMap(Http.response.redirect(url), Http.response.setCookie(cookie, state));
-          }),
-        Email: (registration) =>
-          Credential.EmailPassword.Strong.make(registration.email, registration.password).pipe(
-            Effect.flatMap((credential) => Api.registerWithEmail(credential, registration)),
-            Effect.flatMap(Session.mint),
-            Effect.zipRight(Http.response.redirectToAccount),
-          ),
-      }),
-    ),
-    Effect.catchTags({
-      AlreadyAuthenticated: () => Http.response.redirectToAccount,
-      InvalidFormData: Http.response.badRequest,
-      EmailAlreadyInUse: Http.response.badRequest,
-      GenerateUrlError: () => Http.response.serverError,
-    }),
-  ),
+    return Session.guest.pipe(
+      Effect.mapError(() => ServerResponse.redirect(Routes.dashboard)),
+      Effect.zipRight(ServerRequest.formData(RegisterFormFields)),
+      Effect.flatMap(
+        matchForm({
+          Google: () => oauth.generateUrl("Google", Intent.Register),
+          Apple: () => oauth.generateUrl("Apple", Intent.Register),
+          EmailPassword: (form) =>
+            passwords.hash(form.password).pipe(
+              Effect.map((password) => Credential.Secure.EmailPassword({ email: form.email, password })),
+              Effect.flatMap((credential) => users.register(credential, User.Draft.make(form))),
+              Effect.flatMap((session) => Session.mint(session)),
+              Effect.flatMap(() => ServerResponse.returnTo(Routes.dashboard)),
+            ),
+        }),
+      ),
+      Effect.catchAll(ServerResponse.badRequest),
+    );
+  }),
 );
 
 export default function RegisterPage() {

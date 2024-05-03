@@ -1,55 +1,37 @@
-import { Data, Equal, Equivalence, Match } from "@chuz/prelude";
+import { Data, S } from "@chuz/prelude";
 import { Email } from "./Email";
-import * as EmailPassword from "./EmailPassword";
+import * as Password from "./Password";
 
-export { EmailPassword };
+export type Tag = (typeof Tag)[keyof typeof Tag];
 
-export type Plain = Data.TaggedEnum<{
-  Email: EmailPassword.Plain;
-  Google: { email: Email };
-  Apple: { email: Email };
-}>;
-
-export namespace Plain {
-  export type Email = Data.TaggedEnum.Value<Plain, "Email">;
-  export const { Apple, Email, Google } = Data.taggedEnum<Plain>();
-  export const match = Match.typeTags<Plain>();
-}
-
-export type Secure = Data.TaggedEnum<{
-  Email: EmailPassword.Secure;
-  Google: { email: Email };
-  Apple: { email: Email };
-}>;
-
-export namespace Secure {
-  export type Email = Data.TaggedEnum.Value<Secure, "Email">;
-  export type Google = Data.TaggedEnum.Value<Secure, "Google">;
-  export type Apple = Data.TaggedEnum.Value<Secure, "Apple">;
-
-  export const { Apple, Email, Google } = Data.taggedEnum<Secure>();
-
-  export const match = Match.typeTags<Secure>();
-}
-
-export type ProviderId = Secure["_tag"];
-export const ProviderId = {
-  Email: "Email",
+export const Tag = {
+  EmailPassword: "EmailPassword",
   Google: "Google",
   Apple: "Apple",
 } as const;
 
-export const eqv = Equivalence.strict<ProviderId>();
+export class EmailPasswordPlain extends S.TaggedClass<EmailPasswordPlain>()("EmailPassword", {
+  email: Email,
+  password: Password.Plaintext,
+}) {}
 
-export const is = (
-  id: ProviderId,
-  credential: Secure | Plain,
-): credential is Data.TaggedEnum.Value<Secure | Plain, ProviderId> => Equal.equals(credential._tag, id);
+export class EmailPasswordSecure extends S.TaggedClass<EmailPasswordSecure>()("EmailPassword", {
+  email: Email,
+  password: Password.Hashed,
+}) {}
 
-export const isEmailPassword = (credential: Secure): credential is Secure.Email => is(ProviderId.Email, credential);
+export class Google extends S.TaggedClass<Google>()("Google", {
+  email: Email,
+}) {}
 
-export const isPlainEmailPassword = (credential: Plain): credential is Plain.Email => is(ProviderId.Email, credential);
+export class Apple extends S.TaggedClass<Apple>()("Apple", {
+  email: Email,
+}) {}
 
-export class AlreadyExists extends Data.TaggedError("CredentialAlareadyExists") {}
-export class NotRecognised extends Data.TaggedError("CredentialNotRecognised") {}
-export class NoFallbackAvailable extends Data.TaggedError("NoFallbackCredentialAvailable") {}
+export type Plain = EmailPasswordPlain | Google | Apple;
+
+export type Secure = EmailPasswordSecure | Google | Apple;
+
+export const Plain = Data.taggedEnum<Plain>();
+
+export const Secure = Data.taggedEnum<Secure>();

@@ -1,52 +1,44 @@
 import { Credential, Email, Password, User } from "@chuz/domain";
-import { Clock, Effect, Option, S } from "@chuz/prelude";
+import { ConfigProvider, Effect, Layer, Option, S } from "@chuz/prelude";
 import * as Core from "core/index";
 
-export type TestBench = Core.Capabilities;
+const config = ConfigProvider.fromJson({
+  GOOGLE_CLIENT_ID: "client-id",
+  GOOGLE_CLIENT_SECRET: "client-secret",
+  GOOGLE_REDIRECT_URL: "http://google-redirect-url.com",
+  GOOGLE_GET_USER_URL: "http://google-redirect-url.com",
+  APP_URL: "http://chuz.test",
+});
 
-export namespace TestBench {
-  export const make: Effect.Effect<Core.Capabilities> = Effect.gen(function* () {
-    const clock = Clock.make();
-    const userTokens = yield* Core.ReferenceTokens.create(clock, User.eqId);
-    const passwordResetTokens = yield* Core.ReferenceTokens.create(clock, Password.resetEquals);
+const TestLayer = Layer.mergeAll(Core.Users.Reference, Core.Passwords.layer).pipe(
+  Layer.provide(Layer.setConfigProvider(config)),
+);
 
-    const users = yield* Core.ReferenceUsers.make(userTokens, passwordResetTokens, match);
+export const TestBench = {
+  layer: TestLayer,
+  seed: Effect.gen(function* () {
+    const users = yield* Core.Users;
+    const passwords = yield* Core.Passwords;
 
-    return { users };
-  });
+    const password = yield* passwords.hash(userRegistration.password);
+    const credential = Credential.Secure.EmailPassword({ email: userRegistration.email, password });
 
-  export type Seeded = Core.Capabilities & { seed: { session: User.Session } };
+    const user: User.Draft = {
+      firstName: Option.some(userRegistration.firstName),
+      lastName: Option.some(userRegistration.lastName),
+      optInMarketing: userRegistration.optInMarketing,
+    };
 
-  export namespace Seeded {
-    export const make: Effect.Effect<Seeded> = Effect.gen(function* () {
-      const bench = yield* TestBench.make;
+    const session = yield* users.register(credential, user);
 
-      const password = yield* hash(userRegistration.credentials.password);
-      const credential = Credential.Secure.Email({ email: userRegistration.credentials.email, password });
-
-      const registration: Core.Registration = {
-        credential: credential,
-        firstName: Option.some(userRegistration.firstName),
-        lastName: Option.some(userRegistration.lastName),
-        optInMarketing: userRegistration.optInMarketing,
-      };
-
-      const session = yield* bench.users.register(registration);
-
-      return { seed: { session }, ...bench };
-    }).pipe(Effect.orDie);
-  }
-}
-
-const userRegistration = {
-  firstName: User.FirstName("Toby"),
-  lastName: User.LastName("Lerone"),
-  optInMarketing: User.OptInMarketing(true),
-  credentials: new Credential.EmailPassword.Strong({
-    email: S.decodeSync(Email)("lonestar@an.com"),
-    password: Password.Strong("password"),
+    return { session };
   }),
 };
 
-const match = Core.Passwords.matcher({ N: 2 });
-const hash = Core.Passwords.hasher({ N: 2 });
+const userRegistration = {
+  email: S.decodeSync(Email)("lonestar@an.com"),
+  password: Password.Strong("password"),
+  firstName: User.FirstName("Toby"),
+  lastName: User.LastName("Lerone"),
+  optInMarketing: User.OptInMarketing(true),
+};

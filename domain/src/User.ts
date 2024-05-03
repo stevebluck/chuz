@@ -1,27 +1,7 @@
-import { Data, Equal, Option } from "@chuz/prelude";
-import { S } from "@chuz/prelude";
+import { Data, Equal, Option, Record, S } from "@chuz/prelude";
 import { Email } from "./Email";
-import * as identity from "./Identity";
-import type * as Domain from "./index";
-
-export { identity };
-
-export interface User {
-  email: Email;
-  firstName: Option.Option<FirstName>;
-  lastName: Option.Option<LastName>;
-  optInMarketing: OptInMarketing;
-}
-
-export type Id = Domain.Id<User>;
-export type Session = Domain.Session<User>;
-export type Token = Domain.Token.Token<Id>;
-export type Identified = Domain.Identified<User>;
-
-export type FirstName = S.Schema.Type<typeof FirstName>;
-export type LastName = S.Schema.Type<typeof LastName>;
-export type OptInMarketing = S.Schema.Type<typeof OptInMarketing>;
-export interface Partial extends S.Schema.Type<typeof Partial> {}
+import { Id } from "./Identified";
+import * as Identity from "./Identity";
 
 export const OptInMarketing = S.Boolean.pipe(S.brand("OptInMarketing"));
 
@@ -29,15 +9,36 @@ export const FirstName = S.String100.pipe(S.brand("FirstName"));
 
 export const LastName = S.String100.pipe(S.brand("LastName"));
 
-export const User = S.Struct({
+export class User extends S.Class<User>("User")({
   email: Email,
   firstName: S.Option(FirstName),
   lastName: S.Option(LastName),
   optInMarketing: OptInMarketing,
-});
-
-export const eqId = Equal.equals<Id, Id>;
+}) {}
 
 export const make = Data.case<User>();
 
-export const Partial = User.pipe(S.omit("email"));
+export const eqId = Equal.equivalence<Id<User>>();
+
+export class Partial extends S.Class<Partial>("Partial")({
+  firstName: S.Option(FirstName),
+  lastName: S.Option(LastName),
+  optInMarketing: OptInMarketing,
+}) {}
+
+export class Draft extends S.Class<Draft>("Draft")({
+  firstName: S.Option(FirstName),
+  lastName: S.Option(LastName),
+  optInMarketing: OptInMarketing,
+}) {
+  static make = Data.case<Draft>();
+}
+
+export class Identities extends S.Class<Identities>("Identities")({
+  EmailPassword: S.Option(Identity.EmailPassword),
+  Google: S.Option(Identity.Google),
+  Apple: S.Option(Identity.Apple),
+}) {}
+
+export const hasFallbackIdentity = (identities: Identities): boolean =>
+  Record.values(identities).filter(Option.isSome<Identity.Type>).length > 1;

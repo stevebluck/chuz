@@ -9,6 +9,7 @@
       "dependsOn": []
     },
     "test": {
+      "cache": false,
       "dependsOn": []
     },
     "check": {
