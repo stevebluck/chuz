@@ -9,7 +9,7 @@ import { ResetPasswordForm } from "src/auth/ResetPasswordForm";
 import { useActionData } from "src/hooks/useActionData";
 import * as Remix from "src/server/Remix";
 import * as ServerRequest from "src/server/ServerRequest";
-import * as ServerResponse from "src/server/ServerResponse";
+import { ActionResponse } from "src/server/ServerResponse";
 import { Session } from "src/server/Session";
 
 const FormFields = S.Struct({ password: Password.Strong });
@@ -30,7 +30,12 @@ export const action = Remix.unwrapAction(
         }),
       ),
       Effect.flatMap(({ token, password }) => users.resetPassword(token, password)),
-      Effect.zipRight(ServerResponse.json({})),
+      Effect.map(() => ActionResponse.Redirect(Routes.login)),
+      Effect.catchTags({
+        AlreadyAuthenticated: () => ActionResponse.FailWithRedirect(Routes.dashboard),
+        NoSuchToken: () => ActionResponse.Unauthorized,
+        SearchParamsError: ActionResponse.Unexpected,
+      }),
     );
   }),
 );

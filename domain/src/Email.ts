@@ -10,5 +10,3 @@ export const Email: S.Schema<string & Brand.Brand<"Email">, string> = S.compose(
     S.brand("Email"),
   )
   .annotations({ arbitrary: () => (fc) => fc.emailAddress().map((email) => email as Email) });
-
-export const unsafeMake = S.decodeSync(Email);

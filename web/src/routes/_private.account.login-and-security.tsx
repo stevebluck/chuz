@@ -13,14 +13,15 @@ import { useActiveState } from "src/hooks/useActiveState";
 import { useLoaderData } from "src/hooks/useLoaderData";
 import * as Remix from "src/server/Remix";
 import * as ServerRequest from "src/server/ServerRequest";
-import * as ServerResponse from "src/server/ServerResponse";
+import { ActionResponse, LoaderResponse } from "src/server/ServerResponse";
 import { Session } from "src/server/Session";
 
 export const loader = Remix.loader(
   Session.authenticated.pipe(
     Effect.flatMap((session) => Users.pipe(Effect.flatMap((users) => users.identities(session.user.id)))),
-    Effect.flatMap((identities) => ServerResponse.json(identities)),
-    Effect.catchTags({ Unauthorised: () => ServerResponse.unauthorized }),
+    Effect.flatMap(User.Identities.encode),
+    Effect.map((identities) => LoaderResponse.Succeed(identities)),
+    Effect.catchAll(() => LoaderResponse.Unauthorized),
   ),
 );
 
@@ -55,7 +56,7 @@ export const action = Remix.unwrapAction(
           Effect.flatMap(passwords.hash),
           Effect.map((password) => Credential.Secure.EmailPassword({ email: session.user.value.email, password })),
           Effect.flatMap((credential) => users.linkCredential(session.token, credential)),
-          Effect.flatMap(() => ServerResponse.redirect(Routes.account.loginAndSecurity)),
+          Effect.map(() => ActionResponse.Redirect(Routes.account.loginAndSecurity)),
         );
 
       const UpdatePassword = (form: Data.TaggedEnum.Value<Forms, "UpdatePassword">) =>
@@ -63,13 +64,13 @@ export const action = Remix.unwrapAction(
           Effect.filterOrFail(Equal.equals(form.password2), () => new PasswordsDoNotMatch()),
           Effect.flatMap(passwords.hash),
           Effect.flatMap((password) => users.updatePassword(session.token, form.currentPassword, password)),
-          Effect.zipRight(ServerResponse.redirect(Routes.account.loginAndSecurity)),
+          Effect.map(() => ActionResponse.Redirect(Routes.account.loginAndSecurity)),
         );
 
       return yield* ServerRequest.formData(Forms).pipe(
         Effect.flatMap(match({ SetPassword, UpdatePassword })),
-        Effect.zipRight(ServerResponse.redirect(Routes.account.loginAndSecurity)),
-        Effect.catchAll(ServerResponse.badRequest),
+        Effect.map(() => ActionResponse.Redirect(Routes.account.loginAndSecurity)),
+        Effect.catchAll(ActionResponse.Unexpected),
       );
     });
   }),

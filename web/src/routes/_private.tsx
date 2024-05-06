@@ -1,13 +1,13 @@
 import { Effect } from "@chuz/prelude";
 import { Outlet } from "@remix-run/react";
 import * as Remix from "src/server/Remix";
-import * as ServerResponse from "src/server/ServerResponse";
+import { LoaderResponse } from "src/server/ServerResponse";
 import { Session } from "src/server/Session";
 
 export const loader = Remix.loader(
   Session.authenticated.pipe(
-    Effect.flatMap(() => ServerResponse.json({})),
-    Effect.catchTag("Unauthorised", () => ServerResponse.unauthorized),
+    Effect.map(() => LoaderResponse.Succeed({})),
+    Effect.catchAll(() => LoaderResponse.Unauthorized),
   ),
 );
 

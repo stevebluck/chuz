@@ -5,6 +5,6 @@ export type Token<A> = Phantom<A, string>;
 
 export const make = <A>(value: string): Token<A> => Phantom.make<Phantom<A, string>>()(value);
 
-export const equals = Equal.equivalence<Token<any>>();
+export const equals = <A>(a: Token<A>, b: Token<A>) => Equal.equivalence<Token<A>>()(a, b);
 
 export class TimeToLive extends Data.Class<{ duration: number }> {}

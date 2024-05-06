@@ -8,7 +8,7 @@ import { RequestResetPasswordForm } from "src/auth/RequestResetPasswordForm";
 import { useActionData } from "src/hooks/useActionData";
 import * as Remix from "src/server/Remix";
 import * as ServerRequest from "src/server/ServerRequest";
-import * as ServerResponse from "src/server/ServerResponse";
+import { ActionResponse } from "src/server/ServerResponse";
 import { Session } from "src/server/Session";
 
 type FormFields = S.Schema.Type<typeof FormFields>;
@@ -18,8 +18,8 @@ export const action = Remix.action(
   Session.guest.pipe(
     Effect.zipRight(ServerRequest.formData(FormFields)),
     Effect.flatMap(({ email }) => Users.pipe(Effect.flatMap((users) => users.requestPasswordReset(email)))),
-    Effect.flatMap(ServerResponse.json),
-    Effect.catchAll(ServerResponse.badRequest),
+    Effect.flatMap(() => ActionResponse.ReturnTo(Routes.forgotPassword)),
+    Effect.catchAll(ActionResponse.Unexpected),
   ),
 );
 

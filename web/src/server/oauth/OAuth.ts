@@ -2,7 +2,8 @@ import { Credential, User } from "@chuz/domain";
 import { Context, Effect, Layer, Match } from "@chuz/prelude";
 import * as Http from "@effect/platform/HttpServer";
 import { Cookies } from "../Cookies";
-import * as ServerResponse from "../ServerResponse";
+import { ResponseHeaders } from "../ResponseHeaders";
+import { ActionResponse, Redirect } from "../ServerResponse";
 import * as oauth from "../internals/oauth";
 import { GoogleAuth } from "./GoogleOAuth";
 
@@ -15,13 +16,13 @@ interface UserCredential {
 }
 
 interface OAuthImpl {
-  generateUrl: (
+  redirectToProvider: (
     provider: oauth.Provider,
     intent: oauth.Intent,
   ) => Effect.Effect<
-    Http.response.ServerResponse,
+    Redirect,
     oauth.GenerateUrlFailure | oauth.InvalidState,
-    Http.request.ServerRequest
+    Http.request.ServerRequest | ResponseHeaders
   >;
 
   getCredential: (
@@ -35,21 +36,22 @@ const make = Effect.gen(function* () {
   const authState = yield* Cookies.authState;
 
   return OAuth.of({
-    generateUrl: (provider, intent) => {
+    redirectToProvider: (provider, intent) => {
       return oauth.State.make(provider, intent).pipe(
+        Effect.tap(authState.set),
         Effect.flatMap((state) =>
           Match.value(provider).pipe(
             Match.when("Google", () => oauth.State.toString(state).pipe(Effect.flatMap(google.generateUrl))),
             Match.when("Apple", () => Effect.die("Apple login is not supported yet")),
             Match.exhaustive,
-            Effect.flatMap(ServerResponse.redirect),
-            Effect.flatMap(authState.set(state)),
+            Effect.map(ActionResponse.Redirect),
           ),
         ),
       );
     },
     getCredential: (state, code) => {
-      return authState.read.pipe(
+      return authState.find.pipe(
+        Effect.flatten,
         Effect.mapError(() => new oauth.InvalidState({ error: "auth state cookie is not set" })),
         Effect.flatMap((cookieState) => oauth.State.compare(state, cookieState)),
         Effect.flatMap((state) =>

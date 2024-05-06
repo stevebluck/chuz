@@ -38,7 +38,9 @@ export class Identities extends S.Class<Identities>("Identities")({
   EmailPassword: S.Option(Identity.EmailPassword),
   Google: S.Option(Identity.Google),
   Apple: S.Option(Identity.Apple),
-}) {}
+}) {
+  static encode = S.encode(this);
+}
 
 export const hasFallbackIdentity = (identities: Identities): boolean =>
   Record.values(identities).filter(Option.isSome<Identity.Type>).length > 1;

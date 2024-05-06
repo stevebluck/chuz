@@ -6,7 +6,7 @@ import { AuthContent } from "src/auth/AuthContent";
 import { LoginForm } from "src/auth/LoginForm";
 import * as Remix from "src/server/Remix";
 import * as ServerRequest from "src/server/ServerRequest";
-import * as ServerResponse from "src/server/ServerResponse";
+import { LoaderResponse } from "src/server/ServerResponse";
 import { Session } from "src/server/Session";
 import { Code, Intent, OAuth, StateFromString } from "src/server/oauth/OAuth";
 
@@ -21,18 +21,29 @@ export const loader = Remix.unwrapLoader(
     const users = yield* Users;
 
     return Session.guest.pipe(
-      Effect.mapError(() => ServerResponse.redirect(Routes.login)),
+      Effect.mapError(() => LoaderResponse.Redirect(Routes.login)),
       Effect.zipRight(ServerRequest.searchParams(SearchParams)),
       Effect.flatMap((search) => oauth.getCredential(search.state, search.code)),
       Effect.flatMap(({ credential, user, state }) =>
         Match.value(state.intent).pipe(
           Match.when(Intent.Login, () => users.authenticate(credential)),
-          Match.when(Intent.Register, () => users.register(credential, user)),
+          Match.when(Intent.Register, () =>
+            users
+              .register(credential, user)
+              .pipe(Effect.catchTag("CredentialAlreadyInUse", () => users.authenticate(credential))),
+          ),
           Match.exhaustive,
         ),
       ),
       Effect.flatMap(Session.mint),
-      Effect.zipRight(ServerResponse.returnTo(Routes.dashboard)),
+      Effect.zipRight(LoaderResponse.ReturnTo(Routes.dashboard)),
+      // TODO: should redirect to link/
+      Effect.catchTags({
+        CredentialNotRecognised: LoaderResponse.Unexpected,
+        InvalidCode: LoaderResponse.Unexpected,
+        InvalidState: LoaderResponse.Unexpected,
+        SearchParamsError: () => LoaderResponse.FailWithRedirect(Routes.login),
+      }),
     );
   }),
 );

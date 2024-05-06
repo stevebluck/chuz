@@ -1,12 +1,13 @@
 import { User, Session as DomainSession } from "@chuz/domain";
 import { Data, Effect, Match, Option, Ref } from "@chuz/prelude";
+import { Unauthorized } from "./ServerResponse";
 
 interface Sessions<A> {
   get: Effect.Effect<RequestSession>;
   mint: (session: DomainSession<A>) => Effect.Effect<void>;
   set: (requestSession: RequestSession) => Effect.Effect<void>;
   invalidate: Effect.Effect<void>;
-  authenticated: Effect.Effect<DomainSession<A>, Unauthorised>;
+  authenticated: Effect.Effect<DomainSession<A>, Unauthorized>;
   guest: Effect.Effect<void, AlreadyAuthenticated>;
 }
 
@@ -27,7 +28,7 @@ export class Session extends Effect.Tag("@app/Session")<Session, Sessions<User.U
             Unset: () => Option.none(),
           }),
         ),
-        Effect.mapError(() => new Unauthorised()),
+        Effect.catchAll(() => new Unauthorized()),
       ),
       guest: Effect.suspend(() => Ref.get(ref)).pipe(
         Effect.flatMap(
@@ -57,5 +58,4 @@ export namespace RequestSession {
   export const match = Match.typeTags<RequestSession>();
 }
 
-class Unauthorised extends Data.TaggedError("Unauthorised") {}
 class AlreadyAuthenticated extends Data.TaggedError("AlreadyAuthenticated") {}

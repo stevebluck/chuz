@@ -17,7 +17,7 @@ export const Code = S.String.pipe(S.brand("Auth.Code"));
 
 export class InvalidCode extends Data.TaggedError("InvalidCode")<{ error: unknown }> {}
 
-export class InvalidState extends Data.TaggedError("InvalidState")<{ error: PR.ParseError | string }> {}
+export class InvalidState extends Data.TaggedError("InvalidState")<{ error: string }> {}
 
 export class GenerateUrlFailure extends Data.TaggedError("GenerateUrlFailure")<{ error: unknown }> {}
 
@@ -33,12 +33,15 @@ export class State extends S.Class<State>("State")({
 
   static register = (provider: Provider) => this.make(provider, Intent.Register);
 
-  static toString = (state: State) => toString(state).pipe(Either.mapLeft((error) => new InvalidState({ error })));
+  static toString = (state: State) =>
+    toString(state).pipe(
+      Either.mapLeft(() => new InvalidState({ error: "auth state could not be converted to string" })),
+    );
 
   static compare = (stateString: string, state: State): Either.Either<State, InvalidState> =>
     fromString(stateString).pipe(
-      Either.filterOrLeft(Equal.equals(state), () => "auth states are not equal"),
-      Either.mapLeft((error) => new InvalidState({ error })),
+      Either.mapLeft(() => new InvalidState({ error: "auth state malformed" })),
+      Either.filterOrLeft(Equal.equals(state), () => new InvalidState({ error: "auth states are not equal" })),
     );
 }
 

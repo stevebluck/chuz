@@ -15,6 +15,11 @@ export class EmailPasswordPlain extends S.TaggedClass<EmailPasswordPlain>()("Ema
   password: Password.Plaintext,
 }) {}
 
+export class EmailPasswordStrong extends S.TaggedClass<EmailPasswordStrong>()("EmailPassword", {
+  email: Email,
+  password: Password.Strong,
+}) {}
+
 export class EmailPasswordSecure extends S.TaggedClass<EmailPasswordSecure>()("EmailPassword", {
   email: Email,
   password: Password.Hashed,
