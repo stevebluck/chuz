@@ -1,78 +1,149 @@
-import { Form } from "@remix-run/react";
+import { Credential, User } from "@chuz/domain";
+import { S } from "@chuz/prelude";
 import { LoaderIcon } from "lucide-react";
+import { Email, StrongPassword, fromCheckboxInput, optionalTextInput } from "src/FormSchema";
+import { InputField } from "src/components/InputField";
 import { Checkbox } from "src/components/ui/checkbox";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "src/components/ui/form";
+import { useForm } from "src/hooks/useForm";
 import { Routes } from "web/Routes";
 import { Button } from "web/components/ui/button";
 import { Input } from "web/components/ui/input";
-import { Label } from "web/components/ui/label";
-import { AuthSocialButtons } from "./SocialButtons";
 
-export function RegisterForm({ error }: { error: Record<string, string[]> }) {
-  const isSubmitting = false;
+export type RegisterFormSchemaEncoded = S.Schema.Encoded<typeof RegisterFormSchema>;
+export type RegisterFormSchema = S.Schema.Type<typeof RegisterFormSchema>;
+export const RegisterFormSchema = S.Struct({
+  _tag: S.Literal(Credential.Tag.EmailPassword),
+  password: StrongPassword,
+  email: Email,
+  firstName: optionalTextInput(User.FirstName),
+  lastName: optionalTextInput(User.LastName),
+  optInMarketing: fromCheckboxInput(User.OptInMarketing),
+});
+
+export function RegisterForm() {
+  const form = useForm(RegisterFormSchema, {
+    action: Routes.register,
+    method: "post",
+    preventScrollReset: true,
+    defaultValues: {
+      _tag: Credential.Tag.EmailPassword,
+      email: "",
+      password: "",
+      firstName: "",
+      lastName: "",
+    },
+  });
   return (
-    <div className={"grid gap-6"}>
-      <Form method="POST" action={Routes.register}>
-        <Input name="_tag" type="hidden" value="EmailPassword" />
-        <div className="grid gap-6">
-          <div className="grid gap-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              name="email"
-              placeholder="name@example.com"
-              type="email"
-              autoCapitalize="none"
-              autoComplete="email"
-              autoCorrect="off"
-              disabled={isSubmitting}
+    <Form {...form}>
+      <FormField
+        name="_tag"
+        control={form.control}
+        render={({ field }) => (
+          <FormItem>
+            <FormControl>
+              <Input {...field} type="hidden" readOnly />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <div className="grid gap-6">
+        <InputField
+          name="email"
+          label="Email"
+          type="email"
+          disabled={form.isSubmitting}
+          control={form.control}
+          placeholder="name@example.com"
+          autoCapitalize="none"
+          autoComplete="email"
+          autoCorrect="off"
+        />
+
+        <FormField
+          name="firstName"
+          control={form.control}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>First name</FormLabel>
+              <FormControl>
+                <Input {...field} type="text" disabled={form.isSubmitting} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          name="lastName"
+          control={form.control}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Last name</FormLabel>
+              <FormControl>
+                <Input {...field} type="text" disabled={form.isSubmitting} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          name="password"
+          control={form.control}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Password</FormLabel>
+              <FormControl>
+                <Input type="password" disabled={form.isSubmitting} {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <div className="grid gap-2">
+          <div className="items-top flex space-x-2">
+            <FormField
+              name="optInMarketing"
+              control={form.control}
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex gap-2">
+                    <FormControl>
+                      <Checkbox id="optInMarketing" {...field} value={field.value || "on"} />
+                    </FormControl>
+                    <FormDescription>
+                      <div className="grid gap-1.5 leading-none">
+                        <label
+                          htmlFor="optInMarketing"
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          Opt in to marketing emails
+                        </label>
+                        <p className="text-sm text-muted-foreground">We won't send you any crap.</p>
+                      </div>
+                    </FormDescription>
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            {error?.email}
           </div>
-          <div className="grid gap-2">
-            <Label htmlFor="firstname">First name</Label>
-            <Input id="firstname" type="text" name="firstName" disabled={isSubmitting} />
-            {error?.firstName}
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="lastname">Last name</Label>
-            <Input id="lastname" type="text" name="lastName" disabled={isSubmitting} />
-            {error?.lastName}
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="password">Password</Label>
-            <Input id="password" type="password" name="password" disabled={isSubmitting} />
-            {error?.password}
-          </div>
-          <div className="grid gap-2">
-            <div className="items-top flex space-x-2">
-              <Checkbox id="optInMarketing" name="optInMarketing" />
-              <div className="grid gap-1.5 leading-none">
-                <label
-                  htmlFor="optInMarketing"
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                >
-                  Opt in to marketing emails
-                </label>
-                <p className="text-sm text-muted-foreground">We won't send you any crap.</p>
-                {error?.optInMarketing}
-              </div>
-            </div>
-          </div>
-          <Button disabled={isSubmitting} type="submit">
-            {isSubmitting && <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />}
-            Sign up with Email
-          </Button>
         </div>
-      </Form>
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background text-muted-foreground px-2">Or sign up with</span>
-        </div>
+        <Button disabled={form.isSubmitting} type="submit">
+          {form.isSubmitting && <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />}
+          Sign up with Email
+        </Button>
       </div>
-      <AuthSocialButtons disabled={isSubmitting} action={Routes.register} />
-    </div>
+    </Form>
   );
 }

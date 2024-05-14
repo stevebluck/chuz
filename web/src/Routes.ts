@@ -1,7 +1,13 @@
 import { Brand } from "@chuz/prelude";
 
-export type Route = string & Brand.Brand<"Route">;
+export type Route = Brand.Branded<string, "Route">;
 const Route = Brand.nominal<Route>();
+
+type ChrisRoute = "/login" | "/register";
+
+const a = (route: ChrisRoute) => {};
+
+a("/register");
 
 export const Routes = {
   home: Route("/"),

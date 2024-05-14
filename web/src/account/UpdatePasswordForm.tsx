@@ -1,4 +1,7 @@
-import { Form } from "@remix-run/react";
+import { Password } from "@chuz/domain";
+import { S } from "@chuz/prelude";
+import { useActionData, useFetcher } from "@remix-run/react";
+import { passwordsMatchFilter } from "src/FormSchema";
 import { Routes } from "src/Routes";
 import { Link } from "src/components/Link";
 import { Button, buttonVariants } from "src/components/ui/button";
@@ -6,9 +9,19 @@ import { Input } from "src/components/ui/input";
 import { Label } from "src/components/ui/label";
 import { cn } from "src/styles/classnames";
 
+export const UpdatePasswordFormSchema = S.Struct({
+  _tag: S.Literal("UpdatePassword"),
+  currentPassword: Password.Plaintext,
+  password: Password.Strong,
+  password2: Password.Strong,
+}).pipe(passwordsMatchFilter);
+
 export const UpdatePasswordForm = () => {
+  const { Form, data } = useFetcher();
+  const actionData = useActionData();
   return (
     <Form method="POST">
+      <pre>{JSON.stringify({ data, actionData }, null, 2)}</pre>
       <Input name="_tag" type="hidden" value="UpdatePassword" />
       <div className="grid gap-8">
         <div className="grid gap-2">

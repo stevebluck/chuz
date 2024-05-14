@@ -8,8 +8,8 @@ import { AuthContent } from "src/auth/AuthContent";
 import { ResetPasswordForm } from "src/auth/ResetPasswordForm";
 import { useActionData } from "src/hooks/useActionData";
 import * as Remix from "src/server/Remix";
-import * as ServerRequest from "src/server/ServerRequest";
-import { ActionResponse } from "src/server/ServerResponse";
+import { ServerRequest } from "src/server/ServerRequest";
+import { ServerResponse } from "src/server/ServerResponse";
 import { Session } from "src/server/Session";
 
 const FormFields = S.Struct({ password: Password.Strong });
@@ -30,11 +30,11 @@ export const action = Remix.unwrapAction(
         }),
       ),
       Effect.flatMap(({ token, password }) => users.resetPassword(token, password)),
-      Effect.map(() => ActionResponse.Redirect(Routes.login)),
+      Effect.flatMap(() => ServerResponse.Redirect(Routes.login2)),
       Effect.catchTags({
-        AlreadyAuthenticated: () => ActionResponse.FailWithRedirect(Routes.dashboard),
-        NoSuchToken: () => ActionResponse.Unauthorized,
-        SearchParamsError: ActionResponse.Unexpected,
+        AlreadyAuthenticated: () => ServerResponse.Redirect(Routes.dashboard),
+        NoSuchToken: () => ServerResponse.Unauthorized,
+        SearchParamsError: ServerResponse.Unexpected,
       }),
     );
   }),
@@ -47,7 +47,7 @@ export default function ResetPasswordPage() {
 
   return (
     <AuthContent
-      to={Routes.login}
+      to={Routes.login2}
       toLabel="Login"
       title="Set a new password"
       description="We'll send you an email with a link to reset your password."

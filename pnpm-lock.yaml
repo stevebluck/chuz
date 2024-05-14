@@ -10,7 +10,7 @@ importers:
     devDependencies:
       '@trivago/prettier-plugin-sort-imports':
         specifier: ^4.3.0
-        version: 4.3.0(@vue/compiler-sfc@3.4.26)(prettier@3.2.5)
+        version: 4.3.0(@vue/compiler-sfc@3.4.27)(prettier@3.2.5)
       '@types/node':
         specifier: ^20.12.7
         version: 20.12.7
@@ -25,7 +25,7 @@ importers:
         version: 3.2.5
       prettier-plugin-tailwindcss:
         specifier: ^0.5.14
-        version: 0.5.14(@trivago/prettier-plugin-sort-imports@4.3.0(@vue/compiler-sfc@3.4.26)(prettier@3.2.5))(prettier@3.2.5)
+        version: 0.5.14(@trivago/prettier-plugin-sort-imports@4.3.0(@vue/compiler-sfc@3.4.27)(prettier@3.2.5))(prettier@3.2.5)
       turbo:
         specifier: ^1.13.2
         version: 1.13.2
@@ -70,7 +70,7 @@ importers:
         version: 0.15.0(kysely@0.27.3)(pg@8.11.5)
       vite-tsconfig-paths:
         specifier: ^4.3.2
-        version: 4.3.2(typescript@5.4.5)(vite@5.2.11(@types/node@20.12.8)(terser@5.31.0))
+        version: 4.3.2(typescript@5.4.5)(vite@5.2.11(@types/node@20.12.11)(terser@5.31.0))
 
   domain:
     dependencies:
@@ -85,18 +85,18 @@ importers:
   prelude:
     dependencies:
       '@effect/schema':
-        specifier: ^0.66.14
-        version: 0.66.14(effect@3.1.2)(fast-check@3.18.0)
+        specifier: ^0.66.16
+        version: 0.66.16(effect@3.1.3)(fast-check@3.18.0)
       effect:
-        specifier: ^3.1.2
-        version: 3.1.2
+        specifier: ^3.1.3
+        version: 3.1.3
     devDependencies:
       '@chuz/typescript-config':
         specifier: workspace:*
         version: link:../config/typescript
       '@types/node':
-        specifier: ^20.12.8
-        version: 20.12.8
+        specifier: ^20.12.11
+        version: 20.12.11
       fast-check:
         specifier: ^3.18.0
         version: 3.18.0
@@ -117,13 +117,16 @@ importers:
         version: link:../prelude
       '@effect/experimental':
         specifier: ^0.15.17
-        version: 0.15.17(@effect/platform-node@0.48.3(@effect/platform@0.52.2(@effect/schema@0.66.14(effect@3.1.2)(fast-check@3.18.0))(effect@3.1.2)(ws@8.17.0))(effect@3.1.2))(@effect/platform@0.52.2(@effect/schema@0.66.14(effect@3.1.2)(fast-check@3.18.0))(effect@3.1.2)(ws@8.17.0))(@effect/schema@0.66.14(effect@3.1.2)(fast-check@3.18.0))(effect@3.1.2)(ws@8.17.0)
+        version: 0.15.17(@effect/platform-node@0.48.3(@effect/platform@0.52.2(@effect/schema@0.66.16(effect@3.1.3)(fast-check@3.18.0))(effect@3.1.3)(ws@8.17.0))(effect@3.1.3))(@effect/platform@0.52.2(@effect/schema@0.66.16(effect@3.1.3)(fast-check@3.18.0))(effect@3.1.3)(ws@8.17.0))(@effect/schema@0.66.16(effect@3.1.3)(fast-check@3.18.0))(effect@3.1.3)(ws@8.17.0)
       '@effect/platform':
         specifier: ^0.52.2
-        version: 0.52.2(@effect/schema@0.66.14(effect@3.1.2)(fast-check@3.18.0))(effect@3.1.2)(ws@8.17.0)
+        version: 0.52.2(@effect/schema@0.66.16(effect@3.1.3)(fast-check@3.18.0))(effect@3.1.3)(ws@8.17.0)
       '@effect/platform-node':
         specifier: ^0.48.3
-        version: 0.48.3(@effect/platform@0.52.2(@effect/schema@0.66.14(effect@3.1.2)(fast-check@3.18.0))(effect@3.1.2)(ws@8.17.0))(effect@3.1.2)
+        version: 0.48.3(@effect/platform@0.52.2(@effect/schema@0.66.16(effect@3.1.3)(fast-check@3.18.0))(effect@3.1.3)(ws@8.17.0))(effect@3.1.3)
+      '@hookform/resolvers':
+        specifier: ^3.3.4
+        version: 3.3.4(react-hook-form@7.51.4(react@18.3.1))
       '@radix-ui/react-avatar':
         specifier: ^1.0.4
         version: 1.0.4(@types/react-dom@18.3.0)(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -181,6 +184,9 @@ importers:
       react-dom:
         specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
+      react-hook-form:
+        specifier: ^7.51.4
+        version: 7.51.4(react@18.3.1)
       remix-themes:
         specifier: ^1.3.1
         version: 1.3.1(@remix-run/react@2.9.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.4.5))(@remix-run/server-runtime@2.9.1(typescript@5.4.5))
@@ -193,13 +199,16 @@ importers:
       typescript:
         specifier: '*'
         version: 5.4.5
+      zod:
+        specifier: ^3.23.8
+        version: 3.23.8
     devDependencies:
       '@chuz/typescript-config':
         specifier: workspace:*
         version: link:../config/typescript
       '@remix-run/dev':
         specifier: ^2.9.1
-        version: 2.9.1(@remix-run/react@2.9.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.4.5))(@types/node@20.12.8)(terser@5.31.0)(typescript@5.4.5)(vite@5.2.11(@types/node@20.12.8)(terser@5.31.0))
+        version: 2.9.1(@remix-run/react@2.9.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.4.5))(@types/node@20.12.11)(terser@5.31.0)(typescript@5.4.5)(vite@5.2.11(@types/node@20.12.11)(terser@5.31.0))
       '@types/compression':
         specifier: ^1.7.5
         version: 1.7.5
@@ -235,22 +244,22 @@ importers:
         version: 5.31.0
       vite:
         specifier: ^5.2.11
-        version: 5.2.11(@types/node@20.12.8)(terser@5.31.0)
+        version: 5.2.11(@types/node@20.12.11)(terser@5.31.0)
       vite-env-only:
         specifier: ^2.2.1
         version: 2.2.1
       vite-plugin-babel:
         specifier: ^1.2.0
-        version: 1.2.0(@babel/core@7.24.5)(vite@5.2.11(@types/node@20.12.8)(terser@5.31.0))
+        version: 1.2.0(@babel/core@7.24.5)(vite@5.2.11(@types/node@20.12.11)(terser@5.31.0))
       vite-plugin-cjs-interop:
         specifier: ^2.1.0
         version: 2.1.0
       vite-plugin-entry-shaking:
         specifier: ^0.4.3
-        version: 0.4.3(vite@5.2.11(@types/node@20.12.8)(terser@5.31.0))(vue@3.4.26(typescript@5.4.5))
+        version: 0.4.3(vite@5.2.11(@types/node@20.12.11)(terser@5.31.0))(vue@3.4.27(typescript@5.4.5))
       vite-tsconfig-paths:
         specifier: ^4.3.2
-        version: 4.3.2(typescript@5.4.5)(vite@5.2.11(@types/node@20.12.8)(terser@5.31.0))
+        version: 4.3.2(typescript@5.4.5)(vite@5.2.11(@types/node@20.12.11)(terser@5.31.0))
 
 packages:
 
@@ -497,10 +506,10 @@ packages:
       '@effect/schema': ^0.66.14
       effect: ^3.1.2
 
-  '@effect/schema@0.66.14':
-    resolution: {integrity: sha512-2Yc6gnXpcMmwQnbU2JUwDl0ckeOJmFZzteXn2jjVWuNi9PGv+jp2yK7jxv0pALcieuYwdR5tKkCRI7STuhEwfg==}
+  '@effect/schema@0.66.16':
+    resolution: {integrity: sha512-sT/k5NOgKslGPzs3DUaCFuM6g2JQoIIT8jpwEorAZooplPIMK2xIspr7ECz6pp6Dc7Wz/ppXGk7HVyGZQsIYEQ==}
     peerDependencies:
-      effect: ^3.1.2
+      effect: ^3.1.3
       fast-check: ^3.13.2
 
   '@emotion/hash@0.9.1':
@@ -790,6 +799,11 @@ packages:
 
   '@floating-ui/utils@0.2.2':
     resolution: {integrity: sha512-J4yDIIthosAsRZ5CPYP/jQvUAQtlZTTD/4suA08/FEnlxqW3sKS9iAhgsa9VYLZ6vDHn/ixJgIqRQPotoBjxIw==}
+
+  '@hookform/resolvers@3.3.4':
+    resolution: {integrity: sha512-o5cgpGOuJYrd+iMKvkttOclgwRW86EsWJZZRC23prf0uU2i48Htq4PuT73AVb9ionFyZrwYEITuOFGF+BydEtQ==}
+    peerDependencies:
+      react-hook-form: ^7.0.0
 
   '@isaacs/cliui@8.0.2':
     resolution: {integrity: sha512-O8jcjabXaleOG9DQ0+ARXWZBTfnP4WNAqzuiJK7ll44AmxGKv/J2M4TPjxjY3znBCfvBXFzucm1twdyFybFqEA==}
@@ -1513,11 +1527,11 @@ packages:
   '@types/ms@0.7.34':
     resolution: {integrity: sha512-nG96G3Wp6acyAgJqGasjODb+acrI7KltPiRxzHPXnP3NgI28bpQDRv53olbqGXbfcgF5aiiHmO3xpwEpS5Ld9g==}
 
+  '@types/node@20.12.11':
+    resolution: {integrity: sha512-vDg9PZ/zi+Nqp6boSOT7plNuthRugEKixDv5sFTIpkE89MmNtEArAShI4mxuX2+UrLEe9pxC1vm2cjm9YlWbJw==}
+
   '@types/node@20.12.7':
     resolution: {integrity: sha512-wq0cICSkRLVaf3UGLMGItu/PtdY7oaXaI/RVU+xliKVOtRna3PRY57ZDfztpDL0n11vfymMUnXv8QwYCO7L1wg==}
-
-  '@types/node@20.12.8':
-    resolution: {integrity: sha512-NU0rJLJnshZWdE/097cdCBbyW1h4hEg0xpovcoAQYHl8dnEyp/NAOiE45pvc+Bd1Dt+2r94v2eGFpQJ4R7g+2w==}
 
   '@types/pg@8.11.6':
     resolution: {integrity: sha512-/2WmmBXHLsfRqzfHW7BNZ8SbYzE8OSk7i3WjFYvfgRHj7S1xj+16Je5fUKv3lVdVzk/zn9TXOqf+avFCFIE0yQ==}
@@ -1576,34 +1590,34 @@ packages:
   '@vitest/utils@1.5.0':
     resolution: {integrity: sha512-BDU0GNL8MWkRkSRdNFvCUCAVOeHaUlVJ9Tx0TYBZyXaaOTmGtUFObzchCivIBrIwKzvZA7A9sCejVhXM2aY98A==}
 
-  '@vue/compiler-core@3.4.26':
-    resolution: {integrity: sha512-N9Vil6Hvw7NaiyFUFBPXrAyETIGlQ8KcFMkyk6hW1Cl6NvoqvP+Y8p1Eqvx+UdqsnrnI9+HMUEJegzia3mhXmQ==}
+  '@vue/compiler-core@3.4.27':
+    resolution: {integrity: sha512-E+RyqY24KnyDXsCuQrI+mlcdW3ALND6U7Gqa/+bVwbcpcR3BRRIckFoz7Qyd4TTlnugtwuI7YgjbvsLmxb+yvg==}
 
-  '@vue/compiler-dom@3.4.26':
-    resolution: {integrity: sha512-4CWbR5vR9fMg23YqFOhr6t6WB1Fjt62d6xdFPyj8pxrYub7d+OgZaObMsoxaF9yBUHPMiPFK303v61PwAuGvZA==}
+  '@vue/compiler-dom@3.4.27':
+    resolution: {integrity: sha512-kUTvochG/oVgE1w5ViSr3KUBh9X7CWirebA3bezTbB5ZKBQZwR2Mwj9uoSKRMFcz4gSMzzLXBPD6KpCLb9nvWw==}
 
-  '@vue/compiler-sfc@3.4.26':
-    resolution: {integrity: sha512-It1dp+FAOCgluYSVYlDn5DtZBxk1NCiJJfu2mlQqa/b+k8GL6NG/3/zRbJnHdhV2VhxFghaDq5L4K+1dakW6cw==}
+  '@vue/compiler-sfc@3.4.27':
+    resolution: {integrity: sha512-nDwntUEADssW8e0rrmE0+OrONwmRlegDA1pD6QhVeXxjIytV03yDqTey9SBDiALsvAd5U4ZrEKbMyVXhX6mCGA==}
 
-  '@vue/compiler-ssr@3.4.26':
-    resolution: {integrity: sha512-FNwLfk7LlEPRY/g+nw2VqiDKcnDTVdCfBREekF8X74cPLiWHUX6oldktf/Vx28yh4STNy7t+/yuLoMBBF7YDiQ==}
+  '@vue/compiler-ssr@3.4.27':
+    resolution: {integrity: sha512-CVRzSJIltzMG5FcidsW0jKNQnNRYC8bT21VegyMMtHmhW3UOI7knmUehzswXLrExDLE6lQCZdrhD4ogI7c+vuw==}
 
-  '@vue/reactivity@3.4.26':
-    resolution: {integrity: sha512-E/ynEAu/pw0yotJeLdvZEsp5Olmxt+9/WqzvKff0gE67tw73gmbx6tRkiagE/eH0UCubzSlGRebCbidB1CpqZQ==}
+  '@vue/reactivity@3.4.27':
+    resolution: {integrity: sha512-kK0g4NknW6JX2yySLpsm2jlunZJl2/RJGZ0H9ddHdfBVHcNzxmQ0sS0b09ipmBoQpY8JM2KmUw+a6sO8Zo+zIA==}
 
-  '@vue/runtime-core@3.4.26':
-    resolution: {integrity: sha512-AFJDLpZvhT4ujUgZSIL9pdNcO23qVFh7zWCsNdGQBw8ecLNxOOnPcK9wTTIYCmBJnuPHpukOwo62a2PPivihqw==}
+  '@vue/runtime-core@3.4.27':
+    resolution: {integrity: sha512-7aYA9GEbOOdviqVvcuweTLe5Za4qBZkUY7SvET6vE8kyypxVgaT1ixHLg4urtOlrApdgcdgHoTZCUuTGap/5WA==}
 
-  '@vue/runtime-dom@3.4.26':
-    resolution: {integrity: sha512-UftYA2hUXR2UOZD/Fc3IndZuCOOJgFxJsWOxDkhfVcwLbsfh2CdXE2tG4jWxBZuDAs9J9PzRTUFt1PgydEtItw==}
+  '@vue/runtime-dom@3.4.27':
+    resolution: {integrity: sha512-ScOmP70/3NPM+TW9hvVAz6VWWtZJqkbdf7w6ySsws+EsqtHvkhxaWLecrTorFxsawelM5Ys9FnDEMt6BPBDS0Q==}
 
-  '@vue/server-renderer@3.4.26':
-    resolution: {integrity: sha512-xoGAqSjYDPGAeRWxeoYwqJFD/gw7mpgzOvSxEmjWaFO2rE6qpbD1PC172YRpvKhrihkyHJkNDADFXTfCyVGhKw==}
+  '@vue/server-renderer@3.4.27':
+    resolution: {integrity: sha512-dlAMEuvmeA3rJsOMJ2J1kXU7o7pOxgsNHVr9K8hB3ImIkSuBrIdy0vF66h8gf8Tuinf1TK3mPAz2+2sqyf3KzA==}
     peerDependencies:
-      vue: 3.4.26
+      vue: 3.4.27
 
-  '@vue/shared@3.4.26':
-    resolution: {integrity: sha512-Fg4zwR0GNnjzodMt3KRy2AWGMKQXByl56+4HjN87soxLNU9P5xcJkstAlIeEF3cU6UYOzmJl1tV0dVPGIljCnQ==}
+  '@vue/shared@3.4.27':
+    resolution: {integrity: sha512-DL3NmY2OFlqmYYrzp39yi3LDkKxa5vZVwxWdQ3rG0ekuWscHraeIbnI8t+aZK7qhYqEqWKTUdijadunb9pnrgA==}
 
   '@vueuse/core@10.9.0':
     resolution: {integrity: sha512-/1vjTol8SXnx6xewDEKfS0Ra//ncg4Hb0DaZiwKf7drgfMsKFExQ+FnnENcN6efPen+1kIzhLQoGSy0eDUVOMg==}
@@ -2138,8 +2152,8 @@ packages:
   ee-first@1.1.1:
     resolution: {integrity: sha512-WMwm9LhRUo+WUaRN+vRuETqG89IgZphVSNkdFgeb6sS/E4OrDIN7t48CAewSHXc6C8lefD8KKfr5vY61brQlow==}
 
-  effect@3.1.2:
-    resolution: {integrity: sha512-XakSWck6w6ROqKyEys0tKE9K6Gx2p8W/09u2ZTEZZrneO5Z3QEdPhXzWTyC73kD5zUvfJinZLVIas8I1xoHaTg==}
+  effect@3.1.3:
+    resolution: {integrity: sha512-afL9sbn4m9fCERYMLgUgtJC8+JvHb62zh0Q3v0O56z4aMAEdrrd+DKvLtlTbonQjgdOB37frE9LJuwUO7DV0ww==}
 
   electron-to-chromium@1.4.756:
     resolution: {integrity: sha512-RJKZ9+vEBMeiPAvKNWyZjuYyUqMndcP1f335oHqn3BEQbs2NFtVrnK5+6Xg5wSM9TknNNpWghGDUCKGYF+xWXw==}
@@ -3664,6 +3678,12 @@ packages:
     peerDependencies:
       react: ^18.3.1
 
+  react-hook-form@7.51.4:
+    resolution: {integrity: sha512-V14i8SEkh+V1gs6YtD0hdHYnoL4tp/HX/A45wWQN15CYr9bFRmmRdYStSO5L65lCCZRF+kYiSKhm9alqbcdiVA==}
+    engines: {node: '>=12.22.0'}
+    peerDependencies:
+      react: ^16.8.0 || ^17 || ^18
+
   react-is@18.2.0:
     resolution: {integrity: sha512-xWGDIW6x921xtzPkhiULtthJHoJvBbF3q26fzloPCK0hsvxtPVelvftw3zjbHWSkR2km9Z+4uxbDDK/6Zw9B8w==}
 
@@ -4457,8 +4477,8 @@ packages:
       '@vue/composition-api':
         optional: true
 
-  vue@3.4.26:
-    resolution: {integrity: sha512-bUIq/p+VB+0xrJubaemrfhk1/FiW9iX+pDV+62I/XJ6EkspAO9/DXEjbDFoe8pIfOZBqfk45i9BMc41ptP/uRg==}
+  vue@3.4.27:
+    resolution: {integrity: sha512-8s/56uK6r01r1icG/aEOHqyMVxd1bkYcSe9j8HcKtr/xTOFWvnzIVTehNW+5Yt89f+DLBe4A569pnZLS5HzAMA==}
     peerDependencies:
       typescript: '*'
     peerDependenciesMeta:
@@ -4565,6 +4585,9 @@ packages:
   yocto-queue@1.0.0:
     resolution: {integrity: sha512-9bnSc/HEW2uRy67wc+T8UwauLuPJVn28jb+GtJY16iiKWyvmYJRXVT4UamsAEGQfPohgr2q4Tq0sQbQlxTfi1g==}
     engines: {node: '>=12.20'}
+
+  zod@3.23.8:
+    resolution: {integrity: sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g==}
 
   zwitch@2.0.4:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
@@ -4838,28 +4861,28 @@ snapshots:
       '@babel/helper-validator-identifier': 7.24.5
       to-fast-properties: 2.0.0
 
-  '@effect/experimental@0.15.17(@effect/platform-node@0.48.3(@effect/platform@0.52.2(@effect/schema@0.66.14(effect@3.1.2)(fast-check@3.18.0))(effect@3.1.2)(ws@8.17.0))(effect@3.1.2))(@effect/platform@0.52.2(@effect/schema@0.66.14(effect@3.1.2)(fast-check@3.18.0))(effect@3.1.2)(ws@8.17.0))(@effect/schema@0.66.14(effect@3.1.2)(fast-check@3.18.0))(effect@3.1.2)(ws@8.17.0)':
+  '@effect/experimental@0.15.17(@effect/platform-node@0.48.3(@effect/platform@0.52.2(@effect/schema@0.66.16(effect@3.1.3)(fast-check@3.18.0))(effect@3.1.3)(ws@8.17.0))(effect@3.1.3))(@effect/platform@0.52.2(@effect/schema@0.66.16(effect@3.1.3)(fast-check@3.18.0))(effect@3.1.3)(ws@8.17.0))(@effect/schema@0.66.16(effect@3.1.3)(fast-check@3.18.0))(effect@3.1.3)(ws@8.17.0)':
     dependencies:
-      '@effect/platform': 0.52.2(@effect/schema@0.66.14(effect@3.1.2)(fast-check@3.18.0))(effect@3.1.2)(ws@8.17.0)
-      '@effect/schema': 0.66.14(effect@3.1.2)(fast-check@3.18.0)
-      effect: 3.1.2
+      '@effect/platform': 0.52.2(@effect/schema@0.66.16(effect@3.1.3)(fast-check@3.18.0))(effect@3.1.3)(ws@8.17.0)
+      '@effect/schema': 0.66.16(effect@3.1.3)(fast-check@3.18.0)
+      effect: 3.1.3
       msgpackr: 1.10.1
     optionalDependencies:
-      '@effect/platform-node': 0.48.3(@effect/platform@0.52.2(@effect/schema@0.66.14(effect@3.1.2)(fast-check@3.18.0))(effect@3.1.2)(ws@8.17.0))(effect@3.1.2)
+      '@effect/platform-node': 0.48.3(@effect/platform@0.52.2(@effect/schema@0.66.16(effect@3.1.3)(fast-check@3.18.0))(effect@3.1.3)(ws@8.17.0))(effect@3.1.3)
       ws: 8.17.0
 
-  '@effect/platform-node-shared@0.4.17(@effect/platform@0.52.2(@effect/schema@0.66.14(effect@3.1.2)(fast-check@3.18.0))(effect@3.1.2)(ws@8.17.0))(effect@3.1.2)':
+  '@effect/platform-node-shared@0.4.17(@effect/platform@0.52.2(@effect/schema@0.66.16(effect@3.1.3)(fast-check@3.18.0))(effect@3.1.3)(ws@8.17.0))(effect@3.1.3)':
     dependencies:
-      '@effect/platform': 0.52.2(@effect/schema@0.66.14(effect@3.1.2)(fast-check@3.18.0))(effect@3.1.2)(ws@8.17.0)
+      '@effect/platform': 0.52.2(@effect/schema@0.66.16(effect@3.1.3)(fast-check@3.18.0))(effect@3.1.3)(ws@8.17.0)
       '@parcel/watcher': 2.4.1
-      effect: 3.1.2
+      effect: 3.1.3
       multipasta: 0.2.1
 
-  '@effect/platform-node@0.48.3(@effect/platform@0.52.2(@effect/schema@0.66.14(effect@3.1.2)(fast-check@3.18.0))(effect@3.1.2)(ws@8.17.0))(effect@3.1.2)':
+  '@effect/platform-node@0.48.3(@effect/platform@0.52.2(@effect/schema@0.66.16(effect@3.1.3)(fast-check@3.18.0))(effect@3.1.3)(ws@8.17.0))(effect@3.1.3)':
     dependencies:
-      '@effect/platform': 0.52.2(@effect/schema@0.66.14(effect@3.1.2)(fast-check@3.18.0))(effect@3.1.2)(ws@8.17.0)
-      '@effect/platform-node-shared': 0.4.17(@effect/platform@0.52.2(@effect/schema@0.66.14(effect@3.1.2)(fast-check@3.18.0))(effect@3.1.2)(ws@8.17.0))(effect@3.1.2)
-      effect: 3.1.2
+      '@effect/platform': 0.52.2(@effect/schema@0.66.16(effect@3.1.3)(fast-check@3.18.0))(effect@3.1.3)(ws@8.17.0)
+      '@effect/platform-node-shared': 0.4.17(@effect/platform@0.52.2(@effect/schema@0.66.16(effect@3.1.3)(fast-check@3.18.0))(effect@3.1.3)(ws@8.17.0))(effect@3.1.3)
+      effect: 3.1.3
       mime: 3.0.0
       undici: 6.15.0
       ws: 8.17.0
@@ -4867,10 +4890,10 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@effect/platform@0.52.2(@effect/schema@0.66.14(effect@3.1.2)(fast-check@3.18.0))(effect@3.1.2)(ws@8.17.0)':
+  '@effect/platform@0.52.2(@effect/schema@0.66.16(effect@3.1.3)(fast-check@3.18.0))(effect@3.1.3)(ws@8.17.0)':
     dependencies:
-      '@effect/schema': 0.66.14(effect@3.1.2)(fast-check@3.18.0)
-      effect: 3.1.2
+      '@effect/schema': 0.66.16(effect@3.1.3)(fast-check@3.18.0)
+      effect: 3.1.3
       find-my-way-ts: 0.1.2
       isows: 1.0.4(ws@8.17.0)
       multipasta: 0.2.1
@@ -4878,9 +4901,9 @@ snapshots:
     transitivePeerDependencies:
       - ws
 
-  '@effect/schema@0.66.14(effect@3.1.2)(fast-check@3.18.0)':
+  '@effect/schema@0.66.16(effect@3.1.3)(fast-check@3.18.0)':
     dependencies:
-      effect: 3.1.2
+      effect: 3.1.3
       fast-check: 3.18.0
 
   '@emotion/hash@0.9.1': {}
@@ -5036,6 +5059,10 @@ snapshots:
       react-dom: 18.3.1(react@18.3.1)
 
   '@floating-ui/utils@0.2.2': {}
+
+  '@hookform/resolvers@3.3.4(react-hook-form@7.51.4(react@18.3.1))':
+    dependencies:
+      react-hook-form: 7.51.4(react@18.3.1)
 
   '@isaacs/cliui@8.0.2':
     dependencies:
@@ -5555,7 +5582,7 @@ snapshots:
     dependencies:
       '@babel/runtime': 7.24.5
 
-  '@remix-run/dev@2.9.1(@remix-run/react@2.9.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.4.5))(@types/node@20.12.8)(terser@5.31.0)(typescript@5.4.5)(vite@5.2.11(@types/node@20.12.8)(terser@5.31.0))':
+  '@remix-run/dev@2.9.1(@remix-run/react@2.9.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.4.5))(@types/node@20.12.11)(terser@5.31.0)(typescript@5.4.5)(vite@5.2.11(@types/node@20.12.11)(terser@5.31.0))':
     dependencies:
       '@babel/core': 7.24.5
       '@babel/generator': 7.24.5
@@ -5572,7 +5599,7 @@ snapshots:
       '@remix-run/router': 1.16.0
       '@remix-run/server-runtime': 2.9.1(typescript@5.4.5)
       '@types/mdx': 2.0.13
-      '@vanilla-extract/integration': 6.5.0(@types/node@20.12.8)(terser@5.31.0)
+      '@vanilla-extract/integration': 6.5.0(@types/node@20.12.11)(terser@5.31.0)
       arg: 5.0.2
       cacache: 17.1.4
       chalk: 4.1.2
@@ -5613,7 +5640,7 @@ snapshots:
       ws: 7.5.9
     optionalDependencies:
       typescript: 5.4.5
-      vite: 5.2.11(@types/node@20.12.8)(terser@5.31.0)
+      vite: 5.2.11(@types/node@20.12.11)(terser@5.31.0)
     transitivePeerDependencies:
       - '@types/node'
       - babel-plugin-macros
@@ -5752,7 +5779,7 @@ snapshots:
 
   '@sinclair/typebox@0.27.8': {}
 
-  '@trivago/prettier-plugin-sort-imports@4.3.0(@vue/compiler-sfc@3.4.26)(prettier@3.2.5)':
+  '@trivago/prettier-plugin-sort-imports@4.3.0(@vue/compiler-sfc@3.4.27)(prettier@3.2.5)':
     dependencies:
       '@babel/generator': 7.17.7
       '@babel/parser': 7.24.4
@@ -5762,7 +5789,7 @@ snapshots:
       lodash: 4.17.21
       prettier: 3.2.5
     optionalDependencies:
-      '@vue/compiler-sfc': 3.4.26
+      '@vue/compiler-sfc': 3.4.27
     transitivePeerDependencies:
       - supports-color
 
@@ -5773,7 +5800,7 @@ snapshots:
   '@types/body-parser@1.19.5':
     dependencies:
       '@types/connect': 3.4.38
-      '@types/node': 20.12.8
+      '@types/node': 20.12.11
 
   '@types/compression@1.7.5':
     dependencies:
@@ -5781,7 +5808,7 @@ snapshots:
 
   '@types/connect@3.4.38':
     dependencies:
-      '@types/node': 20.12.8
+      '@types/node': 20.12.11
 
   '@types/cookie@0.6.0': {}
 
@@ -5797,7 +5824,7 @@ snapshots:
 
   '@types/express-serve-static-core@4.19.0':
     dependencies:
-      '@types/node': 20.12.8
+      '@types/node': 20.12.11
       '@types/qs': 6.9.15
       '@types/range-parser': 1.2.7
       '@types/send': 0.17.4
@@ -5825,21 +5852,21 @@ snapshots:
 
   '@types/morgan@1.9.9':
     dependencies:
-      '@types/node': 20.12.8
+      '@types/node': 20.12.11
 
   '@types/ms@0.7.34': {}
+
+  '@types/node@20.12.11':
+    dependencies:
+      undici-types: 5.26.5
 
   '@types/node@20.12.7':
     dependencies:
       undici-types: 5.26.5
 
-  '@types/node@20.12.8':
-    dependencies:
-      undici-types: 5.26.5
-
   '@types/pg@8.11.6':
     dependencies:
-      '@types/node': 20.12.8
+      '@types/node': 20.12.11
       pg-protocol: 1.6.1
       pg-types: 4.0.2
 
@@ -5861,12 +5888,12 @@ snapshots:
   '@types/send@0.17.4':
     dependencies:
       '@types/mime': 1.3.5
-      '@types/node': 20.12.8
+      '@types/node': 20.12.11
 
   '@types/serve-static@1.15.7':
     dependencies:
       '@types/http-errors': 2.0.4
-      '@types/node': 20.12.8
+      '@types/node': 20.12.11
       '@types/send': 0.17.4
 
   '@types/unist@2.0.10': {}
@@ -5896,7 +5923,7 @@ snapshots:
     transitivePeerDependencies:
       - babel-plugin-macros
 
-  '@vanilla-extract/integration@6.5.0(@types/node@20.12.8)(terser@5.31.0)':
+  '@vanilla-extract/integration@6.5.0(@types/node@20.12.11)(terser@5.31.0)':
     dependencies:
       '@babel/core': 7.24.5
       '@babel/plugin-syntax-typescript': 7.24.1(@babel/core@7.24.5)
@@ -5909,8 +5936,8 @@ snapshots:
       lodash: 4.17.21
       mlly: 1.7.0
       outdent: 0.8.0
-      vite: 5.2.11(@types/node@20.12.8)(terser@5.31.0)
-      vite-node: 1.6.0(@types/node@20.12.8)(terser@5.31.0)
+      vite: 5.2.11(@types/node@20.12.11)(terser@5.31.0)
+      vite-node: 1.6.0(@types/node@20.12.11)(terser@5.31.0)
     transitivePeerDependencies:
       - '@types/node'
       - babel-plugin-macros
@@ -5953,74 +5980,74 @@ snapshots:
       loupe: 2.3.7
       pretty-format: 29.7.0
 
-  '@vue/compiler-core@3.4.26':
+  '@vue/compiler-core@3.4.27':
     dependencies:
       '@babel/parser': 7.24.5
-      '@vue/shared': 3.4.26
+      '@vue/shared': 3.4.27
       entities: 4.5.0
       estree-walker: 2.0.2
       source-map-js: 1.2.0
     optional: true
 
-  '@vue/compiler-dom@3.4.26':
+  '@vue/compiler-dom@3.4.27':
     dependencies:
-      '@vue/compiler-core': 3.4.26
-      '@vue/shared': 3.4.26
+      '@vue/compiler-core': 3.4.27
+      '@vue/shared': 3.4.27
     optional: true
 
-  '@vue/compiler-sfc@3.4.26':
+  '@vue/compiler-sfc@3.4.27':
     dependencies:
       '@babel/parser': 7.24.5
-      '@vue/compiler-core': 3.4.26
-      '@vue/compiler-dom': 3.4.26
-      '@vue/compiler-ssr': 3.4.26
-      '@vue/shared': 3.4.26
+      '@vue/compiler-core': 3.4.27
+      '@vue/compiler-dom': 3.4.27
+      '@vue/compiler-ssr': 3.4.27
+      '@vue/shared': 3.4.27
       estree-walker: 2.0.2
       magic-string: 0.30.10
       postcss: 8.4.38
       source-map-js: 1.2.0
     optional: true
 
-  '@vue/compiler-ssr@3.4.26':
+  '@vue/compiler-ssr@3.4.27':
     dependencies:
-      '@vue/compiler-dom': 3.4.26
-      '@vue/shared': 3.4.26
+      '@vue/compiler-dom': 3.4.27
+      '@vue/shared': 3.4.27
     optional: true
 
-  '@vue/reactivity@3.4.26':
+  '@vue/reactivity@3.4.27':
     dependencies:
-      '@vue/shared': 3.4.26
+      '@vue/shared': 3.4.27
     optional: true
 
-  '@vue/runtime-core@3.4.26':
+  '@vue/runtime-core@3.4.27':
     dependencies:
-      '@vue/reactivity': 3.4.26
-      '@vue/shared': 3.4.26
+      '@vue/reactivity': 3.4.27
+      '@vue/shared': 3.4.27
     optional: true
 
-  '@vue/runtime-dom@3.4.26':
+  '@vue/runtime-dom@3.4.27':
     dependencies:
-      '@vue/runtime-core': 3.4.26
-      '@vue/shared': 3.4.26
+      '@vue/runtime-core': 3.4.27
+      '@vue/shared': 3.4.27
       csstype: 3.1.3
     optional: true
 
-  '@vue/server-renderer@3.4.26(vue@3.4.26(typescript@5.4.5))':
+  '@vue/server-renderer@3.4.27(vue@3.4.27(typescript@5.4.5))':
     dependencies:
-      '@vue/compiler-ssr': 3.4.26
-      '@vue/shared': 3.4.26
-      vue: 3.4.26(typescript@5.4.5)
+      '@vue/compiler-ssr': 3.4.27
+      '@vue/shared': 3.4.27
+      vue: 3.4.27(typescript@5.4.5)
     optional: true
 
-  '@vue/shared@3.4.26':
+  '@vue/shared@3.4.27':
     optional: true
 
-  '@vueuse/core@10.9.0(vue@3.4.26(typescript@5.4.5))':
+  '@vueuse/core@10.9.0(vue@3.4.27(typescript@5.4.5))':
     dependencies:
       '@types/web-bluetooth': 0.0.20
       '@vueuse/metadata': 10.9.0
-      '@vueuse/shared': 10.9.0(vue@3.4.26(typescript@5.4.5))
-      vue-demi: 0.14.7(vue@3.4.26(typescript@5.4.5))
+      '@vueuse/shared': 10.9.0(vue@3.4.27(typescript@5.4.5))
+      vue-demi: 0.14.7(vue@3.4.27(typescript@5.4.5))
     transitivePeerDependencies:
       - '@vue/composition-api'
       - vue
@@ -6029,9 +6056,9 @@ snapshots:
   '@vueuse/metadata@10.9.0':
     optional: true
 
-  '@vueuse/shared@10.9.0(vue@3.4.26(typescript@5.4.5))':
+  '@vueuse/shared@10.9.0(vue@3.4.27(typescript@5.4.5))':
     dependencies:
-      vue-demi: 0.14.7(vue@3.4.26(typescript@5.4.5))
+      vue-demi: 0.14.7(vue@3.4.27(typescript@5.4.5))
     transitivePeerDependencies:
       - '@vue/composition-api'
       - vue
@@ -6516,7 +6543,7 @@ snapshots:
 
   ee-first@1.1.1: {}
 
-  effect@3.1.2: {}
+  effect@3.1.3: {}
 
   electron-to-chromium@1.4.756: {}
 
@@ -6649,7 +6676,7 @@ snapshots:
 
   eval@0.1.8:
     dependencies:
-      '@types/node': 20.12.8
+      '@types/node': 20.12.11
       require-like: 0.1.2
 
   event-target-shim@5.0.1: {}
@@ -8173,11 +8200,11 @@ snapshots:
 
   postgres-range@1.1.4: {}
 
-  prettier-plugin-tailwindcss@0.5.14(@trivago/prettier-plugin-sort-imports@4.3.0(@vue/compiler-sfc@3.4.26)(prettier@3.2.5))(prettier@3.2.5):
+  prettier-plugin-tailwindcss@0.5.14(@trivago/prettier-plugin-sort-imports@4.3.0(@vue/compiler-sfc@3.4.27)(prettier@3.2.5))(prettier@3.2.5):
     dependencies:
       prettier: 3.2.5
     optionalDependencies:
-      '@trivago/prettier-plugin-sort-imports': 4.3.0(@vue/compiler-sfc@3.4.26)(prettier@3.2.5)
+      '@trivago/prettier-plugin-sort-imports': 4.3.0(@vue/compiler-sfc@3.4.27)(prettier@3.2.5)
 
   prettier@2.8.8: {}
 
@@ -8256,6 +8283,10 @@ snapshots:
       loose-envify: 1.4.0
       react: 18.3.1
       scheduler: 0.23.2
+
+  react-hook-form@7.51.4(react@18.3.1):
+    dependencies:
+      react: 18.3.1
 
   react-is@18.2.0: {}
 
@@ -9017,13 +9048,13 @@ snapshots:
       - supports-color
       - terser
 
-  vite-node@1.6.0(@types/node@20.12.8)(terser@5.31.0):
+  vite-node@1.6.0(@types/node@20.12.11)(terser@5.31.0):
     dependencies:
       cac: 6.7.14
       debug: 4.3.4
       pathe: 1.1.2
       picocolors: 1.0.0
-      vite: 5.2.11(@types/node@20.12.8)(terser@5.31.0)
+      vite: 5.2.11(@types/node@20.12.11)(terser@5.31.0)
     transitivePeerDependencies:
       - '@types/node'
       - less
@@ -9034,10 +9065,10 @@ snapshots:
       - supports-color
       - terser
 
-  vite-plugin-babel@1.2.0(@babel/core@7.24.5)(vite@5.2.11(@types/node@20.12.8)(terser@5.31.0)):
+  vite-plugin-babel@1.2.0(@babel/core@7.24.5)(vite@5.2.11(@types/node@20.12.11)(terser@5.31.0)):
     dependencies:
       '@babel/core': 7.24.5
-      vite: 5.2.11(@types/node@20.12.8)(terser@5.31.0)
+      vite: 5.2.11(@types/node@20.12.11)(terser@5.31.0)
 
   vite-plugin-cjs-interop@2.1.0:
     dependencies:
@@ -9047,16 +9078,16 @@ snapshots:
       magic-string: 0.30.10
       minimatch: 9.0.4
 
-  vite-plugin-entry-shaking-debugger@1.0.3(vite-plugin-entry-shaking@0.4.3(vite@5.2.11(@types/node@20.12.8)(terser@5.31.0))(vue@3.4.26(typescript@5.4.5)))(vite@5.2.11(@types/node@20.12.8)(terser@5.31.0))(vue@3.4.26(typescript@5.4.5)):
+  vite-plugin-entry-shaking-debugger@1.0.3(vite-plugin-entry-shaking@0.4.3(vite@5.2.11(@types/node@20.12.11)(terser@5.31.0))(vue@3.4.27(typescript@5.4.5)))(vite@5.2.11(@types/node@20.12.11)(terser@5.31.0))(vue@3.4.27(typescript@5.4.5)):
     dependencies:
-      '@vueuse/core': 10.9.0(vue@3.4.26(typescript@5.4.5))
+      '@vueuse/core': 10.9.0(vue@3.4.27(typescript@5.4.5))
       diff-match-patch: 1.0.5
       idb-keyval: 6.2.1
       open: 10.1.0
       sirv: 2.0.4
       unstorage: 1.10.2(idb-keyval@6.2.1)
-      vite: 5.2.11(@types/node@20.12.8)(terser@5.31.0)
-      vite-plugin-entry-shaking: 0.4.3(vite@5.2.11(@types/node@20.12.8)(terser@5.31.0))(vue@3.4.26(typescript@5.4.5))
+      vite: 5.2.11(@types/node@20.12.11)(terser@5.31.0)
+      vite-plugin-entry-shaking: 0.4.3(vite@5.2.11(@types/node@20.12.11)(terser@5.31.0))(vue@3.4.27(typescript@5.4.5))
     transitivePeerDependencies:
       - '@azure/app-configuration'
       - '@azure/cosmos'
@@ -9075,14 +9106,14 @@ snapshots:
       - vue
     optional: true
 
-  vite-plugin-entry-shaking@0.4.3(vite@5.2.11(@types/node@20.12.8)(terser@5.31.0))(vue@3.4.26(typescript@5.4.5)):
+  vite-plugin-entry-shaking@0.4.3(vite@5.2.11(@types/node@20.12.11)(terser@5.31.0))(vue@3.4.27(typescript@5.4.5)):
     dependencies:
       es-module-lexer: 1.5.2
       magic-string: 0.30.10
-      vite: 5.2.11(@types/node@20.12.8)(terser@5.31.0)
+      vite: 5.2.11(@types/node@20.12.11)(terser@5.31.0)
     optionalDependencies:
       fast-glob: 3.3.2
-      vite-plugin-entry-shaking-debugger: 1.0.3(vite-plugin-entry-shaking@0.4.3(vite@5.2.11(@types/node@20.12.8)(terser@5.31.0))(vue@3.4.26(typescript@5.4.5)))(vite@5.2.11(@types/node@20.12.8)(terser@5.31.0))(vue@3.4.26(typescript@5.4.5))
+      vite-plugin-entry-shaking-debugger: 1.0.3(vite-plugin-entry-shaking@0.4.3(vite@5.2.11(@types/node@20.12.11)(terser@5.31.0))(vue@3.4.27(typescript@5.4.5)))(vite@5.2.11(@types/node@20.12.11)(terser@5.31.0))(vue@3.4.27(typescript@5.4.5))
     transitivePeerDependencies:
       - '@azure/app-configuration'
       - '@azure/cosmos'
@@ -9100,16 +9131,26 @@ snapshots:
       - uWebSockets.js
       - vue
 
-  vite-tsconfig-paths@4.3.2(typescript@5.4.5)(vite@5.2.11(@types/node@20.12.8)(terser@5.31.0)):
+  vite-tsconfig-paths@4.3.2(typescript@5.4.5)(vite@5.2.11(@types/node@20.12.11)(terser@5.31.0)):
     dependencies:
       debug: 4.3.4
       globrex: 0.1.2
       tsconfck: 3.0.3(typescript@5.4.5)
     optionalDependencies:
-      vite: 5.2.11(@types/node@20.12.8)(terser@5.31.0)
+      vite: 5.2.11(@types/node@20.12.11)(terser@5.31.0)
     transitivePeerDependencies:
       - supports-color
       - typescript
+
+  vite@5.2.11(@types/node@20.12.11)(terser@5.31.0):
+    dependencies:
+      esbuild: 0.20.2
+      postcss: 8.4.38
+      rollup: 4.17.2
+    optionalDependencies:
+      '@types/node': 20.12.11
+      fsevents: 2.3.3
+      terser: 5.31.0
 
   vite@5.2.11(@types/node@20.12.7)(terser@5.31.0):
     dependencies:
@@ -9118,16 +9159,6 @@ snapshots:
       rollup: 4.17.2
     optionalDependencies:
       '@types/node': 20.12.7
-      fsevents: 2.3.3
-      terser: 5.31.0
-
-  vite@5.2.11(@types/node@20.12.8)(terser@5.31.0):
-    dependencies:
-      esbuild: 0.20.2
-      postcss: 8.4.38
-      rollup: 4.17.2
-    optionalDependencies:
-      '@types/node': 20.12.8
       fsevents: 2.3.3
       terser: 5.31.0
 
@@ -9164,18 +9195,18 @@ snapshots:
       - supports-color
       - terser
 
-  vue-demi@0.14.7(vue@3.4.26(typescript@5.4.5)):
+  vue-demi@0.14.7(vue@3.4.27(typescript@5.4.5)):
     dependencies:
-      vue: 3.4.26(typescript@5.4.5)
+      vue: 3.4.27(typescript@5.4.5)
     optional: true
 
-  vue@3.4.26(typescript@5.4.5):
+  vue@3.4.27(typescript@5.4.5):
     dependencies:
-      '@vue/compiler-dom': 3.4.26
-      '@vue/compiler-sfc': 3.4.26
-      '@vue/runtime-dom': 3.4.26
-      '@vue/server-renderer': 3.4.26(vue@3.4.26(typescript@5.4.5))
-      '@vue/shared': 3.4.26
+      '@vue/compiler-dom': 3.4.27
+      '@vue/compiler-sfc': 3.4.27
+      '@vue/runtime-dom': 3.4.27
+      '@vue/server-renderer': 3.4.27(vue@3.4.27(typescript@5.4.5))
+      '@vue/shared': 3.4.27
     optionalDependencies:
       typescript: 5.4.5
     optional: true
@@ -9257,5 +9288,7 @@ snapshots:
   yocto-queue@0.1.0: {}
 
   yocto-queue@1.0.0: {}
+
+  zod@3.23.8: {}
 
   zwitch@2.0.4: {}

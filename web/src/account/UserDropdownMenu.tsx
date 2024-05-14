@@ -2,7 +2,6 @@ import { Form } from "@remix-run/react";
 import { CircleUser } from "lucide-react";
 import { Routes } from "src/Routes";
 import { Link } from "src/components/Link";
-import { Button } from "src/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,10 +14,10 @@ import {
 export const UserDropdownMenu = () => (
   <DropdownMenu>
     <DropdownMenuTrigger asChild>
-      <Button variant="ghost" size="icon" className="rounded-full">
+      <Link to={Routes.account.home} className="rounded-full">
         <CircleUser className="h-5 w-5" />
         <span className="sr-only">Toggle user menu</span>
-      </Button>
+      </Link>
     </DropdownMenuTrigger>
     <DropdownMenuContent align="end">
       <DropdownMenuLabel>My Account</DropdownMenuLabel>

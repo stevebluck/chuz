@@ -1,13 +1,13 @@
 import { Email } from "@chuz/domain";
-import { Data, S } from "@chuz/prelude";
+import { Data } from "@chuz/prelude";
 
 // TODO: add more context to errors
 
-export class CredentialNotRecognised extends S.TaggedError<CredentialNotRecognised>()("CredentialNotRecognised", {}) {}
+export class CredentialNotRecognised extends Data.TaggedError("CredentialNotRecognised") {}
 
 export class EmailAlreadyInUse extends Data.TaggedError("EmailAlreadyInUse")<{ email: Email }> {}
 
-export class CredentialAlreadyInUse extends S.TaggedError<CredentialAlreadyInUse>()("CredentialAlreadyInUse", {}) {}
+export class CredentialAlreadyInUse extends Data.TaggedError("CredentialAlreadyInUse") {}
 
 export class CredentialTooWeak extends Data.TaggedError("CredentialTooWeak") {}
 

@@ -1,32 +1,31 @@
 import { Passwords, Users } from "@chuz/core";
-import { Credential, Email, Password, User } from "@chuz/domain";
+import { Credential, User } from "@chuz/domain";
 import { Effect, Match, S } from "@chuz/prelude";
-import { useActionData } from "@remix-run/react";
-import { CredentialAlreadyInUse } from "core/users/Errors";
-import { fromCheckboxInput, optionalTextInput } from "src/FormSchema";
 import { Routes } from "src/Routes";
 import { AuthContent } from "src/auth/AuthContent";
-import { RegisterForm } from "src/auth/RegisterForm";
+import { RegisterForm, RegisterFormSchema } from "src/auth/RegisterForm";
+import { AppleForm, GoogleForm } from "src/auth/SocialButtons";
 import * as Remix from "src/server/Remix";
 import * as ServerRequest from "src/server/ServerRequest";
-import { ActionResponse } from "src/server/ServerResponse";
+import { ServerResponse } from "src/server/ServerResponse";
 import { Session } from "src/server/Session";
 import { Intent } from "src/server/internals/oauth";
 import * as OAuth from "src/server/oauth/OAuth";
 
-type RegisterFormFields = S.Schema.Type<typeof RegisterFormFields>;
-const RegisterFormFields = S.Union(
-  S.Struct({
-    _tag: S.Literal(Credential.Tag.EmailPassword),
-    password: Password.Strong,
-    email: Email,
-    firstName: optionalTextInput(User.FirstName),
-    lastName: optionalTextInput(User.LastName),
-    optInMarketing: fromCheckboxInput(User.OptInMarketing),
-  }),
-  S.Struct({ _tag: S.Literal(Credential.Tag.Google) }),
-  S.Struct({ _tag: S.Literal(Credential.Tag.Apple) }),
-);
+export default function RegisterPage() {
+  return (
+    <AuthContent
+      to={Routes.login2}
+      toLabel="Login"
+      title="Create an account"
+      description="Lets get learning!"
+      separatorText="Or register with"
+      socialButtonsAction={Routes.register}
+    >
+      <RegisterForm />
+    </AuthContent>
+  );
+}
 
 export const action = Remix.unwrapAction(
   Effect.gen(function* () {
@@ -34,11 +33,13 @@ export const action = Remix.unwrapAction(
     const oauth = yield* OAuth.OAuth;
     const passwords = yield* Passwords;
 
-    const matchForm = Match.typeTags<RegisterFormFields>();
+    const LoginFormFields = S.Union(AppleForm, GoogleForm, RegisterFormSchema);
+
+    const matchForm = Match.typeTags<S.Schema.Type<typeof LoginFormFields>>();
 
     return Session.guest.pipe(
-      Effect.mapError(() => ActionResponse.Redirect(Routes.dashboard)),
-      Effect.zipRight(ServerRequest.formData(RegisterFormFields)),
+      Effect.orElse(() => ServerResponse.Redirect(Routes.dashboard)),
+      Effect.flatMap(() => ServerRequest.formData(RegisterFormSchema)),
       Effect.flatMap(
         matchForm({
           Google: () => oauth.redirectToProvider("Google", Intent.Register),
@@ -47,27 +48,16 @@ export const action = Remix.unwrapAction(
             passwords.hash(form.password).pipe(
               Effect.map((password) => Credential.Secure.EmailPassword({ email: form.email, password })),
               Effect.flatMap((credential) => users.register(credential, User.Draft.make(form))),
-              Effect.flatMap((session) => Session.mint(session)),
-              Effect.flatMap(() => ActionResponse.ReturnTo(Routes.dashboard)),
+              Effect.tap(Session.mint),
+              Effect.zipRight(ServerResponse.ReturnTo(Routes.dashboard)),
             ),
         }),
       ),
       Effect.catchTags({
-        CredentialAlreadyInUse: ActionResponse.BadRequest(CredentialAlreadyInUse),
-        GenerateUrlFailure: ActionResponse.Unexpected,
-        InvalidState: ActionResponse.Unexpected,
+        GenerateUrlFailure: ServerResponse.Unexpected,
+        InvalidState: ServerResponse.Unexpected,
+        CredentialAlreadyInUse: () => ServerResponse.FormRootError("Those credentials are already in use"),
       }),
     );
   }),
 );
-
-export default function RegisterPage() {
-  const result = useActionData<typeof action>();
-
-  return (
-    <AuthContent to={Routes.login} toLabel="Login" title="Create an account" description="Lets get learning!">
-      <pre>{JSON.stringify(result, null, 2)}</pre>
-      <RegisterForm error={{}} />
-    </AuthContent>
-  );
-}

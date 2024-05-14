@@ -1,10 +1,9 @@
-import { Data, Effect, Record, PR, S, Scope } from "@chuz/prelude";
+import { Data, Effect, Record, PR, S, Scope, Array, Option } from "@chuz/prelude";
+import { ArrayFormatter } from "@chuz/prelude/src/Schema";
 import { FileSystem } from "@effect/platform/FileSystem";
 import * as Http from "@effect/platform/HttpServer";
 import { Path } from "@effect/platform/Path";
-import { ActionResponse, BadRequest, ValidationError } from "./ServerResponse";
-
-export const url = Http.request.ServerRequest.pipe(Effect.map((req) => new URL(req.url)));
+import { FormError, ServerResponse } from "./ServerResponse";
 
 export const searchParams = <A, Out extends Record<string, string | undefined>>(
   schema: S.Schema<A, Out>,
@@ -18,13 +17,23 @@ export const searchParams = <A, Out extends Record<string, string | undefined>>(
 
 export const formData = <A, Out extends Partial<Record<string, string>>>(
   schema: S.Schema<A, Out>,
-): Effect.Effect<A, BadRequest<ValidationError>, Http.request.ServerRequest | FileSystem | Scope.Scope | Path> =>
-  Http.request.schemaBodyForm(schema, { errors: "all" }).pipe(
+): Effect.Effect<A, FormError, Http.request.ServerRequest | FileSystem | Scope.Scope | Path> =>
+  Http.request.schemaBodyForm(schema, { errors: "all", onExcessProperty: "error" }).pipe(
     Effect.catchTags({
-      ParseError: (error) => ActionResponse.ValidationError(error),
+      ParseError: (error) =>
+        ArrayFormatter.formatError(error).pipe(
+          Effect.map(Array.groupBy((a) => a.path.join("."))),
+          Effect.map(Record.map(Array.head)),
+          Effect.map(Record.map(Option.getOrUndefined)),
+          Effect.map((result) => ({ errors: result, values: {} })),
+          Effect.map(ServerResponse.FormError),
+          Effect.flip,
+        ),
       MultipartError: Effect.die,
       RequestError: Effect.die,
     }),
   );
 
 class SearchParamsError extends Data.TaggedError("SearchParamsError")<{ error: PR.ParseError }> {}
+
+export const ServerRequest = { searchParams, formData };

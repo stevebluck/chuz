@@ -1,55 +1,101 @@
-import { Form } from "@remix-run/react";
+import { Credential, Email, Password } from "@chuz/domain";
+import { S } from "@chuz/prelude";
 import { LoaderIcon } from "lucide-react";
+import { Routes } from "src/Routes";
 import { Link } from "src/components/Link";
-import { Routes } from "web/Routes";
-import { Button } from "web/components/ui/button";
-import { Input } from "web/components/ui/input";
-import { Label } from "web/components/ui/label";
-import { AuthSocialButtons } from "./SocialButtons";
+import { Button } from "src/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "src/components/ui/form";
+import { Input } from "src/components/ui/input";
+import { useForm } from "src/hooks/useForm";
+
+export const LoginFormSchema = S.Struct({
+  _tag: S.Literal(Credential.Tag.EmailPassword),
+  email: Email.pipe(S.message(() => "Invalid email address")),
+  password: Password.Plaintext.pipe(S.message(() => "Your password is required")),
+});
 
 export function LoginForm() {
-  const isSubmitting = false;
-  return (
-    <div className={"grid gap-6"}>
-      <Form method="POST" action={Routes.login}>
-        <Input name="_tag" type="hidden" value="EmailPassword" />
+  const form = useForm(LoginFormSchema, {
+    action: Routes.login,
+    method: "post",
+    preventScrollReset: false,
+    defaultValues: {
+      _tag: Credential.Tag.EmailPassword,
+      email: "",
+      password: "",
+    },
+  });
 
-        <div className="grid gap-6">
-          <div className="grid gap-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              name="email"
-              placeholder="name@example.com"
-              type="email"
-              autoCapitalize="none"
-              autoComplete="email"
-              autoCorrect="off"
-              disabled={isSubmitting}
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="password">Password</Label>
-            <Input id="password" type="password" name="password" autoCorrect="off" disabled={isSubmitting} />
-            <Link to={Routes.forgotPassword} className="ml-auto inline-block text-sm underline">
-              Forgot your password?
-            </Link>
-          </div>
-          <Button disabled={isSubmitting} type="submit">
-            {isSubmitting && <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />}
-            Sign in with Email
-          </Button>
-        </div>
-      </Form>
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background text-muted-foreground px-2">Or sign in with</span>
-        </div>
+  return (
+    <Form {...form}>
+      <FormField
+        name="_tag"
+        control={form.control}
+        render={({ field }) => (
+          <FormItem>
+            <FormControl>
+              <Input {...field} type="hidden" readOnly />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <div className="grid gap-6">
+        <FormField
+          name="email"
+          control={form.control}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  type="email"
+                  disabled={form.isSubmitting}
+                  placeholder="name@example.com"
+                  autoCapitalize="none"
+                  autoComplete="email"
+                  autoCorrect="off"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          name="password"
+          control={form.control}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Password</FormLabel>
+              <FormControl>
+                <Input type="password" placeholder="name@example.com" disabled={form.isSubmitting} {...field} />
+              </FormControl>
+              <FormDescription>
+                <Link to={Routes.forgotPassword} className="inline-block text-sm underline hover:text-primary">
+                  Forgot your password?
+                </Link>
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <Button type="submit">
+          {form.isSubmitting && <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />}
+          Sign in with Email
+        </Button>
       </div>
-      <AuthSocialButtons disabled={isSubmitting} action={Routes.login} />
-    </div>
+    </Form>
   );
 }

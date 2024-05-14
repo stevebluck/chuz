@@ -1,3 +1,5 @@
+import { Credential } from "@chuz/domain";
+import { S } from "@chuz/prelude";
 import { Form } from "@remix-run/react";
 import { Route } from "src/Routes";
 import { Button } from "src/components/ui/button";
@@ -9,6 +11,9 @@ interface Props {
   disabled: boolean;
   action: Route;
 }
+
+export const GoogleForm = S.Struct({ _tag: S.Literal(Credential.Tag.Google) });
+export const AppleForm = S.Struct({ _tag: S.Literal(Credential.Tag.Apple) });
 
 export const AuthSocialButtons = ({ disabled, action }: Props) => {
   return (
