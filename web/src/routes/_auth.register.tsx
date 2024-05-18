@@ -33,13 +33,13 @@ export const action = Remix.unwrapAction(
     const oauth = yield* OAuth.OAuth;
     const passwords = yield* Passwords;
 
-    const LoginFormFields = S.Union(AppleForm, GoogleForm, RegisterFormSchema);
+    const Form = S.Union(AppleForm, GoogleForm, RegisterFormSchema);
 
-    const matchForm = Match.typeTags<S.Schema.Type<typeof LoginFormFields>>();
+    const matchForm = Match.typeTags<S.Schema.Type<typeof Form>>();
 
     return Session.guest.pipe(
       Effect.orElse(() => ServerResponse.Redirect(Routes.dashboard)),
-      Effect.flatMap(() => ServerRequest.formData(RegisterFormSchema)),
+      Effect.zipRight(ServerRequest.formData(Form)),
       Effect.flatMap(
         matchForm({
           Google: () => oauth.redirectToProvider("Google", Intent.Register),
