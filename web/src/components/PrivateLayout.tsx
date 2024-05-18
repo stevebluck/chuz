@@ -11,7 +11,7 @@ interface Props {
   children: React.ReactNode;
 }
 
-export const RootLayout = ({ children }: Props) => {
+export const PrivateLayout = ({ children }: Props) => {
   return (
     <div className="flex min-h-screen w-full flex-col">
       <header className="sticky z-10 top-0 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6">
@@ -56,7 +56,9 @@ export const RootLayout = ({ children }: Props) => {
         </div>
       </header>
 
-      {children}
+      <div className="flex flex-1 flex-col p-4 md:p-10">
+        <div className="mx-auto w-full max-w-6xl">{children}</div>
+      </div>
     </div>
   );
 };
