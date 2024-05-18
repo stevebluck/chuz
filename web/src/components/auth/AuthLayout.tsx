@@ -16,7 +16,7 @@ export const AuthLayout = ({ children }: AuthLayoutProps) => (
         </Link>
         <div className="relative z-20 mt-auto">
           <blockquote className="space-y-2">
-            <p className="text-lg">&ldquo;The most effective way to learn anything really fast.&rdquo;</p>
+            <p className="text-lg">&ldquo;Some amazing catchy testimonial should go here.&rdquo;</p>
             <footer className="text-sm">Toby Lerone</footer>
           </blockquote>
         </div>

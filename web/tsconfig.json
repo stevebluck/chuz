@@ -6,8 +6,7 @@
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "paths": {
-      "core/*": ["../core/src/*"],
-      "web/*": ["../web/src/*"]
+      "core/*": ["../core/src/*"]
     }
   }
 }

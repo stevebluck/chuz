@@ -4,5 +4,5 @@ import * as ReferenceUsers from "./ReferenceUsers";
 import { Users as UsersImpl } from "./Users";
 
 export class Users extends Context.Tag("@core/Users")<Users, UsersImpl>() {
-  static Reference = Layer.effect(Users, ReferenceUsers.make).pipe(Layer.provide(Passwords.layer));
+  static reference = Layer.effect(Users, ReferenceUsers.make).pipe(Layer.provide(Passwords.layer));
 }

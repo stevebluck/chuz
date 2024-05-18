@@ -1,6 +1,6 @@
 import { UserCircle } from "lucide-react";
-import { AccountSettingsLayout } from "src/account/AccountSettingsLayout";
 import { TitledSection } from "src/components/TitledSection";
+import { AccountSettingsLayout } from "src/components/account/AccountSettingsLayout";
 import { Button } from "src/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "src/components/ui/card";
 

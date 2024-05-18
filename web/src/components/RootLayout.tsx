@@ -2,10 +2,10 @@ import { Menu, Search } from "lucide-react";
 import { Routes } from "src/Routes";
 import { Link, NavLink, NavLinkRenderProps } from "src/components/Link";
 import { Logo } from "src/components/Logo";
+import { UserDropdownMenu } from "src/components/account/UserDropdownMenu";
 import { Button } from "src/components/ui/button";
 import { Input } from "src/components/ui/input";
 import { Sheet, SheetContent, SheetTrigger } from "src/components/ui/sheet";
-import { UserDropdownMenu } from "../account/UserDropdownMenu";
 
 interface Props {
   children: React.ReactNode;

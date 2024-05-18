@@ -17,9 +17,17 @@ export const Code = S.String.pipe(S.brand("Auth.Code"));
 
 export class InvalidCode extends Data.TaggedError("InvalidCode")<{ error: unknown }> {}
 
-export class InvalidState extends Data.TaggedError("InvalidState")<{ error: string }> {}
+export interface InvalidState {
+  _tag: "InvalidState";
+  error: string;
+}
+export const InvalidState = Data.tagged<InvalidState>("InvalidState");
 
-export class GenerateUrlFailure extends Data.TaggedError("GenerateUrlFailure")<{ error: unknown }> {}
+export interface GenerateUrlFailure {
+  _tag: "GenerateUrlFailure";
+  provider: Provider;
+}
+export const GenerateUrlFailure = Data.tagged<GenerateUrlFailure>("GenerateUrlFailure");
 
 export class State extends S.Class<State>("State")({
   provider: S.Literal(Credential.Tag.Google, Credential.Tag.Apple),
@@ -34,14 +42,12 @@ export class State extends S.Class<State>("State")({
   static register = (provider: Provider) => this.make(provider, Intent.Register);
 
   static toString = (state: State) =>
-    toString(state).pipe(
-      Either.mapLeft(() => new InvalidState({ error: "auth state could not be converted to string" })),
-    );
+    toString(state).pipe(Either.mapLeft(() => InvalidState({ error: "auth state could not be converted to string" })));
 
   static compare = (stateString: string, state: State): Either.Either<State, InvalidState> =>
     fromString(stateString).pipe(
-      Either.mapLeft(() => new InvalidState({ error: "auth state malformed" })),
-      Either.filterOrLeft(Equal.equals(state), () => new InvalidState({ error: "auth states are not equal" })),
+      Either.mapLeft(() => InvalidState({ error: "auth state malformed" })),
+      Either.filterOrLeft(Equal.equals(state), () => InvalidState({ error: "auth states are not equal" })),
     );
 }
 

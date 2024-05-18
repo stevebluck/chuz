@@ -6,7 +6,7 @@ export * as PR from "@effect/schema/ParseResult";
 export * as ArrayFormatter from "@effect/schema/ArrayFormatter";
 
 export const String100: S.Schema<string & Brand.Brand<"String100">, string> = S.Trim.pipe(
-  S.minLength(1),
+  S.minLength(1, { message: (a) => "String must not be empty" }),
   S.maxLength(100),
   S.brand("String100"),
 );
@@ -17,7 +17,6 @@ export const String1000: S.Schema<string & Brand.Brand<"String1000">, string> = 
   S.brand("String1000"),
 );
 
-// TODO Rename BooleanFromString
 export const BooleanFromString: S.Schema<boolean, string | undefined> = S.transform(
   S.UndefinedOr(S.String),
   S.Boolean,

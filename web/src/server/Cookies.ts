@@ -1,6 +1,6 @@
 import { Config, ConfigError, Duration, Effect, Layer, Option, Secret } from "@chuz/prelude";
 import { S } from "@chuz/prelude";
-import * as Http from "@effect/platform/HttpServer";
+import { ServerRequest, schemaHeaders } from "@effect/platform/Http/ServerRequest";
 import { CookieOptions, createCookie as remixCreateCookie } from "@remix-run/node";
 import { ResponseHeaders } from "./ResponseHeaders";
 import { State, StateFromString } from "./internals/oauth";
@@ -42,9 +42,9 @@ const make = Effect.gen(function* () {
 });
 
 interface CookieImpl<T> {
-  find: Effect.Effect<Option.Option<T>, never, Http.request.ServerRequest>;
+  find: Effect.Effect<Option.Option<T>, never, ServerRequest>;
   set: (value: T) => Effect.Effect<Option.Option<string>, never, ResponseHeaders>;
-  remove: Effect.Effect<Option.Option<string>, never, Http.request.ServerRequest | ResponseHeaders>;
+  remove: Effect.Effect<Option.Option<string>, never, ServerRequest | ResponseHeaders>;
 }
 
 type CookieOpts = Omit<CookieOptions, "maxAge" | "secrets"> & {
@@ -64,7 +64,7 @@ const createCookie = <T>(
       secrets: options.secrets.map(Secret.value),
     });
 
-    const find = Http.request.schemaHeaders(S.Struct({ cookie: S.String })).pipe(
+    const find = schemaHeaders(S.Struct({ cookie: S.String })).pipe(
       Effect.andThen((headers) => cookie.parse(headers.cookie)),
       Effect.flatMap(S.decode(schema)),
       Effect.option,

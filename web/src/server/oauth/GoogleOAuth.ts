@@ -48,7 +48,7 @@ export const GoogleAuth = Effect.gen(function* () {
       }),
     ).pipe(
       Effect.map(ProviderUrl),
-      Effect.mapError((error) => new GenerateUrlFailure({ error })),
+      Effect.mapError(() => GenerateUrlFailure({ provider: "Google" })),
     );
   };
 

@@ -3,7 +3,7 @@ import { Context, Effect, Layer, Match } from "@chuz/prelude";
 import * as Http from "@effect/platform/HttpServer";
 import { Cookies } from "../Cookies";
 import { ResponseHeaders } from "../ResponseHeaders";
-import { ActionResponse, Redirect } from "../ServerResponse";
+import { Redirect, ServerResponse } from "../ServerResponse";
 import * as oauth from "../internals/oauth";
 import { GoogleAuth } from "./GoogleOAuth";
 
@@ -20,15 +20,19 @@ interface OAuthImpl {
     provider: oauth.Provider,
     intent: oauth.Intent,
   ) => Effect.Effect<
-    Redirect,
-    oauth.GenerateUrlFailure | oauth.InvalidState,
+    never,
+    Redirect | oauth.GenerateUrlFailure | oauth.InvalidState,
     Http.request.ServerRequest | ResponseHeaders
   >;
 
   getCredential: (
     state: string,
     code: oauth.Code,
-  ) => Effect.Effect<UserCredential, oauth.InvalidCode | oauth.InvalidState, Http.request.ServerRequest>;
+  ) => Effect.Effect<
+    UserCredential,
+    oauth.InvalidCode | oauth.InvalidState,
+    Http.request.ServerRequest | ResponseHeaders
+  >;
 }
 
 const make = Effect.gen(function* () {
@@ -44,7 +48,7 @@ const make = Effect.gen(function* () {
             Match.when("Google", () => oauth.State.toString(state).pipe(Effect.flatMap(google.generateUrl))),
             Match.when("Apple", () => Effect.die("Apple login is not supported yet")),
             Match.exhaustive,
-            Effect.map(ActionResponse.Redirect),
+            Effect.flatMap(ServerResponse.Redirect),
           ),
         ),
       );
@@ -52,7 +56,7 @@ const make = Effect.gen(function* () {
     getCredential: (state, code) => {
       return authState.find.pipe(
         Effect.flatten,
-        Effect.mapError(() => new oauth.InvalidState({ error: "auth state cookie is not set" })),
+        Effect.mapError(() => oauth.InvalidState({ error: "auth state cookie is not set" })),
         Effect.flatMap((cookieState) => oauth.State.compare(state, cookieState)),
         Effect.flatMap((state) =>
           Match.value(state.provider).pipe(
@@ -62,6 +66,8 @@ const make = Effect.gen(function* () {
             Effect.map(([credential, user]) => ({ credential, state, user })),
           ),
         ),
+        Effect.tap(() => authState.remove),
+        Effect.tapError(() => authState.remove),
       );
     },
   });

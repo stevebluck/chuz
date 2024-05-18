@@ -17,8 +17,6 @@ export const Strong = S.String.pipe(
   S.message(() => "Your password needs to be a bit stronger!"),
 );
 
-export const strongEquals = Equal.equals<Strong>;
-
 export const Hashed = S.NonEmpty.pipe(S.brand("HashedPassword"));
 
 export const resetEquals = Equivalence.make<Reset<Id<any>>>(

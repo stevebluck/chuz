@@ -1,5 +1,5 @@
 import { BellIcon } from "lucide-react";
-import { AccountSettingsLayout } from "src/account/AccountSettingsLayout";
+import { AccountSettingsLayout } from "src/components/account/AccountSettingsLayout";
 import { Card, CardDescription, CardHeader, CardTitle } from "src/components/ui/card";
 
 export default function PersonalInfo() {

@@ -35,9 +35,9 @@ export class Draft extends S.Class<Draft>("Draft")({
 }
 
 export class Identities extends S.Class<Identities>("Identities")({
-  EmailPassword: S.Option(Identity.EmailPassword),
-  Google: S.Option(Identity.Google),
-  Apple: S.Option(Identity.Apple),
+  EmailPassword: S.OptionFromNullOr(Identity.EmailPassword),
+  Google: S.OptionFromNullOr(Identity.Google),
+  Apple: S.OptionFromNullOr(Identity.Apple),
 }) {
   static encode = S.encode(this);
 }

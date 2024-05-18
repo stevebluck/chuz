@@ -1,5 +1,5 @@
-import { AccountBreadcrumb } from "src/account/AccountBreadcrumb";
 import { BreadcrumbItem, BreadcrumbPage } from "src/components/ui/breadcrumb";
+import { AccountBreadcrumb } from "./AccountBreadcrumb";
 
 type Props = {
   title: string;

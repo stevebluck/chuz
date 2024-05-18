@@ -10,7 +10,7 @@ const config = ConfigProvider.fromJson({
   APP_URL: "http://chuz.test",
 });
 
-const TestLayer = Layer.mergeAll(Core.Users.Reference, Core.Passwords.layer).pipe(
+const TestLayer = Layer.mergeAll(Core.Users.reference, Core.Passwords.layer).pipe(
   Layer.provide(Layer.setConfigProvider(config)),
 );
 
