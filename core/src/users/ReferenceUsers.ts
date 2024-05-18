@@ -1,8 +1,8 @@
 import { Credential, Email, Id, Identified, Identity, Password, Session, Token, User } from "@chuz/domain";
 import { Array, Clock, ConfigError, Duration, Effect, Either, HashMap, Option, Ref } from "@chuz/prelude";
-import { AutoIncrement } from "core/persistence/AutoIncrement";
 import { NoSuchToken } from "../Errors";
 import { Passwords } from "../auth/Passwords";
+import { AutoIncrement } from "../persistence/AutoIncrement";
 import { ReferenceTokens } from "../tokens/ReferenceTokens";
 import * as Errors from "./Errors";
 import { Users } from "./Users";

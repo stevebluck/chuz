@@ -1,9 +1,4 @@
 {
   "extends": "@chuz/typescript-config/core.json",
-  "include": ["src/**/*", "test/**/*"],
-  "compilerOptions": {
-    "paths": {
-      "core/*": ["../core/src/*"]
-    }
-  }
+  "include": ["src/**/*", "test/**/*"]
 }

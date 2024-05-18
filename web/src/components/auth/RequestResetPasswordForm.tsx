@@ -1,9 +1,9 @@
-import { S } from "@chuz/prelude";
 import { LoaderIcon } from "lucide-react";
 import { Email } from "src/FormSchema";
 import { Routes } from "src/Routes";
 import { Button } from "src/components/ui/button";
 import { useForm } from "src/hooks/useForm";
+import { S } from "@chuz/prelude";
 import { InputField } from "../InputField";
 import { Form } from "../ui/form";
 

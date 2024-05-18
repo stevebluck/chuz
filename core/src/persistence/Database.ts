@@ -1,7 +1,7 @@
-import { Effect, Option } from "@chuz/prelude";
 import { Kysely, PostgresDialect, SelectQueryBuilder } from "kysely";
 import { DB } from "kysely-codegen";
 import { Pool } from "pg";
+import { Effect, Option } from "@chuz/prelude";
 
 export type { DB } from "kysely-codegen";
 

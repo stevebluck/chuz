@@ -1,10 +1,10 @@
-import { S } from "@chuz/prelude";
 import { Form } from "@remix-run/react";
 import { LoaderIcon } from "lucide-react";
 import { StrongPassword } from "src/FormSchema";
 import { Routes } from "src/Routes";
 import { Button } from "src/components/ui/button";
 import { useForm } from "src/hooks/useForm";
+import { S } from "@chuz/prelude";
 import { InputField } from "../InputField";
 
 interface Props {

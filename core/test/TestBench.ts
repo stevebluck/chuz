@@ -1,6 +1,6 @@
 import { Credential, Email, Password, User } from "@chuz/domain";
 import { ConfigProvider, Effect, Layer, Option, S } from "@chuz/prelude";
-import * as Core from "core/index";
+import * as Core from "../src/index";
 
 const config = ConfigProvider.fromJson({
   GOOGLE_CLIENT_ID: "client-id",

@@ -1,6 +1,6 @@
+import { describe, expect, test } from "vitest";
 import { Password } from "@chuz/domain";
 import { Effect, Either } from "@chuz/prelude";
-import { describe, expect, test } from "vitest";
 import { Passwords, PasswordsDoNotMatch } from "../../src";
 import { Arbs } from "../Arbs";
 import { asyncProperty } from "../Property";

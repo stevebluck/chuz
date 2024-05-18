@@ -4,9 +4,6 @@
   "compilerOptions": {
     "baseUrl": "./",
     "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "paths": {
-      "core/*": ["../core/src/*"]
-    }
+    "moduleResolution": "Bundler"
   }
 }

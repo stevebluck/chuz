@@ -1,10 +1,10 @@
+import { afterAll, describe, expect } from "vitest";
 import { Credential, Email, Identity, Password, User } from "@chuz/domain";
 import { Effect, Option, fc } from "@chuz/prelude";
 import { S } from "@chuz/prelude";
-import { NoSuchToken } from "core/Errors";
-import { Passwords, Users } from "core/index";
-import * as Errors from "core/users/Errors";
-import { afterAll, describe, expect } from "vitest";
+import { NoSuchToken } from "../../src/Errors";
+import { Passwords, Users } from "../../src/index";
+import * as Errors from "../../src/users/Errors";
 import { Arbs, EmailPasswordRegistration } from "../Arbs";
 import { asyncProperty } from "../Property";
 import { SpecConfig, defaultSpecConfig } from "../SpecConfig";

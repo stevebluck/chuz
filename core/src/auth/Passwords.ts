@@ -1,6 +1,6 @@
+import { scryptSync, randomBytes, timingSafeEqual } from "crypto";
 import { Password } from "@chuz/domain";
 import { Config, Context, Data, Effect, Layer } from "@chuz/prelude";
-import { scryptSync, randomBytes, timingSafeEqual } from "crypto";
 
 const SaltRounds = Config.number("SALT_ROUNDS").pipe(Config.withDefault(4));
 

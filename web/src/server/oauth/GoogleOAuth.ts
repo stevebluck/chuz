@@ -1,7 +1,7 @@
+import { google } from "googleapis";
 import { Email, User, Credential } from "@chuz/domain";
 import { Config, Effect, Secret, Tuple } from "@chuz/prelude";
 import { S } from "@chuz/prelude";
-import { google } from "googleapis";
 import { Code, GenerateUrlFailure, InvalidCode, ProviderUrl } from "../internals/oauth";
 
 const GoogleConfig = Config.all({

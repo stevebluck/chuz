@@ -1,5 +1,3 @@
-import { Password } from "@chuz/domain";
-import { S } from "@chuz/prelude";
 import { passwordsMatchFilter } from "src/FormSchema";
 import { Routes } from "src/Routes";
 import { HiddenField } from "src/components/HiddenField";
@@ -9,6 +7,8 @@ import { Button, buttonVariants } from "src/components/ui/button";
 import { Form } from "src/components/ui/form";
 import { useForm } from "src/hooks/useForm";
 import { cn } from "src/styles/classnames";
+import { Password } from "@chuz/domain";
+import { S } from "@chuz/prelude";
 
 export const UpdatePasswordFormSchema = S.Struct({
   _tag: S.Literal("UpdatePassword"),

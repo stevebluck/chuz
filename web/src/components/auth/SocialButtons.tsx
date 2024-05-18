@@ -1,11 +1,11 @@
-import { Credential } from "@chuz/domain";
-import { S } from "@chuz/prelude";
 import { Form } from "@remix-run/react";
 import { Route } from "src/Routes";
 import { Button } from "src/components/ui/button";
 import { AppleIcon } from "src/components/ui/icons/AppleIcon";
 import { GoogleIcon } from "src/components/ui/icons/GoogleIcon";
 import { Input } from "src/components/ui/input";
+import { Credential } from "@chuz/domain";
+import { S } from "@chuz/prelude";
 
 interface Props {
   disabled: boolean;

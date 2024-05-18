@@ -1,5 +1,5 @@
-import { Effect, fc } from "@chuz/prelude";
 import { test } from "vitest";
+import { Effect, fc } from "@chuz/prelude";
 
 type Config = {
   beforeEach?: () => void;

@@ -1,6 +1,3 @@
-import { Passwords, Users } from "@chuz/core";
-import { Credential, User } from "@chuz/domain";
-import { Effect, Match, S } from "@chuz/prelude";
 import { Routes } from "src/Routes";
 import { AuthContent } from "src/components/auth/AuthContent";
 import { RegisterForm, RegisterFormSchema } from "src/components/auth/RegisterForm";
@@ -11,6 +8,9 @@ import { ServerResponse } from "src/server/ServerResponse";
 import { Session } from "src/server/Session";
 import { Intent } from "src/server/internals/oauth";
 import * as OAuth from "src/server/oauth/OAuth";
+import { Passwords, Users } from "@chuz/core";
+import { Credential, User } from "@chuz/domain";
+import { Effect, Match, S } from "@chuz/prelude";
 
 export default function RegisterPage() {
   return (

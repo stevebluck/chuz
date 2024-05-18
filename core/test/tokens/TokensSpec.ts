@@ -1,6 +1,6 @@
+import { afterAll, expect } from "vitest";
 import { Token } from "@chuz/domain";
 import { Clock, Duration, Effect, Number, fc } from "@chuz/prelude";
-import { afterAll, expect } from "vitest";
 import { NoSuchToken } from "../../src/Errors";
 import { ReferenceTokens } from "../../src/tokens/ReferenceTokens";
 import { asyncProperty } from "../Property";

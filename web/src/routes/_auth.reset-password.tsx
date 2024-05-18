@@ -1,7 +1,3 @@
-import { Passwords, Users } from "@chuz/core";
-import { Id, Password, Token, User } from "@chuz/domain";
-import { Effect } from "@chuz/prelude";
-import { S } from "@chuz/prelude";
 import { useSearchParams } from "@remix-run/react";
 import { Routes } from "src/Routes";
 import { AuthContent } from "src/components/auth/AuthContent";
@@ -10,6 +6,10 @@ import { Remix } from "src/server/Remix";
 import { ServerRequest } from "src/server/ServerRequest";
 import { ServerResponse } from "src/server/ServerResponse";
 import { Session } from "src/server/Session";
+import { Passwords, Users } from "@chuz/core";
+import { Id, Password, Token, User } from "@chuz/domain";
+import { Effect } from "@chuz/prelude";
+import { S } from "@chuz/prelude";
 
 const SearchParams = S.Struct({ token: S.NonEmpty });
 

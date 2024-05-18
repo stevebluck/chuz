@@ -1,7 +1,3 @@
-import { Users } from "@chuz/core";
-import { Email } from "@chuz/domain";
-import { Effect } from "@chuz/prelude";
-import { S } from "@chuz/prelude";
 import { Routes } from "src/Routes";
 import { AuthContent } from "src/components/auth/AuthContent";
 import { RequestResetPasswordForm } from "src/components/auth/RequestResetPasswordForm";
@@ -9,6 +5,10 @@ import { Remix } from "src/server/Remix";
 import { ServerRequest } from "src/server/ServerRequest";
 import { ServerResponse } from "src/server/ServerResponse";
 import { Session } from "src/server/Session";
+import { Users } from "@chuz/core";
+import { Email } from "@chuz/domain";
+import { Effect } from "@chuz/prelude";
+import { S } from "@chuz/prelude";
 
 type FormFields = S.Schema.Type<typeof FormFields>;
 const FormFields = S.Struct({ email: Email });

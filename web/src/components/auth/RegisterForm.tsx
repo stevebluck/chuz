@@ -1,5 +1,3 @@
-import { User } from "@chuz/domain";
-import { S } from "@chuz/prelude";
 import { LoaderIcon } from "lucide-react";
 import { Email, StrongPassword, fromCheckboxInput, optionalTextInput } from "src/FormSchema";
 import { Routes } from "src/Routes";
@@ -9,6 +7,8 @@ import { InputField } from "src/components/InputField";
 import { Button } from "src/components/ui/button";
 import { Form } from "src/components/ui/form";
 import { useForm } from "src/hooks/useForm";
+import { User } from "@chuz/domain";
+import { S } from "@chuz/prelude";
 
 export const RegisterFormSchema = S.Struct({
   _tag: S.Literal("RegisterForm"),

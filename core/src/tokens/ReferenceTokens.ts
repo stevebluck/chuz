@@ -1,7 +1,7 @@
+import { addMilliseconds, isAfter } from "date-fns";
 import { Token } from "@chuz/domain";
 import { HashMap, Array, Timestamp, makeUuid } from "@chuz/prelude";
 import { Clock, Effect, Equivalence, Option, Ref } from "@chuz/prelude";
-import { addMilliseconds, isAfter } from "date-fns";
 import { NoSuchToken } from "../Errors";
 import { Tokens } from "./Tokens";
 

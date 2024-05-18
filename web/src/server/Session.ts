@@ -1,6 +1,6 @@
+import { Users } from "@chuz/core";
 import { User, Session as DomainSession, Token, Id } from "@chuz/domain";
 import { Data, Effect, Layer, Match, Ref } from "@chuz/prelude";
-import { Users } from "core/index";
 import { Cookies } from "./Cookies";
 import { ServerResponse, Unauthorized } from "./ServerResponse";
 

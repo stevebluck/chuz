@@ -1,6 +1,6 @@
-import { Effect, Option } from "@chuz/prelude";
 import { LinksFunction } from "@remix-run/node";
 import { Links, Meta, Outlet, Scripts, ScrollRestoration } from "@remix-run/react";
+import { Effect, Option } from "@chuz/prelude";
 import { Toaster } from "./components/ui/sonner";
 import { Remix } from "./server/Remix";
 import { ServerResponse } from "./server/ServerResponse";

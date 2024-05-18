@@ -1,8 +1,8 @@
-import { Data, Effect, Record, PR, S, Scope, Array, Option } from "@chuz/prelude";
-import { ArrayFormatter } from "@chuz/prelude/src/Schema";
 import { FileSystem } from "@effect/platform/FileSystem";
 import * as Http from "@effect/platform/HttpServer";
 import { Path } from "@effect/platform/Path";
+import { Data, Effect, Record, PR, S, Scope, Array, Option } from "@chuz/prelude";
+import { ArrayFormatter } from "@chuz/prelude/src/Schema";
 import { FormError, ServerResponse } from "./ServerResponse";
 
 export const searchParams = <A, Out extends Record<string, string | undefined>>(

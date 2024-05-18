@@ -9,8 +9,6 @@ export class EmailAlreadyInUse extends Data.TaggedError("EmailAlreadyInUse")<{ e
 
 export class CredentialAlreadyInUse extends Data.TaggedError("CredentialAlreadyInUse") {}
 
-export class CredentialTooWeak extends Data.TaggedError("CredentialTooWeak") {}
-
 export class NoFallbackCredential extends Data.TaggedError("NoFallbackCredential") {}
 
 export class UserNotFound extends Data.TaggedError("UserNotFound") {}
