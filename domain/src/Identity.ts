@@ -23,7 +23,7 @@ export class Apple extends S.TaggedClass<Apple>()("Apple", {
   static fromCredential = (credential: Credential.Apple): Apple => this.make(credential.email);
 }
 
-export type Type = EmailPassword | Google | Apple;
+export type Type = typeof Type.Type;
 export const Type = S.Union(EmailPassword, Google, Apple);
 
 export const { $match: match, $is: is } = Data.taggedEnum<Type>();

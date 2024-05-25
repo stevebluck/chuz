@@ -24,10 +24,10 @@ export namespace PasswordSpec {
             const passwords = yield* Passwords;
             const hashed = yield* passwords.hash(password);
 
-            yield* passwords.validate(Password.Plaintext(password), hashed);
+            yield* passwords.validate(Password.Plaintext.make(password), hashed);
 
             const doesNotMatch = yield* Effect.flip(
-              passwords.validate(Password.Plaintext(`mutate-${password}`), hashed),
+              passwords.validate(Password.Plaintext.make(`mutate-${password}`), hashed),
             );
 
             expect(doesNotMatch).toStrictEqual(new PasswordsDoNotMatch());
@@ -35,13 +35,13 @@ export namespace PasswordSpec {
       );
 
       test("Strong passwords must have a minimum length of 8 characters", () => {
-        expect(Either.isLeft(Either.try(() => Password.Strong("1234567")))).toBe(true);
-        expect(Either.isRight(Either.try(() => Password.Strong("12345678")))).toBe(true);
+        expect(Either.isLeft(Either.try(() => Password.Strong.make("1234567")))).toBe(true);
+        expect(Either.isRight(Either.try(() => Password.Strong.make("12345678")))).toBe(true);
       });
 
       test("Strong passwords must have a maximum length of 64 characters", () => {
-        expect(Either.isLeft(Either.try(() => Password.Strong(Array(65).fill("a").join(""))))).toBe(true);
-        expect(Either.isRight(Either.try(() => Password.Strong(Array(64).fill("a").join(""))))).toBe(true);
+        expect(Either.isLeft(Either.try(() => Password.Strong.make(Array(65).fill("a").join(""))))).toBe(true);
+        expect(Either.isRight(Either.try(() => Password.Strong.make(Array(64).fill("a").join(""))))).toBe(true);
       });
     });
   };

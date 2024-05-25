@@ -1,6 +1,6 @@
 import { google } from "googleapis";
 import { Email, User, Credential } from "@chuz/domain";
-import { Config, Effect, Secret, Tuple } from "@chuz/prelude";
+import { Config, Effect, Option, Secret } from "@chuz/prelude";
 import { S } from "@chuz/prelude";
 import { Code, GenerateUrlFailure, InvalidCode, ProviderUrl } from "../internals/oauth";
 
@@ -11,11 +11,18 @@ const GoogleConfig = Config.all({
   redirectUrl: Config.string("GOOGLE_REDIRECT_URL"),
 });
 
+interface UserDraft {
+  credential: Credential.Google;
+  firstName: Option.Option<User.FirstName>;
+  lastName: Option.Option<User.LastName>;
+  optInMarketing: User.OptInMarketing;
+}
+
 export const GoogleAuth = Effect.gen(function* () {
   const config = yield* GoogleConfig;
   const client = new google.auth.OAuth2(config.clientId, Secret.value(config.clientSecret));
 
-  const getCredential = (code: Code): Effect.Effect<[Credential.Google, User.Draft], InvalidCode> => {
+  const getCredential = (code: Code): Effect.Effect<UserDraft, InvalidCode> => {
     return Effect.tryPromise(() =>
       client
         .getToken({ code, redirect_uri: config.redirectUrl })
@@ -23,16 +30,12 @@ export const GoogleAuth = Effect.gen(function* () {
         .then((res) => res.json() as Promise<unknown>),
     ).pipe(
       Effect.flatMap(GoogleUser.fromUnknown),
-      Effect.map((user) =>
-        Tuple.make(
-          Credential.Secure.Google({ email: user.email }),
-          User.Draft.make({
-            firstName: user.given_name,
-            lastName: user.family_name,
-            optInMarketing: User.OptInMarketing(false),
-          }),
-        ),
-      ),
+      Effect.map((user) => ({
+        credential: Credential.Secure.Google({ email: user.email }),
+        firstName: user.given_name,
+        lastName: user.family_name,
+        optInMarketing: User.OptInMarketing.make(false),
+      })),
       Effect.mapError((error) => new InvalidCode({ error })),
     );
   };
@@ -47,7 +50,7 @@ export const GoogleAuth = Effect.gen(function* () {
         scope: ["https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/userinfo.profile"],
       }),
     ).pipe(
-      Effect.map(ProviderUrl),
+      Effect.map(ProviderUrl.make),
       Effect.mapError(() => GenerateUrlFailure({ provider: "Google" })),
     );
   };

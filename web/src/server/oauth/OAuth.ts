@@ -1,6 +1,6 @@
 import * as Http from "@effect/platform/HttpServer";
 import { Credential, User } from "@chuz/domain";
-import { Context, Effect, Layer, Match } from "@chuz/prelude";
+import { Context, Effect, Layer, Match, Option } from "@chuz/prelude";
 import { Cookies } from "../Cookies";
 import { ResponseHeaders } from "../ResponseHeaders";
 import { Redirect, ServerResponse } from "../ServerResponse";
@@ -10,9 +10,11 @@ import { GoogleAuth } from "./GoogleOAuth";
 export * from "../internals/oauth";
 
 interface UserCredential {
-  credential: Exclude<Credential.Secure, Extract<Credential.Secure, { _tag: "EmailPassword" }>>;
   state: oauth.State;
-  user: User.Draft;
+  credential: Exclude<Credential.Secure, Extract<Credential.Secure, { _tag: "EmailPassword" }>>;
+  firstName: Option.Option<User.FirstName>;
+  lastName: Option.Option<User.LastName>;
+  optInMarketing: User.OptInMarketing;
 }
 
 interface OAuthImpl {
@@ -63,7 +65,7 @@ const make = Effect.gen(function* () {
             Match.when("Google", () => google.getCredential(code)),
             Match.when("Apple", () => Effect.die("Apple login is not supported yet")),
             Match.exhaustive,
-            Effect.map(([credential, user]) => ({ credential, state, user })),
+            Effect.map((user) => Object.assign({ state }, user)),
           ),
         ),
         Effect.tap(() => authState.remove),

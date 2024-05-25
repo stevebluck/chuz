@@ -51,7 +51,12 @@ export namespace UsersSpec {
         Effect.gen(function* () {
           const users = yield* Users;
 
-          const session = yield* users.register(registration.credential, registration);
+          const session = yield* users.register(
+            registration.credential,
+            registration.firstName,
+            registration.lastName,
+            registration.optInMarketing,
+          );
 
           const user = yield* users.getByEmail(registration.credential.email);
 
@@ -100,7 +105,7 @@ export namespace UsersSpec {
             const authed2 = yield* users.authenticate(plain.uppercase);
             const badCredentials = Credential.Plain.EmailPassword({
               email: plain.credentials.email,
-              password: Password.Plaintext(`bad-${plain.credentials.password}`),
+              password: Password.Plaintext.make(`bad-${plain.credentials.password}`),
             });
             const credentialsNotRecognisedError = yield* Effect.flip(users.authenticate(badCredentials));
 
@@ -118,7 +123,12 @@ export namespace UsersSpec {
           Effect.gen(function* () {
             const users = yield* Users;
 
-            yield* users.register(registration.credential, registration);
+            yield* users.register(
+              registration.credential,
+              registration.firstName,
+              registration.lastName,
+              registration.optInMarketing,
+            );
 
             const session = yield* users.authenticate(registration.credential);
             const user = yield* users.getByEmail(registration.credential.email);
@@ -227,7 +237,7 @@ export namespace UsersSpec {
 
             const credential = Credential.Plain.EmailPassword({
               email: register.credential.email,
-              password: Password.Plaintext(newPassword),
+              password: Password.Plaintext.make(newPassword),
             });
             const authed2 = yield* users.authenticate(credential);
 
@@ -248,7 +258,7 @@ export namespace UsersSpec {
             const hashedPassword = yield* passwords.hash(newPassword);
 
             const error0 = yield* Effect.flip(
-              users.updatePassword(session.token, Password.Plaintext("whatever"), hashedPassword),
+              users.updatePassword(session.token, Password.Plaintext.make("whatever"), hashedPassword),
             );
             expect(error0).toStrictEqual(new Errors.CredentialNotRecognised());
 
@@ -329,7 +339,7 @@ export namespace UsersSpec {
             const session1 = yield* users.authenticate(
               Credential.Plain.EmailPassword({
                 email: plain.credentials.email,
-                password: Password.Plaintext(password),
+                password: Password.Plaintext.make(password),
               }),
             );
 
@@ -421,7 +431,12 @@ export namespace UsersSpec {
           Effect.gen(function* () {
             const users = yield* Users;
 
-            const session = yield* users.register(registration.credential, registration);
+            const session = yield* users.register(
+              registration.credential,
+              registration.firstName,
+              registration.lastName,
+              registration.optInMarketing,
+            );
 
             const emailCredential = yield* makeSecureCredential(credential);
             const identities = yield* users.linkCredential(session.token, emailCredential);
@@ -441,8 +456,14 @@ export namespace UsersSpec {
           Effect.gen(function* () {
             const users = yield* Users;
 
-            yield* users.register(apple.credential, apple);
-            const session = yield* users.register(google.credential, google);
+            yield* users.register(apple.credential, apple.firstName, apple.lastName, apple.optInMarketing);
+
+            const session = yield* users.register(
+              google.credential,
+              google.firstName,
+              google.lastName,
+              google.optInMarketing,
+            );
 
             const alreadyExistsError = yield* Effect.flip(users.linkCredential(session.token, apple.credential));
 
@@ -459,7 +480,12 @@ export namespace UsersSpec {
           Effect.gen(function* () {
             const users = yield* Users;
 
-            const session = yield* users.register(registration.credential, registration);
+            const session = yield* users.register(
+              registration.credential,
+              registration.firstName,
+              registration.lastName,
+              registration.optInMarketing,
+            );
 
             const emailCredential = yield* makeSecureCredential(credential);
             const identities1 = yield* users.linkCredential(session.token, emailCredential);
@@ -511,7 +537,12 @@ export namespace UsersSpec {
           Effect.gen(function* () {
             const users = yield* Users;
 
-            const session = yield* users.register(registration.credential, registration);
+            const session = yield* users.register(
+              registration.credential,
+              registration.firstName,
+              registration.lastName,
+              registration.optInMarketing,
+            );
 
             const noFallbackError = yield* Effect.flip(
               users.unlinkCredential(session.token, registration.credential._tag),
@@ -528,13 +559,18 @@ export namespace UsersSpec {
           Effect.gen(function* () {
             const users = yield* Users;
 
-            const session = yield* users.register(google.credential, google);
+            const session = yield* users.register(
+              google.credential,
+              google.firstName,
+              google.lastName,
+              google.optInMarketing,
+            );
             yield* users.linkCredential(session.token, apple);
 
             const identities = yield* users.unlinkCredential(session.token, "Apple");
 
             expect(identities).toStrictEqual({
-              Google: Option.some(Identity.Google.make(google.credential.email)),
+              Google: Option.some(new Identity.Google({ email: google.credential.email })),
               Apple: Option.none(),
               EmailPassword: Option.none(),
             });
@@ -549,23 +585,22 @@ export namespace UsersSpec {
       const users = yield* Users;
       const credential = yield* makeSecureCredential(register.credential);
 
-      return yield* users.register(credential, {
-        firstName: register.firstName,
-        lastName: register.lastName,
-        optInMarketing: register.optInMarketing,
-      });
+      return yield* users.register(credential, register.firstName, register.lastName, register.optInMarketing);
     });
 
   const makePlainCredentials = (cred: { email: Email; password: Password.Strong }) => {
     return {
-      credentials: Credential.Plain.EmailPassword({ email: cred.email, password: Password.Plaintext(cred.password) }),
+      credentials: Credential.Plain.EmailPassword({
+        email: cred.email,
+        password: Password.Plaintext.make(cred.password),
+      }),
       lowercase: Credential.Plain.EmailPassword({
         email: makeEmail(cred.email.toLowerCase()),
-        password: Password.Plaintext(cred.password),
+        password: Password.Plaintext.make(cred.password),
       }),
       uppercase: Credential.Plain.EmailPassword({
         email: makeEmail(cred.email.toUpperCase()),
-        password: Password.Plaintext(cred.password),
+        password: Password.Plaintext.make(cred.password),
       }),
     };
   };

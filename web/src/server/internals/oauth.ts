@@ -1,10 +1,10 @@
 import { Credential } from "@chuz/domain";
-import { Brand, Data, Effect, Either, Equal, PR, S, makeUuid } from "@chuz/prelude";
+import { Data, Effect, Either, Equal, PR, S, makeUuid } from "@chuz/prelude";
 
 export type Intent = (typeof Intent)[keyof typeof Intent];
-export type Code = S.Schema.Type<typeof Code>;
 export type Provider = "Google" | "Apple";
-export type ProviderUrl = Brand.Branded<string, "ProviderUrl">;
+export type Code = typeof Code.Type;
+export type ProviderUrl = typeof ProviderUrl.Type;
 
 export const Intent = {
   Login: "login",
@@ -35,7 +35,7 @@ export class State extends S.Class<State>("State")({
   value: S.UUID.pipe(S.brand("State")),
 }) {
   static make = (provider: Provider, intent: Intent) =>
-    makeUuid.pipe(Effect.map((value) => new State({ provider, value: State.fields.value(value), intent })));
+    makeUuid.pipe(Effect.map((value) => new State({ provider, value: State.fields.value.make(value), intent })));
 
   static login = (provider: Provider) => this.make(provider, Intent.Login);
 

@@ -1,11 +1,11 @@
-import { Equivalence, Brand, Equal } from "@chuz/prelude";
+import { Equivalence, Equal } from "@chuz/prelude";
 import { S } from "@chuz/prelude";
 import { Email } from "./Email";
 import { Id } from "./Identified";
 
-export type Plaintext = string & Brand.Brand<"PlaintextPassword">;
-export type Strong = string & Brand.Brand<"StrongPassword">;
-export type Hashed = string & Brand.Brand<"HashedPassword">;
+export type Plaintext = typeof Plaintext.Type;
+export type Strong = typeof Strong.Type;
+export type Hashed = typeof Hashed.Type;
 export type Reset<A> = [Email, A];
 
 export const Plaintext = S.NonEmpty.pipe(S.brand("PlaintextPassword"));

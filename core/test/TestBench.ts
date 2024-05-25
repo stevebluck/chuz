@@ -20,25 +20,24 @@ export const TestBench = {
     const users = yield* Core.Users;
     const passwords = yield* Core.Passwords;
 
+    const userRegistration = {
+      email: S.decodeSync(Email)("lonestar@an.com"),
+      password: Password.Strong.make("password"),
+      firstName: User.FirstName.make("Toby"),
+      lastName: User.LastName.make("Lerone"),
+      optInMarketing: User.OptInMarketing.make(true),
+    };
+
     const password = yield* passwords.hash(userRegistration.password);
     const credential = Credential.Secure.EmailPassword({ email: userRegistration.email, password });
 
-    const user: User.Draft = {
-      firstName: Option.some(userRegistration.firstName),
-      lastName: Option.some(userRegistration.lastName),
-      optInMarketing: userRegistration.optInMarketing,
-    };
-
-    const session = yield* users.register(credential, user);
+    const session = yield* users.register(
+      credential,
+      Option.some(userRegistration.firstName),
+      Option.some(userRegistration.lastName),
+      userRegistration.optInMarketing,
+    );
 
     return { session };
   }),
-};
-
-const userRegistration = {
-  email: S.decodeSync(Email)("lonestar@an.com"),
-  password: Password.Strong("password"),
-  firstName: User.FirstName("Toby"),
-  lastName: User.LastName("Lerone"),
-  optInMarketing: User.OptInMarketing(true),
 };

@@ -22,12 +22,14 @@ export const loader = Remix.unwrapLoader(
       Effect.mapError(() => ServerResponse.Redirect(Routes.login)),
       Effect.zipRight(ServerRequest.searchParams(SearchParams)),
       Effect.flatMap((search) => oauth.getCredential(search.state, search.code)),
-      Effect.flatMap(({ credential, user, state }) =>
-        Match.value(state.intent).pipe(
+      Effect.flatMap((result) =>
+        Match.value(result.state.intent).pipe(
           // TODO: should redirect to link/
-          Match.when(Intent.Login, () => users.authenticate(credential)),
+          Match.when(Intent.Login, () => users.authenticate(result.credential)),
           Match.when(Intent.Register, () =>
-            Effect.orElse(users.register(credential, user), () => users.authenticate(credential)),
+            users
+              .register(result.credential, result.firstName, result.lastName, result.optInMarketing)
+              .pipe(Effect.orElse(() => users.authenticate(result.credential))),
           ),
           Match.exhaustive,
         ),

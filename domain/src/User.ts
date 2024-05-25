@@ -3,6 +3,10 @@ import { Email } from "./Email";
 import { Id } from "./Identified";
 import * as Identity from "./Identity";
 
+export type FirstName = typeof FirstName.Type;
+export type LastName = typeof LastName.Type;
+export type OptInMarketing = typeof OptInMarketing.Type;
+
 export const OptInMarketing = S.Boolean.pipe(S.brand("OptInMarketing"));
 
 export const FirstName = S.String100.pipe(S.brand("FirstName"));
@@ -25,14 +29,6 @@ export class Partial extends S.Class<Partial>("Partial")({
   lastName: S.Option(LastName),
   optInMarketing: OptInMarketing,
 }) {}
-
-export class Draft extends S.Class<Draft>("Draft")({
-  firstName: S.Option(FirstName),
-  lastName: S.Option(LastName),
-  optInMarketing: OptInMarketing,
-}) {
-  static make = Data.case<Draft>();
-}
 
 export class Identities extends S.Class<Identities>("Identities")({
   EmailPassword: S.OptionFromNullOr(Identity.EmailPassword),

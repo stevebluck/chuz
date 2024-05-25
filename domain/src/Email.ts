@@ -1,6 +1,6 @@
 import { Brand, S } from "@chuz/prelude";
 
-export type Email = S.Schema.Type<typeof Email>;
+export type Email = typeof Email.Type;
 
 export const Email: S.Schema<string & Brand.Brand<"Email">, string> = S.compose(S.Lowercase, S.Trim)
   .pipe(

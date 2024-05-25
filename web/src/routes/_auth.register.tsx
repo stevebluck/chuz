@@ -7,9 +7,9 @@ import { ServerRequest } from "src/server/ServerRequest";
 import { ServerResponse } from "src/server/ServerResponse";
 import { Session } from "src/server/Session";
 import { Intent } from "src/server/internals/oauth";
-import * as OAuth from "src/server/oauth/OAuth";
+import { OAuth } from "src/server/oauth/OAuth";
 import { Passwords, Users } from "@chuz/core";
-import { Credential, User } from "@chuz/domain";
+import { Credential } from "@chuz/domain";
 import { Effect, Match, S } from "@chuz/prelude";
 
 export default function RegisterPage() {
@@ -30,7 +30,7 @@ export default function RegisterPage() {
 export const action = Remix.unwrapAction(
   Effect.gen(function* () {
     const users = yield* Users;
-    const oauth = yield* OAuth.OAuth;
+    const oauth = yield* OAuth;
     const passwords = yield* Passwords;
 
     const Form = S.Union(AppleForm, GoogleForm, RegisterFormSchema);
@@ -47,7 +47,9 @@ export const action = Remix.unwrapAction(
           RegisterForm: (form) =>
             passwords.hash(form.password).pipe(
               Effect.map((password) => Credential.Secure.EmailPassword({ email: form.email, password })),
-              Effect.flatMap((credential) => users.register(credential, User.Draft.make(form))),
+              Effect.flatMap((credential) =>
+                users.register(credential, form.firstName, form.lastName, form.optInMarketing),
+              ),
               Effect.tap(Session.mint),
               Effect.zipRight(ServerResponse.ReturnTo(Routes.dashboard)),
             ),

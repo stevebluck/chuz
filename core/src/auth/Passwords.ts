@@ -10,7 +10,7 @@ const make = Effect.map(SaltRounds, (saltRounds) => {
       Effect.gen(function* () {
         const salt = randomBytes(16).toString("hex");
         const buf = scryptSync(password, salt, 64, { N: saltRounds });
-        return Password.Hashed(`${buf.toString("hex")}.${salt}`);
+        return Password.Hashed.make(`${buf.toString("hex")}.${salt}`);
       }),
     validate: (
       password: Password.Plaintext,

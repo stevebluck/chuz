@@ -54,11 +54,15 @@ export const make: Effect.Effect<Users, ConfigError.ConfigError, Passwords> = Ef
 
   const register = (
     credential: Credential.Secure,
-    user: User.Draft,
+    firstName: Option.Option<User.FirstName>,
+    lastName: Option.Option<User.LastName>,
+    optInMarketing: User.OptInMarketing,
   ): Effect.Effect<Session<User.User>, Errors.CredentialAlreadyInUse> => {
     return getByEmail(credential.email).pipe(
       Effect.flatMap(() => new Errors.CredentialAlreadyInUse()),
-      Effect.catchTag("UserNotFound", () => Ref.modify(state, (state) => state.register(credential, user))),
+      Effect.catchTag("UserNotFound", () =>
+        Ref.modify(state, (state) => state.register(credential, firstName, lastName, optInMarketing)),
+      ),
       Effect.flatMap(issueToken),
     );
   };
@@ -249,15 +253,20 @@ class State {
     return HashMap.get(this.credentials, credential).pipe(Option.flatMap((id) => HashMap.get(this.users, id)));
   };
 
-  register = (credential: Credential.Secure, user: User.Draft): [Identified<User.User>, State] => {
+  register = (
+    credential: Credential.Secure,
+    firstName: Option.Option<User.FirstName>,
+    lastName: Option.Option<User.LastName>,
+    optInMarketing: User.OptInMarketing,
+  ): [Identified<User.User>, State] => {
     const [id, ids] = this.ids.next();
     const _user = new Identified({
       id,
       value: User.make({
         email: credential.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        optInMarketing: user.optInMarketing,
+        firstName,
+        lastName,
+        optInMarketing,
       }),
     });
 

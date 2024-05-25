@@ -1,13 +1,15 @@
 import { Credential, Email, Id, Identified, Password, Session, Token } from "@chuz/domain";
 import { User } from "@chuz/domain";
-import { Effect } from "@chuz/prelude";
+import { Effect, Option } from "@chuz/prelude";
 import { NoSuchToken } from "../Errors";
 import * as Errors from "./Errors";
 
 export interface Users {
   register: (
     credential: Credential.Secure,
-    user: User.Draft,
+    firstName: Option.Option<User.FirstName>,
+    lastName: Option.Option<User.LastName>,
+    optInMarketing: User.OptInMarketing,
   ) => Effect.Effect<Session<User.User>, Errors.CredentialAlreadyInUse>;
 
   identify: (token: Token.Token<Id<User.User>>) => Effect.Effect<Session<User.User>, NoSuchToken>;
