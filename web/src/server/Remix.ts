@@ -134,32 +134,32 @@ const handleFailedResponse = (cause: Cause.Cause<ConfigError.ConfigError | Respo
 export const action =
   <A, R extends AppEnv | RequestEnv>(effect: RemixHandler<A, R>) =>
   async (args: ActionFunctionArgs): Promise<TypedResponse<Ok<A> | FormError>> => {
-    const exit = await effect.pipe(
+    const runnable = effect.pipe(
       Effect.merge,
       Effect.tap(() => setSessionCookie),
       Effect.flatMap(toRemixActionResponse),
       Effect.provide(makeRequestContext(args)),
       Effect.scoped,
-      runtime.runPromiseExit,
+      Effect.exit,
     );
 
-    return Exit.getOrElse(exit, handleFailedResponse);
+    return runtime.runPromise(runnable).then(Exit.getOrElse(handleFailedResponse));
   };
 
 export const loader =
   <A, R extends AppEnv | RequestEnv>(effect: RemixHandler<A, R>) =>
   async (args: LoaderFunctionArgs): Promise<TypedResponse<Ok<A>>> => {
-    const exit = await effect.pipe(
+    const runnable = effect.pipe(
       Effect.merge,
       Effect.tap(() => setSessionCookie),
       Effect.filterOrElse(Predicate.not(ServerResponse.isUnauthorized), () => Effect.flip(redirectToLogin)),
       Effect.flatMap(toRemixLoaderResponse),
       Effect.provide(makeRequestContext(args)),
       Effect.scoped,
-      runtime.runPromiseExit,
+      Effect.exit,
     );
 
-    return Exit.getOrElse(exit, handleFailedResponse);
+    return runtime.runPromise(runnable).then(Exit.getOrElse(handleFailedResponse));
   };
 
 export const unwrapLoader = <A1, R1 extends AppEnv | RequestEnv, E, R2 extends AppEnv>(
