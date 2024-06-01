@@ -1,17 +1,12 @@
 import { Routes } from "src/Routes";
 import { AuthContent } from "src/components/auth/AuthContent";
-import { RequestResetPasswordForm } from "src/components/auth/RequestResetPasswordForm";
+import { RequestResetPasswordForm, RequestResetPasswordFormSchema } from "src/components/auth/RequestResetPasswordForm";
 import { Remix } from "src/server/Remix";
 import { ServerRequest } from "src/server/ServerRequest";
 import { ServerResponse } from "src/server/ServerResponse";
 import { Session } from "src/server/Session";
 import { Users } from "@chuz/core";
-import { Email } from "@chuz/domain";
 import { Effect } from "@chuz/prelude";
-import { S } from "@chuz/prelude";
-
-type FormFields = S.Schema.Type<typeof FormFields>;
-const FormFields = S.Struct({ email: Email });
 
 export default function ForgotPasswordPage() {
   return (
@@ -27,9 +22,10 @@ export default function ForgotPasswordPage() {
     </AuthContent>
   );
 }
+
 export const action = Remix.action(
   Session.guest.pipe(
-    Effect.zipRight(ServerRequest.formData(FormFields)),
+    Effect.zipRight(ServerRequest.formData(RequestResetPasswordFormSchema)),
     Effect.flatMap(({ email }) => Users.pipe(Effect.flatMap((users) => users.requestPasswordReset(email)))),
     Effect.flatMap(() => ServerResponse.ReturnTo(Routes.forgotPassword)),
     Effect.catchTags({
