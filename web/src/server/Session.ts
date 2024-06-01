@@ -56,7 +56,7 @@ export class Session extends Effect.Tag("@app/Session")<Session, Sessions<User.U
       Effect.flatMap((rs) => Ref.make<RequestSession>(rs)),
       Effect.map(this.make),
     ),
-  ).pipe(Layer.provide(Cookies.layer));
+  );
 }
 
 export const setSessionCookie = Effect.gen(function* () {

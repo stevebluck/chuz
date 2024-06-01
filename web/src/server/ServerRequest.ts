@@ -24,8 +24,9 @@ export const formData = <A, Out extends Partial<Record<string, string>>>(
         ArrayFormatter.formatError(error).pipe(
           Effect.map(Array.groupBy((a) => a.path.join("."))),
           Effect.map(Record.map(Array.head)),
-          Effect.map(Record.map(Option.getOrUndefined)),
-          Effect.map((result) => ({ errors: result, values: {} })),
+          Effect.map(Record.filter(Option.isSome)),
+          Effect.map(Record.map((e) => ({ message: e.value.message, type: e.value._tag }))),
+          Effect.map((errors) => ({ values: {}, errors })),
           Effect.map(ServerResponse.FormError),
           Effect.flip,
         ),

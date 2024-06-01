@@ -10,7 +10,15 @@ export default defineConfig({
     cjsInterop({
       dependencies: ["pg"],
     }),
-    remix({ appDirectory: "src" }),
+    remix({
+      appDirectory: "src",
+      future: {
+        unstable_singleFetch: true,
+        v3_throwAbortReason: true,
+        v3_fetcherPersist: true,
+        v3_relativeSplatPath: true,
+      },
+    }),
     tsconfigPaths(),
     babel({
       apply: "build",

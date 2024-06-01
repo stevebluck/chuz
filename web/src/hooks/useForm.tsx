@@ -1,6 +1,6 @@
 import { effectTsResolver } from "@hookform/resolvers/effect-ts";
 import { useActionData, useFetcher } from "@remix-run/react";
-import { DefaultValues, FieldValues, useForm as useHookForm } from "react-hook-form";
+import { DefaultValues, FieldValues, useForm as useReactHookForm } from "react-hook-form";
 import { Route } from "src/Routes";
 import { S } from "@chuz/prelude";
 
@@ -11,16 +11,18 @@ interface Options<T> {
   defaultValues: DefaultValues<T>;
 }
 
+// TODO: Fix the types in this file
 export const useForm = <A extends FieldValues, I>(schema: S.Schema<A, I>, options: Options<I>) => {
-  const actionData = useActionData();
-  const fetcher = useFetcher();
+  const actionData = useActionData<unknown>();
+  const fetcher = useFetcher<unknown>();
   const isSubmitting = fetcher.state === "submitting" && fetcher.formAction === options.action;
 
   const data: any = fetcher.data || actionData;
 
-  const form = useHookForm<A>({
+  const form = useReactHookForm<A>({
     resolver: effectTsResolver(schema),
-    errors: data?.errors as any,
+    errors: data?.errors,
+    values: data?.values,
     defaultValues: options.defaultValues as any,
   });
 

@@ -41,7 +41,7 @@ const Section = {
 } as const;
 
 export default function LoginAndSecurity() {
-  const { data } = useLoaderData<typeof loader>();
+  const { hasPassword, identities } = useLoaderData<typeof loader>();
 
   const { isActive, isOtherActive } = useActiveState(Section);
 
@@ -51,18 +51,18 @@ export default function LoginAndSecurity() {
         <TitledSection title="Login">
           <PreviewContent
             title="Password"
-            activateButtonLabel={data.hasPassword ? "Update" : "Add"}
+            activateButtonLabel={hasPassword ? "Update" : "Add"}
             isActive={isActive(Section.updatePassword)}
             isDisabled={isOtherActive(Section.updatePassword)}
             activateRoute={Routes.account.loginAndSecurityError(Section.updatePassword)}
             cancelRoute={Routes.account.loginAndSecurity}
             preview={
               <p className="text-muted-foreground">
-                {data.hasPassword ? "Password last updated (TBC)" : "No password is currently set"}
+                {hasPassword ? "Password last updated (TBC)" : "No password is currently set"}
               </p>
             }
           >
-            {data.hasPassword ? <UpdatePasswordForm /> : <SetPasswordForm />}
+            {hasPassword ? <UpdatePasswordForm /> : <SetPasswordForm />}
           </PreviewContent>
         </TitledSection>
         <TitledSection title="Social accounts">
@@ -73,11 +73,11 @@ export default function LoginAndSecurity() {
                 <div>
                   <div className="font-medium">Google</div>
                   <div className="text-muted-foreground text-sm">
-                    {data.identities.Google ? data.identities.Google.email : "No Google account linked"}
+                    {identities.Google ? identities.Google.email : "No Google account linked"}
                   </div>
                 </div>
               </div>
-              <Button variant="link">{data.identities.Google ? "Unlink" : "Link"}</Button>
+              <Button variant="link">{identities.Google ? "Unlink" : "Link"}</Button>
             </li>
             <li className="border-t" />
             <li className="flex gap-2 justify-between items-start">
@@ -86,11 +86,11 @@ export default function LoginAndSecurity() {
                 <div>
                   <div className="font-medium">Apple</div>
                   <div className="text-muted-foreground text-sm">
-                    {data.identities.Apple ? data.identities.Apple.email : "No Apple account linked"}
+                    {identities.Apple ? identities.Apple.email : "No Apple account linked"}
                   </div>
                 </div>
               </div>
-              <Button variant="link">{data.identities.Apple ? "Unlink" : "Link"}</Button>
+              <Button variant="link">{identities.Apple ? "Unlink" : "Link"}</Button>
             </li>
           </ul>
         </TitledSection>

@@ -1,3 +1,4 @@
+import { useLoaderData } from "@remix-run/react";
 import { Routes } from "src/Routes";
 import { AuthContent } from "src/components/auth/AuthContent";
 import { Remix } from "src/server/Remix";
@@ -41,13 +42,14 @@ export const loader = Remix.unwrapLoader(
           Effect.succeed(ServerResponse.Ok("We could not find a user with those credentials")),
         InvalidCode: () => Effect.succeed(ServerResponse.Ok("We could not verify your identity. Please try again.")),
         InvalidState: () => Effect.succeed(ServerResponse.Ok("We could not verify your identity. Please try again.")),
-        SearchParamsError: () => Effect.succeed(ServerResponse.Ok("That's an inalid URL.")),
+        SearchParamsError: () => Effect.succeed(ServerResponse.Ok("That's an invalid URL.")),
       }),
     );
   }),
 );
 
 export default function AuthCallbackPage() {
+  const data = useLoaderData<typeof loader>();
   return (
     <AuthContent
       to={Routes.register}
@@ -57,6 +59,7 @@ export default function AuthCallbackPage() {
       title="Sign in to your account"
       description="Lets get back to learning!"
     >
+      <div>{data}</div>
       Callback page
     </AuthContent>
   );
