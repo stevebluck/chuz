@@ -1,6 +1,6 @@
 # Exploring Remix + Effect + DDD
 
-This repo is exploring what a Remix and Effect combo with a flavour of Domain Drvien Design could look like. I plan to evolve this into a **real** production ready starter kit for my side projects.
+This repo is exploring what a Remix and Effect combo with a flavour of Domain Driven Design could look like. I plan to evolve this into a **real** production ready starter kit for my side projects.
 
 This projects main purpose is to help me scratch that itch when working outside of my day job. I'm constantly refactoring so expect big changes frequently.
 
