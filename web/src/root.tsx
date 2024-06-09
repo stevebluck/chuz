@@ -3,7 +3,6 @@ import { Links, Meta, Outlet, Scripts, ScrollRestoration } from "@remix-run/reac
 import { Effect, Option } from "@chuz/prelude";
 import { Toaster } from "./components/ui/sonner";
 import { Remix } from "./server/Remix";
-import { ServerResponse } from "./server/ServerResponse";
 import { Session } from "./server/Session";
 import { cn } from "./styles/classnames";
 import "./styles/style.css";
@@ -31,7 +30,6 @@ export const loader = Remix.loader(
   Session.authenticated.pipe(
     Effect.map((session) => ({ name: Option.getOrElse(session.user.value.firstName, () => "Mr NoName") })),
     Effect.orElseSucceed(() => ({ name: "Guest" })),
-    Effect.map(ServerResponse.Ok),
   ),
 );
 

@@ -26,12 +26,11 @@ export const loader = Remix.unwrapLoader(
     return Session.authenticated.pipe(
       Effect.flatMap((session) => users.identities(session.user.id)),
       Effect.flatMap(User.Identities.encode),
-      Effect.map((identities) => ({ identities, hasPassword: Predicate.isNotNull(identities.EmailPassword) })),
-      Effect.map(ServerResponse.Ok),
-      Effect.catchTags({
-        ParseError: ServerResponse.Unexpected,
-        Unauthorized: () => ServerResponse.Unauthorized,
-      }),
+      Effect.map((identities) => ({
+        identities,
+        hasPassword: Predicate.isNotNull(identities.EmailPassword),
+      })),
+      Effect.catchTags({ ParseError: ServerResponse.Unexpected }),
     );
   }),
 );
@@ -139,8 +138,12 @@ export const action = Remix.unwrapAction(
         Effect.flatMap(matchForm({ SetPassword, UpdatePassword })),
         Effect.flatMap(() => ServerResponse.Redirect(Routes.account.loginAndSecurity)),
         Effect.catchTags({
-          CredentialAlreadyInUse: () => ServerResponse.FormRootError("Those credentials are already in use"),
-          CredentialNotRecognised: () => ServerResponse.FormRootError("Your current password is incorrect"),
+          CredentialAlreadyInUse: () => ServerResponse.FormRootError("This email is already in use by another account"),
+          CredentialNotRecognised: () =>
+            ServerResponse.FormError({
+              errors: { currentPassword: { type: "Type", message: "Password is incorrect" } },
+              values: {},
+            }),
           NoSuchToken: () => ServerResponse.Unauthorized,
         }),
       );

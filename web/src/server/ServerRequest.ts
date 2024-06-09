@@ -1,7 +1,7 @@
 import { FileSystem } from "@effect/platform/FileSystem";
 import * as Http from "@effect/platform/HttpServer";
 import { Path } from "@effect/platform/Path";
-import { Data, Effect, Record, PR, S, Scope, Array, Option } from "@chuz/prelude";
+import { Data, Effect, Record, PR, S, Scope, Array, Option, pipe } from "@chuz/prelude";
 import { ArrayFormatter } from "@chuz/prelude/src/Schema";
 import { FormError, ServerResponse } from "./ServerResponse";
 
@@ -22,12 +22,16 @@ export const formData = <A, Out extends Partial<Record<string, string>>>(
     Effect.catchTags({
       ParseError: (error) =>
         ArrayFormatter.formatError(error).pipe(
-          Effect.map(Array.groupBy((a) => a.path.join("."))),
-          Effect.map(Record.map(Array.head)),
-          Effect.map(Record.filter(Option.isSome)),
-          Effect.map(Record.map((e) => ({ message: e.value.message, type: e.value._tag }))),
-          Effect.map((errors) => ({ values: {}, errors })),
-          Effect.map(ServerResponse.FormError),
+          Effect.map((errors) =>
+            pipe(
+              Array.groupBy(errors, (a) => a.path.join(".")),
+              Record.map(Array.head),
+              Record.filter(Option.isSome),
+              Record.map((e) => ({ message: e.value.message, type: e.value._tag })),
+              // TODO: get values from parse error maybe?
+              (errors) => ServerResponse.FormError({ values: {}, errors }),
+            ),
+          ),
           Effect.flip,
         ),
       MultipartError: Effect.die,

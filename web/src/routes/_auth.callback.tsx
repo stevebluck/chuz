@@ -38,11 +38,10 @@ export const loader = Remix.unwrapLoader(
       Effect.flatMap(Session.mint),
       Effect.zipRight(ServerResponse.ReturnTo(Routes.dashboard)),
       Effect.catchTags({
-        CredentialNotRecognised: () =>
-          Effect.succeed(ServerResponse.Ok("We could not find a user with those credentials")),
-        InvalidCode: () => Effect.succeed(ServerResponse.Ok("We could not verify your identity. Please try again.")),
-        InvalidState: () => Effect.succeed(ServerResponse.Ok("We could not verify your identity. Please try again.")),
-        SearchParamsError: () => Effect.succeed(ServerResponse.Ok("That's an invalid URL.")),
+        CredentialNotRecognised: () => Effect.succeed("We could not find a user with those credentials"),
+        InvalidCode: () => Effect.succeed("We could not verify your identity. Please try again."),
+        InvalidState: () => Effect.succeed("We could not verify your identity. Please try again."),
+        SearchParamsError: () => Effect.succeed("That's an invalid URL."),
       }),
     );
   }),
