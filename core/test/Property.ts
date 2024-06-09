@@ -2,15 +2,11 @@ import { test } from "vitest";
 import { Effect, fc } from "@chuz/prelude";
 
 type Config = {
-  beforeEach?: () => void;
-  afterEach?: () => void;
-  timeout?: number;
   runs: number;
+  timeout?: number;
 };
 
 const defaultConfig: Required<Config> = {
-  beforeEach: () => {},
-  afterEach: () => {},
   timeout: 5000,
   runs: 100,
 };
@@ -21,21 +17,14 @@ export const asyncProperty = <A, E>(
   predicate: (a: A) => Effect.Effect<boolean | void, E>,
   config: Config = defaultConfig,
 ) => {
-  const beforeEach = config.beforeEach === undefined ? defaultConfig.beforeEach : config.beforeEach;
-  const afterEach = config.afterEach === undefined ? defaultConfig.afterEach : config.afterEach;
   const timeout = config.timeout === undefined ? defaultConfig.timeout : config.timeout;
 
   test(
     title,
     async () =>
       fc.assert(
-        fc
-          .asyncProperty(arbs, (a) => predicate(a).pipe(Effect.runPromise))
-          .beforeEach(beforeEach)
-          .afterEach(afterEach),
-        {
-          numRuns: config.runs,
-        },
+        fc.asyncProperty(arbs, (a) => Effect.runPromise(predicate(a))),
+        { numRuns: config.runs },
       ),
     timeout,
   );
@@ -65,21 +54,14 @@ asyncProperty.only = <A, E>(
   predicate: (a: A) => Effect.Effect<boolean | void, E>,
   config: Config = defaultConfig,
 ) => {
-  const beforeEach = config.beforeEach === undefined ? defaultConfig.beforeEach : config.beforeEach;
-  const afterEach = config.afterEach === undefined ? defaultConfig.afterEach : config.afterEach;
   const timeout = config.timeout === undefined ? defaultConfig.timeout : config.timeout;
 
   test.only(
     title,
     async () =>
       fc.assert(
-        fc
-          .asyncProperty(arbs, (a) => predicate(a).pipe(Effect.runPromise))
-          .beforeEach(beforeEach)
-          .afterEach(afterEach),
-        {
-          numRuns: config.runs,
-        },
+        fc.asyncProperty(arbs, (a) => Effect.runPromise(predicate(a))),
+        { numRuns: config.runs },
       ),
     timeout,
   );

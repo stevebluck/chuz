@@ -1,13 +1,8 @@
-import { Password, User, Email } from "@chuz/domain";
+import { Password, User, Email, Credential } from "@chuz/domain";
 import { Arbitrary, Option, fc } from "@chuz/prelude";
 
-export type EmailPasswordRegistration = typeof EmailPasswordRegistration extends fc.Arbitrary<infer A> ? A : never;
-const EmailPasswordRegistration = fc.record({
-  credential: fc.record({ email: Arbitrary.make(Email), password: Arbitrary.make(Password.Strong) }),
-  firstName: Arbitrary.make(User.FirstName).map(Option.fromNullable),
-  lastName: Arbitrary.make(User.LastName).map(Option.fromNullable),
-  optInMarketing: Arbitrary.make(User.OptInMarketing),
-});
+export type EmailPasswordRegistration =
+  typeof Arbs.Registration.EmailPassword extends fc.Arbitrary<infer A> ? A : never;
 
 export const Arbs = {
   Passwords: {
@@ -16,20 +11,26 @@ export const Arbs = {
   },
   Email: Arbitrary.make(Email),
   Credentials: {
-    EmailPassword: fc.record({ email: Arbitrary.make(Email), password: Arbitrary.make(Password.Strong) }),
-    Apple: fc.record({ _tag: fc.constant("Apple" as const), email: Arbitrary.make(Email) }),
-    Google: fc.record({ _tag: fc.constant("Google" as const), email: Arbitrary.make(Email) }),
+    EmailPassword: Arbitrary.make(Credential.EmailPasswordStrong),
+    Apple: Arbitrary.make(Credential.Apple),
+    Google: Arbitrary.make(Credential.Google),
   },
   Registration: {
-    EmailPassword: EmailPasswordRegistration,
+    // TODO: Update this to use a Registration schema
+    EmailPassword: fc.record({
+      credential: Arbitrary.make(Credential.EmailPasswordStrong),
+      firstName: Arbitrary.make(User.FirstName).map(Option.fromNullable),
+      lastName: Arbitrary.make(User.LastName).map(Option.fromNullable),
+      optInMarketing: Arbitrary.make(User.OptInMarketing),
+    }),
     Google: fc.record({
-      credential: fc.record({ _tag: fc.constant("Google" as const), email: Arbitrary.make(Email) }),
+      credential: Arbitrary.make(Credential.Google),
       firstName: Arbitrary.make(User.FirstName).map(Option.fromNullable),
       lastName: Arbitrary.make(User.LastName).map(Option.fromNullable),
       optInMarketing: Arbitrary.make(User.OptInMarketing),
     }),
     Apple: fc.record({
-      credential: fc.record({ _tag: fc.constant("Apple" as const), email: Arbitrary.make(Email) }),
+      credential: Arbitrary.make(Credential.Apple),
       firstName: Arbitrary.make(User.FirstName).map(Option.fromNullable),
       lastName: Arbitrary.make(User.LastName).map(Option.fromNullable),
       optInMarketing: Arbitrary.make(User.OptInMarketing),
