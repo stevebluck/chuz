@@ -1,5 +1,5 @@
 import { ConfigProvider, Effect, Layer, LogLevel, Logger } from "@chuz/prelude";
-import { Passwords, Users } from "../../src";
+import { Passwords, ReferenceUsers } from "../../src";
 import { ReferenceCleanUp } from "../CleanUp";
 import { Seeds } from "../Seed";
 import { UsersSpec } from "./UsersSpec";
@@ -16,7 +16,7 @@ const TestLayer = Layer.succeed(
   UsersSpec.TestLayer,
   Seeds.layer.pipe(
     Layer.provide(ReferenceCleanUp),
-    Layer.provideMerge(Users.reference),
+    Layer.provideMerge(ReferenceUsers.layer),
     Layer.provideMerge(Passwords.layer),
     Layer.provide(Layer.setConfigProvider(config)),
     Layer.provide(Logger.minimumLogLevel(LogLevel.None)),

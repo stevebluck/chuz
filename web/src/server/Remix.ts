@@ -5,7 +5,7 @@ import * as Path from "@effect/platform/Path";
 import { json, unstable_defineAction, unstable_defineLoader } from "@remix-run/node";
 import { Params as RemixParams } from "@remix-run/react";
 import { Routes } from "src/Routes";
-import { Passwords, Users } from "@chuz/core";
+import { Passwords, ReferenceUsers } from "@chuz/core";
 import {
   Effect,
   Layer,
@@ -27,7 +27,7 @@ import { Session, setSessionCookie } from "./Session";
 import { OAuth } from "./oauth/OAuth";
 
 const AppLayer = Layer.mergeAll(
-  Users.reference,
+  ReferenceUsers.layer,
   Passwords.layer,
   OAuth.layer,
   Cookies.layer,

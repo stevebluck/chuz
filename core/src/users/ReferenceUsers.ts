@@ -1,9 +1,10 @@
 import { Credential, Email, Id, Identified, Identity, Password, Session, Token, User } from "@chuz/domain";
-import { Array, Clock, ConfigError, Duration, Effect, Either, HashMap, Option, Ref } from "@chuz/prelude";
+import { Array, Clock, ConfigError, Duration, Effect, Either, HashMap, Layer, Option, Ref } from "@chuz/prelude";
 import { NoSuchToken } from "../Errors";
 import { Passwords } from "../auth/Passwords";
 import { AutoIncrement } from "../persistence/AutoIncrement";
 import { ReferenceTokens } from "../tokens/ReferenceTokens";
+import { Users as UsersTag } from "./Context";
 import * as Errors from "./Errors";
 import { Users } from "./Users";
 
@@ -203,6 +204,10 @@ export const make: Effect.Effect<Users, ConfigError.ConfigError, Passwords> = Ef
     updatePassword,
   };
 });
+
+export const ReferenceUsers = {
+  layer: Layer.effect(UsersTag, make).pipe(Layer.provide(Passwords.layer)),
+};
 
 class State {
   constructor(
