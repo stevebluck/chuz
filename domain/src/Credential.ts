@@ -25,13 +25,8 @@ export class EmailPasswordSecure extends S.TaggedClass<EmailPasswordSecure>()(Ta
   password: Password.Hashed,
 }) {}
 
-export class Google extends S.TaggedClass<Google>()(Tag.Google, {
-  email: Email,
-}) {}
-
-export class Apple extends S.TaggedClass<Apple>()(Tag.Apple, {
-  email: Email,
-}) {}
+export class Google extends S.TaggedClass<Google>()(Tag.Google, { email: Email }) {}
+export class Apple extends S.TaggedClass<Apple>()(Tag.Apple, { email: Email }) {}
 
 export type Plain = EmailPasswordPlain | Google | Apple;
 

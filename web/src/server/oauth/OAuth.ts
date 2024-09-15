@@ -1,8 +1,7 @@
-import * as Http from "@effect/platform/HttpServer";
+import { HttpServerRequest } from "@effect/platform/HttpServerRequest";
 import { Credential, User } from "@chuz/domain";
 import { Context, Effect, Layer, Match, Option } from "@chuz/prelude";
 import { Cookies } from "../Cookies";
-import { ResponseHeaders } from "../ResponseHeaders";
 import { Redirect, ServerResponse } from "../ServerResponse";
 import * as oauth from "../internals/oauth";
 import { GoogleAuth } from "./GoogleOAuth";
@@ -21,20 +20,12 @@ interface OAuthImpl {
   redirectToProvider: (
     provider: oauth.Provider,
     intent: oauth.Intent,
-  ) => Effect.Effect<
-    never,
-    Redirect | oauth.GenerateUrlFailure | oauth.InvalidState,
-    Http.request.ServerRequest | ResponseHeaders
-  >;
+  ) => Effect.Effect<never, Redirect | oauth.GenerateUrlFailure | oauth.InvalidState, HttpServerRequest>;
 
   getCredential: (
     state: string,
     code: oauth.Code,
-  ) => Effect.Effect<
-    UserCredential,
-    oauth.InvalidCode | oauth.InvalidState,
-    Http.request.ServerRequest | ResponseHeaders
-  >;
+  ) => Effect.Effect<UserCredential, oauth.InvalidCode | oauth.InvalidState, HttpServerRequest>;
 }
 
 const make = Effect.gen(function* () {
@@ -43,7 +34,7 @@ const make = Effect.gen(function* () {
 
   return OAuth.of({
     redirectToProvider: (provider, intent) => {
-      return oauth.State.make(provider, intent).pipe(
+      return oauth.State[intent](provider).pipe(
         Effect.tap(authState.set),
         Effect.flatMap((state) =>
           Match.value(provider).pipe(

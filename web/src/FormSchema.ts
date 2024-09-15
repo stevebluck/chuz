@@ -16,6 +16,6 @@ export const passwordsMatchFilter = <A extends { password: string; password2: st
     }),
   );
 
-export const Email = Domain.Email.pipe(S.message(() => "Invalid email address"));
+export const Email = Domain.Email.annotations({ message: () => "Invalid email address" });
 
-export const StrongPassword = Domain.Password.Strong.pipe(S.message(() => "Your password is too weak"));
+export const StrongPassword = Domain.Password.Strong.annotations({ message: () => "Your password is too weak" });

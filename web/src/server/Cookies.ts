@@ -1,8 +1,7 @@
-import { ServerRequest, schemaHeaders } from "@effect/platform/Http/ServerRequest";
+import { HttpServerRequest, schemaHeaders } from "@effect/platform/HttpServerRequest";
 import { CookieOptions, createCookie as remixCreateCookie } from "@remix-run/node";
 import { Config, ConfigError, Duration, Effect, Layer, Option, Secret } from "@chuz/prelude";
 import { S } from "@chuz/prelude";
-import { ResponseHeaders } from "./ResponseHeaders";
 import { State, StateFromString } from "./internals/oauth";
 
 interface AppCookies {
@@ -42,9 +41,9 @@ const make = Effect.gen(function* () {
 });
 
 interface CookieImpl<T> {
-  find: Effect.Effect<Option.Option<T>, never, ServerRequest>;
-  set: (value: T) => Effect.Effect<Option.Option<string>, never, ResponseHeaders>;
-  remove: Effect.Effect<Option.Option<string>, never, ServerRequest | ResponseHeaders>;
+  find: Effect.Effect<Option.Option<T>, never, HttpServerRequest>;
+  set: (value: T) => Effect.Effect<Option.Option<string>>;
+  remove: Effect.Effect<Option.Option<string>, never, HttpServerRequest>;
 }
 
 type CookieOpts = Omit<CookieOptions, "maxAge" | "secrets"> & {
@@ -74,13 +73,15 @@ const createCookie = <T>(
       Effect.succeed(value).pipe(
         Effect.flatMap(S.encode(schema)),
         Effect.andThen((value) => cookie.serialize(value)),
-        Effect.tap((cookie) => ResponseHeaders.append("Set-Cookie", cookie)),
+        // TODO: set cookie should use a ref
+        // Effect.tap((cookie) => ResponseHeaders.append("Set-Cookie", cookie)),
         Effect.option,
       );
 
     const remove = find.pipe(
       Effect.andThen((value) => cookie.serialize(value, { maxAge: 0 })),
-      Effect.tap((cookie) => ResponseHeaders.append("Set-Cookie", cookie)),
+      //set cookie
+      // Effect.tap((cookie) => ResponseHeaders.append("Set-Cookie", cookie)),
       Effect.option,
     );
 

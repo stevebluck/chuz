@@ -34,12 +34,15 @@ export class State extends S.Class<State>("State")({
   intent: S.Literal(Intent.Login, Intent.Register),
   value: S.UUID.pipe(S.brand("State")),
 }) {
-  static make = (provider: Provider, intent: Intent) =>
-    makeUuid.pipe(Effect.map((value) => new State({ provider, value: State.fields.value.make(value), intent })));
+  static login = (provider: Provider) =>
+    makeUuid.pipe(
+      Effect.map((value) => this.make({ provider, intent: Intent.Login, value: State.fields.value.make(value) })),
+    );
 
-  static login = (provider: Provider) => this.make(provider, Intent.Login);
-
-  static register = (provider: Provider) => this.make(provider, Intent.Register);
+  static register = (provider: Provider) =>
+    makeUuid.pipe(
+      Effect.map((value) => this.make({ provider, intent: Intent.Register, value: State.fields.value.make(value) })),
+    );
 
   static toString = (state: State) =>
     toString(state).pipe(Either.mapLeft(() => InvalidState({ error: "auth state could not be converted to string" })));

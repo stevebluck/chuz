@@ -228,10 +228,14 @@ class State {
 
     const identities: User.Identities = {
       EmailPassword: Array.findFirst(creds, Credential.Secure.$is(Credential.Tag.EmailPassword)).pipe(
-        Option.map(Identity.EmailPassword.fromCredential),
+        Option.map((cred) => Identity.EmailPassword.make({ email: cred.email })),
       ),
-      Apple: Array.findFirst(creds, Credential.Secure.$is("Apple")).pipe(Option.map(Identity.Apple.fromCredential)),
-      Google: Array.findFirst(creds, Credential.Secure.$is("Google")).pipe(Option.map(Identity.Google.fromCredential)),
+      Apple: Array.findFirst(creds, Credential.Secure.$is("Apple")).pipe(
+        Option.map((cred) => Identity.Apple.make({ email: cred.email })),
+      ),
+      Google: Array.findFirst(creds, Credential.Secure.$is("Google")).pipe(
+        Option.map((cred) => Identity.Google.make({ email: cred.email })),
+      ),
     };
 
     return [identities, new State(this.users, credentials, this.ids)] as const;

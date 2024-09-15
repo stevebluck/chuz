@@ -5,6 +5,12 @@ import { cjsInterop } from "vite-plugin-cjs-interop";
 import EntryShakingPlugin from "vite-plugin-entry-shaking";
 import tsconfigPaths from "vite-tsconfig-paths";
 
+declare module "@remix-run/server-runtime" {
+  interface Future {
+    unstable_singleFetch: true;
+  }
+}
+
 export default defineConfig({
   plugins: [
     cjsInterop({

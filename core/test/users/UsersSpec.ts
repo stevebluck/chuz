@@ -406,9 +406,9 @@ const Suite = Effect.gen(function* () {
           const identities = yield* users.identities(session.user.id);
 
           expect(identities).toEqual({
-            EmailPassword: Option.some(Identity.EmailPassword.make(session.user.value.email)),
-            Google: Option.some(Identity.Google.make(google.email)),
-            Apple: Option.some(Identity.Apple.make(apple.email)),
+            EmailPassword: Option.some(Identity.EmailPassword.make({ email: session.user.value.email })),
+            Google: Option.some(Identity.Google.make({ email: google.email })),
+            Apple: Option.some(Identity.Apple.make({ email: apple.email })),
           });
         }).pipe(Effect.provide(layer)),
     );
@@ -431,8 +431,8 @@ const Suite = Effect.gen(function* () {
           const identities = yield* users.linkCredential(session.token, emailCredential);
 
           expect(identities).toEqual({
-            EmailPassword: Option.some(Identity.EmailPassword.make(emailCredential.email)),
-            Google: Option.some(Identity.Google.make(registration.credential.email)),
+            EmailPassword: Option.some(Identity.EmailPassword.make({ email: emailCredential.email })),
+            Google: Option.some(Identity.Google.make({ email: registration.credential.email })),
             Apple: Option.none(),
           });
         }).pipe(Effect.provide(layer)),

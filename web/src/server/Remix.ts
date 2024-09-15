@@ -1,8 +1,8 @@
 import * as NodeFileSystem from "@effect/platform-node/NodeFileSystem";
 import * as FileSystem from "@effect/platform/FileSystem";
-import { ServerRequest, fromWeb } from "@effect/platform/Http/ServerRequest";
+import { fromWeb, HttpServerRequest } from "@effect/platform/HttpServerRequest";
 import * as Path from "@effect/platform/Path";
-import { json, unstable_defineAction, unstable_defineLoader } from "@remix-run/node";
+import { unstable_data, ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { Params as RemixParams } from "@remix-run/react";
 import { Routes } from "src/Routes";
 import { Passwords, ReferenceUsers } from "@chuz/core";
@@ -21,7 +21,6 @@ import {
   Ref,
 } from "@chuz/prelude";
 import { Cookies } from "./Cookies";
-import { ResponseHeaders } from "./ResponseHeaders";
 import { FormError, NotFound, Redirect, ServerResponse, Unauthorized, Unexpected } from "./ServerResponse";
 import { Session, setSessionCookie } from "./Session";
 import { OAuth } from "./oauth/OAuth";
@@ -49,7 +48,7 @@ const ResponseStatus = Context.GenericTag<ResponseStatus, Ref.Ref<Option.Option<
 
 type AppEnv = Layer.Layer.Success<typeof AppLayer>;
 
-type RequestEnv = ServerRequest | FileSystem.FileSystem | Params | Session | Scope.Scope | Path.Path | ResponseHeaders;
+type RequestEnv = HttpServerRequest | FileSystem.FileSystem | Params | Session | Scope.Scope | Path.Path;
 
 type ActionError = Redirect | Unauthorized | Unexpected | FormError;
 
@@ -57,39 +56,12 @@ type RemixActionHandler<R> = Effect.Effect<never, ActionError, R | AppEnv | Requ
 
 type LoaderError = Redirect | NotFound | Unauthorized | Unexpected;
 
-type RemixLoaderHandler<A extends Serializable, R> = Effect.Effect<A, LoaderError, R | AppEnv | RequestEnv>;
+type RemixLoaderHandler<A, R> = Effect.Effect<A, LoaderError, R | AppEnv | RequestEnv>;
 
-type Serializable =
-  | undefined
-  | null
-  | boolean
-  | string
-  | symbol
-  | number
-  | Array<Serializable>
-  | {
-      [key: PropertyKey]: Serializable;
-    }
-  | bigint
-  | Date
-  | URL
-  | RegExp
-  | Error
-  | Map<Serializable, Serializable>
-  | Set<Serializable>
-  | Promise<Serializable>;
-
-type RemixLoader = Parameters<typeof unstable_defineLoader>[0];
-type LoaderArgs = Parameters<RemixLoader>[0];
-
-type RemixAction = Parameters<typeof unstable_defineAction>[0];
-type ActionArgs = Parameters<RemixAction>[0];
-
-const makeRequestContext = (args: LoaderArgs | ActionArgs) => {
+const makeRequestContext = (args: LoaderFunctionArgs | ActionFunctionArgs) => {
   const context = Context.empty().pipe(
-    Context.add(ServerRequest, fromWeb(args.request)),
+    Context.add(HttpServerRequest, fromWeb(args.request)),
     Context.add(Params, args.params),
-    Context.add(ResponseHeaders, args.response.headers),
     Layer.succeedContext,
   );
 
@@ -98,7 +70,7 @@ const makeRequestContext = (args: LoaderArgs | ActionArgs) => {
 
 const redirectToLogin = Effect.gen(function* () {
   const cookies = yield* Cookies;
-  const request = yield* ServerRequest;
+  const request = yield* HttpServerRequest;
   const url = new URL(request.url);
 
   yield* cookies.returnTo.set(url.href);
@@ -110,7 +82,51 @@ const matchLoaderError = Match.typeTags<Redirect | NotFound | Unexpected>();
 
 const matchActionError = Match.typeTags<ActionError>();
 
-const handleFailedResponse = <E extends Serializable>(cause: Cause.Cause<E>) => {
+export const action =
+  <R extends AppEnv | RequestEnv>(effect: RemixActionHandler<R>) =>
+  (args: ActionFunctionArgs): Promise<FormError | never> => {
+    const runnable = effect.pipe(
+      Effect.tap(() => setSessionCookie),
+      Effect.tapError(() => setSessionCookie),
+      Effect.provide(makeRequestContext(args)),
+      Effect.mapError(
+        matchActionError({
+          Unauthorized: () => unstable_data({}, { status: 401 }),
+          Unexpected: () => unstable_data({}, { status: 500 }),
+          FormError: () => unstable_data({}, { status: 400 }),
+          Redirect: (e) => unstable_data({}, { status: 302, headers: { Location: e.location } }),
+        }),
+      ),
+      Effect.exit,
+      Effect.scoped,
+    );
+
+    return runtime.runPromise(runnable).then(Exit.getOrElse(handleFailedResponse));
+  };
+
+const loader =
+  <A, R extends AppEnv | RequestEnv>(effect: RemixLoaderHandler<A, R>) =>
+  (args: LoaderFunctionArgs): Promise<A> => {
+    const runnable = effect.pipe(
+      Effect.tap(() => setSessionCookie),
+      Effect.tapError(() => setSessionCookie),
+      Effect.catchTag("Unauthorized", () => redirectToLogin),
+      Effect.provide(makeRequestContext(args)),
+      Effect.mapError(
+        matchLoaderError({
+          NotFound: () => unstable_data({}, { status: 404 }),
+          Unexpected: () => unstable_data({}, { status: 500 }),
+          Redirect: (e) => unstable_data({}, { status: 302, headers: { Location: e.location } }),
+        }),
+      ),
+      Effect.exit,
+      Effect.scoped,
+    );
+
+    return runtime.runPromise(runnable).then(Exit.getOrElse(handleFailedResponse));
+  };
+
+const handleFailedResponse = <E>(cause: Cause.Cause<E>) => {
   if (Cause.isFailType(cause)) {
     throw cause.error;
   }
@@ -118,76 +134,12 @@ const handleFailedResponse = <E extends Serializable>(cause: Cause.Cause<E>) => 
   throw Cause.pretty(cause);
 };
 
-export const action = <R extends AppEnv | RequestEnv>(effect: RemixActionHandler<R>) =>
-  unstable_defineAction((args) => {
-    const runnable = effect.pipe(
-      Effect.tap(() => setSessionCookie),
-      Effect.tapError(() => setSessionCookie),
-      Effect.tapError((e) =>
-        Effect.sync(() =>
-          matchActionError({
-            Unauthorized: () => (args.response.status = 401),
-            Unexpected: () => (args.response.status = 500),
-            FormError: () => (args.response.status = 400),
-            Redirect: (e) => {
-              args.response.status = 302;
-              args.response.headers.set("Location", e.location);
-            },
-          })(e),
-        ),
-      ),
-      Effect.catchTag("FormError", (e) => Effect.succeed(e.toJSON())), // TODO: map FormError to ErrorResponse
-      Effect.provide(makeRequestContext(args)),
-      Effect.scoped,
-      Effect.exit,
-    );
-
-    return runtime.runPromise(runnable).then(Exit.getOrElse(handleFailedResponse)) as Promise<FormError>;
-  });
-
-const loader = <A extends Serializable, R extends AppEnv | RequestEnv>(effect: RemixLoaderHandler<A, R>) =>
-  unstable_defineLoader((args) => {
-    const runnable = effect.pipe(
-      Effect.tap(() => setSessionCookie),
-      Effect.tapError(() => setSessionCookie),
-      Effect.catchTag("Unauthorized", () => redirectToLogin),
-      Effect.tapError((e) =>
-        Effect.sync(() =>
-          matchLoaderError({
-            Unexpected: () => (args.response.status = 500),
-            NotFound: () => (args.response.status = 404),
-            Redirect: (e) => {
-              args.response.status = 302;
-              args.response.headers.set("Location", e.location);
-            },
-          })(e),
-        ),
-      ),
-      Effect.provide(makeRequestContext(args)),
-      Effect.scoped,
-      Effect.exit,
-    );
-
-    return runtime.runPromise(runnable).then(
-      Exit.getOrElse((cause) => {
-        if (Cause.isFailType(cause)) {
-          throw json(cause.error.message, {
-            status: args.response.status || 500,
-            headers: args.response.headers,
-          });
-        }
-
-        throw Cause.pretty(cause);
-      }),
-    ) as Promise<A>;
-  });
-
-export const unwrapLoader = <A1 extends Serializable, R1 extends AppEnv | RequestEnv, E, R2 extends AppEnv>(
+export const unwrapLoader = <A1, R1 extends AppEnv | RequestEnv, E, R2 extends AppEnv>(
   effect: Effect.Effect<RemixLoaderHandler<A1, R1>, E, R2>,
 ) => {
   const awaitedHandler = runtime.runPromise(effect).then(loader);
 
-  return (args: LoaderArgs): Promise<A1> => awaitedHandler.then((handler) => handler(args));
+  return (args: LoaderFunctionArgs): Promise<A1> => awaitedHandler.then((handler) => handler(args));
 };
 
 export const unwrapAction = <R1 extends AppEnv | RequestEnv, E, R2 extends AppEnv>(
@@ -195,7 +147,7 @@ export const unwrapAction = <R1 extends AppEnv | RequestEnv, E, R2 extends AppEn
 ) => {
   const awaitedHandler = runtime.runPromise(effect).then(action);
 
-  return (args: ActionArgs): Promise<FormError> => awaitedHandler.then((handler) => handler(args));
+  return (args: ActionFunctionArgs): Promise<FormError> => awaitedHandler.then((handler) => handler(args));
 };
 
 export const Remix = { action, loader, unwrapLoader, unwrapAction };

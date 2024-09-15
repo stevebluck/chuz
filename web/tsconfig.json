@@ -4,7 +4,6 @@
   "compilerOptions": {
     "baseUrl": "./",
     "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "types": ["@remix-run/react/future/single-fetch.d.ts"]
+    "moduleResolution": "Bundler"
   }
 }

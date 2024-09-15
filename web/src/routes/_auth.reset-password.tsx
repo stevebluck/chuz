@@ -11,7 +11,8 @@ import { Id, Password, Token, User } from "@chuz/domain";
 import { Effect } from "@chuz/prelude";
 import { S } from "@chuz/prelude";
 
-const SearchParams = S.Struct({ token: S.NonEmpty });
+// TODO: added token schema
+const SearchParams = S.Struct({ token: S.NonEmptyString });
 
 export default function ResetPasswordPage() {
   // TODO get this from the loader

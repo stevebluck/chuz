@@ -13,7 +13,7 @@ import { S } from "@chuz/prelude";
 export const LoginFormSchema = S.Struct({
   _tag: S.Literal("LoginForm"),
   email: Email,
-  password: Password.Plaintext.pipe(S.message(() => "Your password is required")),
+  password: Password.Plaintext.annotations({ message: () => "Your password is required" }),
 });
 
 export function LoginForm() {
