@@ -1,68 +1,95 @@
-import { test } from "vitest";
-import { Effect, fc } from "@chuz/prelude";
+import { it } from "@effect/vitest";
+import { Data, Effect, FC } from "@chuz/prelude";
 
-type Config = {
-  runs: number;
-  timeout?: number;
-};
+export namespace Property {
+  export class Config extends Data.Class<{
+    beforeEach: () => void;
+    afterEach: () => void;
+    timeout: number;
+    runs: number;
+    seed?: number;
+    path?: string;
+    endOnFailure: boolean;
+  }> {
+    static default = new Config({
+      beforeEach: () => {},
+      afterEach: () => {},
+      timeout: 5000,
+      runs: 100,
+      endOnFailure: false,
+    });
 
-const defaultConfig: Required<Config> = {
-  timeout: 5000,
-  runs: 100,
-};
+    static integration = new Config({
+      beforeEach: () => {},
+      afterEach: () => {},
+      timeout: 10000,
+      runs: 5,
+      endOnFailure: true,
+    });
 
-export const asyncProperty = <A, E>(
+    copy = (that: Partial<Config>): Config => new Config({ ...this, ...that });
+
+    get once(): Config {
+      return new Config({ ...this, runs: 1, endOnFailure: true });
+    }
+  }
+}
+
+export const property = <A, E>(
   title: string,
-  arbs: fc.Arbitrary<fc.RecordValue<A>>,
+  arbs: FC.Arbitrary<FC.RecordValue<A>>,
   predicate: (a: A) => Effect.Effect<boolean | void, E>,
-  config: Config = defaultConfig,
+  config: Property.Config = Property.Config.default,
 ) => {
-  const timeout = config.timeout === undefined ? defaultConfig.timeout : config.timeout;
-
-  test(
+  it(
     title,
     async () =>
-      fc.assert(
-        fc.asyncProperty(arbs, (a) => Effect.runPromise(predicate(a))),
-        { numRuns: config.runs },
+      FC.assert(
+        FC.asyncProperty(arbs, (a) => predicate(a).pipe(Effect.runPromise))
+          .beforeEach(config.beforeEach)
+          .afterEach(config.afterEach),
+        {
+          numRuns: config.runs,
+          endOnFailure: config.endOnFailure,
+          seed: config.seed,
+          path: config.path,
+        },
       ),
-    timeout,
+    config.timeout,
   );
 };
 
-asyncProperty.skip = <A, E>(
+property.skip = <A, E>(
   title: string,
-  arbs: fc.Arbitrary<fc.RecordValue<A>>,
+  arbs: FC.Arbitrary<FC.RecordValue<A>>,
   predicate: (a: A) => Effect.Effect<boolean | void, E>,
-  config: Config = defaultConfig,
+  config: Property.Config = Property.Config.default,
 ) => {
-  test.skip(title, () => {});
+  it.skip(title, () => {});
 };
 
-asyncProperty.todo = <A, E>(
-  title: string,
-  arbs: fc.Arbitrary<fc.RecordValue<A>>,
-  predicate: (a: A) => Effect.Effect<boolean | void, E>,
-  config: Config = defaultConfig,
-) => {
-  test.todo(title, () => {});
+property.todo = <A, E>(title: string) => {
+  it.todo(title, () => {});
 };
 
-asyncProperty.only = <A, E>(
+property.only = <A, E>(
   title: string,
-  arbs: fc.Arbitrary<fc.RecordValue<A>>,
+  arbs: FC.Arbitrary<FC.RecordValue<A>>,
   predicate: (a: A) => Effect.Effect<boolean | void, E>,
-  config: Config = defaultConfig,
+  config: Property.Config = Property.Config.default,
 ) => {
-  const timeout = config.timeout === undefined ? defaultConfig.timeout : config.timeout;
-
-  test.only(
+  it.only(
     title,
     async () =>
-      fc.assert(
-        fc.asyncProperty(arbs, (a) => Effect.runPromise(predicate(a))),
-        { numRuns: config.runs },
+      FC.assert(
+        FC.asyncProperty(arbs, (a) => predicate(a).pipe(Effect.runPromise))
+          .beforeEach(config.beforeEach)
+          .afterEach(config.afterEach),
+        {
+          numRuns: config.runs,
+          endOnFailure: config.endOnFailure,
+        },
       ),
-    timeout,
+    config.timeout,
   );
 };

@@ -1,58 +1,46 @@
-import { Credential, Email, Id, Identified, Password, Session, Token } from "@chuz/domain";
-import { User } from "@chuz/domain";
+import { Credentials, Email, Id, Identified, Password, Session, Token, User } from "@chuz/domain";
 import { Effect, Option } from "@chuz/prelude";
-import { NoSuchToken } from "../Errors";
-import * as Errors from "./Errors";
 
 export interface Users {
-  register: (
-    credential: Credential.Secure,
-    firstName: Option.Option<User.FirstName>,
-    lastName: Option.Option<User.LastName>,
-    optInMarketing: User.OptInMarketing,
-  ) => Effect.Effect<Session<User.User>, Errors.CredentialAlreadyInUse>;
+  register: (registration: Users.Registration) => Effect.Effect<Session, Credentials.AlreadyInUse>;
 
-  identify: (token: Token.Token<Id<User.User>>) => Effect.Effect<Session<User.User>, NoSuchToken>;
+  authenticate: (credential: Credentials.Authentication) => Effect.Effect<Session, Credentials.NotRecognised>;
 
-  authenticate: (credential: Credential.Plain) => Effect.Effect<Session<User.User>, Errors.CredentialNotRecognised>;
+  identify: (token: Token<Id<User>>) => Effect.Effect<Session, Token.NoSuchToken>;
 
-  logout: (token: Token.Token<Id<User.User>>) => Effect.Effect<void>;
+  logout: (token: Token<Id<User>>) => Effect.Effect<void>;
 
-  identities: (id: Id<User.User>) => Effect.Effect<User.Identities>;
+  findById: (id: Id<User>) => Effect.Effect<Identified<User>, User.NotFound>;
 
-  getById: (id: Id<User.User>) => Effect.Effect<Identified<User.User>, Errors.UserNotFound>;
+  findByEmail: (email: Email) => Effect.Effect<Identified<User>, User.NotFound>;
 
-  getByEmail: (email: Email) => Effect.Effect<Identified<User.User>, Errors.UserNotFound>;
+  findCredentials: (id: Id<User>) => Effect.Effect<Array<Credentials.EmailPassword.Display>>;
 
-  update: (id: Id<User.User>, partial: User.Partial) => Effect.Effect<Identified<User.User>, Errors.UserNotFound>;
+  update: (id: Id<User>, user: User.Patch) => Effect.Effect<Identified<User>, User.NotFound>;
 
-  updateEmail: (
-    id: Id<User.User>,
-    email: Email,
-  ) => Effect.Effect<Identified<User.User>, Errors.UserNotFound | Errors.EmailAlreadyInUse>;
+  updateEmail: (id: Id<User>, email: Email) => Effect.Effect<Identified<User>, Users.UpdateEmailError>;
 
-  updatePassword: (
-    token: Token.Token<Id<User.User>>,
-    currentPassword: Password.Plaintext,
-    updatedPasword: Password.Hashed,
-  ) => Effect.Effect<void, NoSuchToken | Errors.CredentialNotRecognised>;
+  updatePassword: (token: Token<Id<User>>, currentPassword: Password.Plaintext, updatedPasword: Password.Hashed) => Effect.Effect<void, Users.UpdatePasswordError>;
 
-  requestPasswordReset: (
-    email: Email,
-  ) => Effect.Effect<Token.Token<[Email, Id<User.User>]>, Errors.CredentialNotRecognised>;
+  requestPasswordReset: (email: Email) => Effect.Effect<Password.Reset.Token, Credentials.NotRecognised>;
 
-  resetPassword: (
-    token: Token.Token<[Email, Id<User.User>]>,
-    password: Password.Hashed,
-  ) => Effect.Effect<Identified<User.User>, NoSuchToken>;
+  resetPassword: (token: Password.Reset.Token, password: Password.Hashed) => Effect.Effect<Identified<User>, Token.NoSuchToken>;
 
-  linkCredential: (
-    token: Token.Token<Id<User.User>>,
-    credential: Credential.Secure,
-  ) => Effect.Effect<User.Identities, NoSuchToken | Errors.CredentialAlreadyInUse>;
+  linkCredential: (token: Token<Id<User>>, credential: Credentials.Authentication) => Effect.Effect<void, Users.LinkCredentialError>;
 
-  unlinkCredential: (
-    token: Token.Token<Id<User.User>>,
-    type: Credential.Tag,
-  ) => Effect.Effect<User.Identities, NoSuchToken | Errors.NoFallbackCredential | Errors.CredentialNotRecognised>;
+  unlinkCredential: (token: Token<Id<User>>, type: Credentials.Name) => Effect.Effect<void, Users.UnlinkCredentialError>;
+}
+
+export namespace Users {
+  export type Registration = {
+    credentials: Credentials.Registration;
+    firstName: Option.Option<User.FirstName>;
+    lastName: Option.Option<User.LastName>;
+    optInMarketing: User.OptInMarketing;
+  };
+
+  export type UpdateEmailError = Credentials.AlreadyInUse | Credentials.NotRecognised;
+  export type UpdatePasswordError = Token.NoSuchToken | Credentials.NotRecognised;
+  export type LinkCredentialError = Token.NoSuchToken | Credentials.AlreadyInUse;
+  export type UnlinkCredentialError = Token.NoSuchToken | Credentials.NoFallbackAvailable | Credentials.NotRecognised;
 }

@@ -1,42 +1,34 @@
-import { Data, Equal, Option, Record, S } from "@chuz/prelude";
+import { Brand, Data, Equal, Option, Refined, S } from "@chuz/prelude";
 import { Email } from "./Email";
 import { Id } from "./Identified";
-import * as Identity from "./Identity";
 
-export type FirstName = typeof FirstName.Type;
-export type LastName = typeof LastName.Type;
-export type OptInMarketing = typeof OptInMarketing.Type;
-
-export const OptInMarketing = S.Boolean.pipe(S.brand("OptInMarketing"));
-
-export const FirstName = S.String100.pipe(S.brand("FirstName"));
-
-export const LastName = S.String100.pipe(S.brand("LastName"));
-
-export class User extends S.Class<User>("User")({
-  email: Email,
-  firstName: S.Option(FirstName),
-  lastName: S.Option(LastName),
-  optInMarketing: OptInMarketing,
-}) {}
-
-export const make = Data.case<User>();
-
-export const eqId = Equal.equivalence<Id<User>>();
-
-export class Partial extends S.Class<Partial>("Partial")({
-  firstName: S.Option(FirstName),
-  lastName: S.Option(LastName),
-  optInMarketing: OptInMarketing,
-}) {}
-
-export class Identities extends S.Class<Identities>("Identities")({
-  EmailPassword: S.OptionFromNullOr(Identity.EmailPassword),
-  Google: S.OptionFromNullOr(Identity.Google),
-  Apple: S.OptionFromNullOr(Identity.Apple),
-}) {
-  static encode = S.encode(this);
+export interface User {
+  email: Email;
+  firstName: Option.Option<User.FirstName>;
+  lastName: Option.Option<User.LastName>;
+  optInMarketing: User.OptInMarketing;
 }
 
-export const hasFallbackIdentity = (identities: Identities): boolean =>
-  Record.values(identities).filter(Option.isSome<Identity.Type>).length > 1;
+export namespace User {
+  export type FirstName = Brand.Branded<string, "FirstName">;
+  export type LastName = Brand.Branded<string, "LastName">;
+  export type OptInMarketing = Brand.Branded<boolean, "OptInMarketing">;
+
+  export const OptInMarketing = Refined<OptInMarketing>("OptInMarketing", S.Boolean);
+  export const FirstName = Refined<FirstName>("FirstName", S.String100);
+  export const LastName = Refined<LastName>("LastName", S.String100);
+
+  export const make = Data.case<User>();
+
+  export const eqId = Equal.equivalence<Id<User>>();
+
+  export interface Patch {
+    firstName?: Option.Option<FirstName>;
+    lastName?: Option.Option<LastName>;
+    optInMarketing?: OptInMarketing;
+  }
+
+  const type = "User";
+
+  export class NotFound extends Data.TaggedError(`${type}NotFound`) {}
+}

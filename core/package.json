@@ -21,7 +21,7 @@
   },
   "devDependencies": {
     "@chuz/typescript-config": "workspace:*",
-    "@effect/vitest": "^0.9.3",
+    "@effect/vitest": "^0.10.2",
     "@types/pg": "^8.11.10",
     "kysely-codegen": "^0.16.6",
     "vite-tsconfig-paths": "^5.0.1"

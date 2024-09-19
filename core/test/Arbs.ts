@@ -1,42 +1,34 @@
-import { Password, User, Email, Credential } from "@chuz/domain";
-import { Arbitrary, Option, fc } from "@chuz/prelude";
+import * as Domain from "@chuz/domain";
+import { Arbitrary, FC, Option } from "@chuz/prelude";
 
-export type EmailPasswordRegistration =
-  typeof Arbs.Registration.EmailPassword extends fc.Arbitrary<infer A> ? A : never;
+export namespace Arbs {
+  export const OptionArb = <A>(arb: FC.Arbitrary<A>): FC.Arbitrary<Option.Option<A>> => FC.option(arb).map(Option.fromNullable);
 
-export const Arbs = {
-  Passwords: {
-    Plaintext: Arbitrary.make(Password.Plaintext),
-    Strong: Arbitrary.make(Password.Strong),
-  },
-  Email: Arbitrary.make(Email),
-  Credentials: {
-    EmailPassword: Arbitrary.make(Credential.EmailPasswordStrong),
-    Apple: Arbitrary.make(Credential.Apple),
-    Google: Arbitrary.make(Credential.Google),
-  },
-  Registration: {
-    // TODO: Update this to use a Registration schema
-    EmailPassword: fc.record({
-      credential: Arbitrary.make(Credential.EmailPasswordStrong),
-      firstName: Arbitrary.make(User.FirstName).map(Option.fromNullable),
-      lastName: Arbitrary.make(User.LastName).map(Option.fromNullable),
-      optInMarketing: Arbitrary.make(User.OptInMarketing),
-    }),
-    Google: fc.record({
-      credential: Arbitrary.make(Credential.Google),
-      firstName: Arbitrary.make(User.FirstName).map(Option.fromNullable),
-      lastName: Arbitrary.make(User.LastName).map(Option.fromNullable),
-      optInMarketing: Arbitrary.make(User.OptInMarketing),
-    }),
-    Apple: fc.record({
-      credential: Arbitrary.make(Credential.Apple),
-      firstName: Arbitrary.make(User.FirstName).map(Option.fromNullable),
-      lastName: Arbitrary.make(User.LastName).map(Option.fromNullable),
-      optInMarketing: Arbitrary.make(User.OptInMarketing),
-    }),
-  },
-  Users: {
-    Partial: Arbitrary.make(User.Partial),
-  },
-};
+  export namespace Emails {
+    export const Email: FC.Arbitrary<Domain.Email> = FC.emailAddress().map<Domain.Email>(Domain.Email.unsafeFrom);
+  }
+
+  export namespace Passwords {
+    export const Plaintext = Arbitrary.make(Domain.Password.Plaintext);
+    export const Strong = Arbitrary.make(Domain.Password.Strong);
+  }
+
+  export namespace Users {
+    export const FirstName = Arbitrary.make(Domain.User.FirstName);
+    export const LastName = Arbitrary.make(Domain.User.LastName);
+    export const OptInMarketing = Arbitrary.make(Domain.User.OptInMarketing);
+
+    export const Registration = FC.record({
+      credentials: FC.record({
+        _tag: FC.constant("EmailPasswordStrong" as const),
+        email: Emails.Email,
+        password: Passwords.Strong,
+      }),
+      firstName: OptionArb(FirstName),
+      lastName: OptionArb(LastName),
+      optInMarketing: OptInMarketing,
+    });
+  }
+
+  export namespace Registration {}
+}

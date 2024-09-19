@@ -1,42 +1,35 @@
-import { scryptSync, randomBytes, timingSafeEqual } from "crypto";
+import { randomBytes, scryptSync, timingSafeEqual } from "crypto";
 import { Password } from "@chuz/domain";
-import { Config, Context, Data, Effect, Layer } from "@chuz/prelude";
+import { Brand, Effect, Data } from "@chuz/prelude";
 
-const SaltRounds = Config.number("SALT_ROUNDS").pipe(Config.withDefault(4));
+export namespace Passwords {
+  export type SaltRounds = Brand.Branded<number, "SaltRounds">;
+  export const SaltRounds = Brand.nominal<SaltRounds>();
 
-const make = Effect.map(SaltRounds, (saltRounds) => {
-  return Passwords.of({
-    hash: (password: Password.Strong) =>
+  export type Hash = (password: Password.Strong) => Effect.Effect<Password.Hashed>;
+  export type Match = (password: Password.Plaintext, hashed: Password.Hashed) => Effect.Effect<Password.Hashed, DoNotMatch>;
+
+  export const hash =
+    (saltRounds: SaltRounds): Hash =>
+    (password: Password.Strong) =>
       Effect.gen(function* () {
         const salt = randomBytes(16).toString("hex");
         const buf = scryptSync(password, salt, 64, { N: saltRounds });
-        return Password.Hashed.make(`${buf.toString("hex")}.${salt}`);
-      }),
-    validate: (
-      password: Password.Plaintext,
-      hashed: Password.Hashed,
-    ): Effect.Effect<Password.Hashed, PasswordsDoNotMatch> =>
+        return Password.Hashed.unsafeFrom(`${buf.toString("hex")}.${salt}`);
+      });
+
+  export const match =
+    (saltRounds: SaltRounds): Match =>
+    (password: Password.Plaintext, hashed: Password.Hashed): Effect.Effect<Password.Hashed, DoNotMatch> =>
       Effect.gen(function* () {
         const [hashedPassword, salt] = hashed.split(".");
         const hashedPasswordBuf = Buffer.from(hashedPassword, "hex");
         const suppliedPasswordBuf = scryptSync(password, salt, 64, { N: saltRounds });
 
-        return timingSafeEqual(hashedPasswordBuf, suppliedPasswordBuf) ? hashed : yield* new PasswordsDoNotMatch();
-      }),
-  });
-});
+        return timingSafeEqual(hashedPasswordBuf, suppliedPasswordBuf) ? hashed : yield* new DoNotMatch();
+      });
 
-export class Passwords extends Context.Tag("@core/Passwords")<
-  Passwords,
-  {
-    hash: (password: Password.Strong) => Effect.Effect<Password.Hashed>;
-    validate: (
-      password: Password.Plaintext,
-      hashed: Password.Hashed,
-    ) => Effect.Effect<Password.Hashed, PasswordsDoNotMatch>;
-  }
->() {
-  static layer = Layer.effect(Passwords, make);
+  const type = "Passwords";
+
+  export class DoNotMatch extends Data.TaggedError(`${type}DoNotMatch`) {}
 }
-
-export class PasswordsDoNotMatch extends Data.TaggedError("PasswordsDoNotMatch") {}

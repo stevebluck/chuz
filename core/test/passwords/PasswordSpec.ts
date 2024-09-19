@@ -1,47 +1,48 @@
 import { describe, expect, test } from "vitest";
 import { Password } from "@chuz/domain";
 import { Effect, Either } from "@chuz/prelude";
-import { Passwords, PasswordsDoNotMatch } from "../../src";
+import { Passwords } from "../../src";
 import { Arbs } from "../Arbs";
-import { asyncProperty } from "../Property";
+import { Property, property } from "../Property";
 
 export namespace PasswordSpec {
-  export const run = () => {
+  export const run = (hash: Passwords.Hash, match: Passwords.Match, config: Property.Config) => {
     describe("Passwords", () => {
-      asyncProperty("Passwords are hashed with random salt", Arbs.Passwords.Strong, (password: Password.Strong) =>
-        Effect.gen(function* () {
-          const passwords = yield* Passwords;
-          const hashes = yield* Effect.all(Array.from({ length: 5 }, () => password).map(passwords.hash));
-          expect(new Set(hashes).size).toBe(hashes.length);
-        }).pipe(Effect.provide(Passwords.layer)),
+      property(
+        "Passwords are hashed with random salt",
+        Arbs.Passwords.Strong,
+        (password) =>
+          Effect.gen(function* () {
+            const hashes = yield* Effect.all(Array.from({ length: 5 }, () => password).map(hash));
+            expect(new Set(hashes).size).toBe(hashes.length);
+          }),
+        config,
       );
 
-      asyncProperty(
+      property(
         "Passwords only validate against their hashes",
         Arbs.Passwords.Strong,
-        (password: Password.Strong) =>
+        (password) =>
           Effect.gen(function* () {
-            const passwords = yield* Passwords;
-            const hashed = yield* passwords.hash(password);
+            const hashed = yield* hash(password);
 
-            yield* passwords.validate(Password.Plaintext.make(password), hashed);
+            yield* match(Password.Plaintext.unsafeFrom(password), hashed);
 
-            const doesNotMatch = yield* Effect.flip(
-              passwords.validate(Password.Plaintext.make(`mutate-${password}`), hashed),
-            );
+            const doesNotMatch = yield* Effect.flip(match(Password.Plaintext.unsafeFrom(`mutate-${password}`), hashed));
 
-            expect(doesNotMatch).toStrictEqual(new PasswordsDoNotMatch());
-          }).pipe(Effect.provide(Passwords.layer)),
+            expect(doesNotMatch).toStrictEqual(new Passwords.DoNotMatch());
+          }),
+        config,
       );
 
       test("Strong passwords must have a minimum length of 8 characters", () => {
-        expect(Either.isLeft(Either.try(() => Password.Strong.make("1234567")))).toBe(true);
-        expect(Either.isRight(Either.try(() => Password.Strong.make("12345678")))).toBe(true);
+        expect(Either.isLeft(Either.try(() => Password.Strong.unsafeFrom("1234567")))).toBe(true);
+        expect(Either.isRight(Either.try(() => Password.Strong.unsafeFrom("12345678")))).toBe(true);
       });
 
       test("Strong passwords must have a maximum length of 64 characters", () => {
-        expect(Either.isLeft(Either.try(() => Password.Strong.make(Array(65).fill("a").join(""))))).toBe(true);
-        expect(Either.isRight(Either.try(() => Password.Strong.make(Array(64).fill("a").join(""))))).toBe(true);
+        expect(Either.isLeft(Either.try(() => Password.Strong.unsafeFrom(Array(65).fill("a").join(""))))).toBe(true);
+        expect(Either.isRight(Either.try(() => Password.Strong.unsafeFrom(Array(64).fill("a").join(""))))).toBe(true);
       });
     });
   };

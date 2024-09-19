@@ -6,7 +6,7 @@ export class AutoIncrement<A> {
   private constructor(private readonly nextId: number) {}
 
   next = (): [Id<A>, AutoIncrement<A>] => {
-    const id = Id<A>(this.nextId.toString());
+    const id = Id.make<A>(this.nextId.toString());
     return [id, new AutoIncrement<A>(this.nextId + 1)];
   };
 }

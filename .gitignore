@@ -5,3 +5,5 @@ build
 .env
 .DS_Store
 .turbo
+todo.md
+test.tsx
