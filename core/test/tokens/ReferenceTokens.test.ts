@@ -1,6 +1,5 @@
-import { Clock, Number } from "@chuz/prelude";
-import { ReferenceTokens } from "../../src/tokens/ReferenceTokens";
 import { Property } from "../Property";
+import { TestBench } from "../TestBench";
 import { TokensSpec } from "./TokensSpec";
 
-TokensSpec.run(ReferenceTokens.make(Clock.make(), Number.Equivalence), Property.Config.default);
+TokensSpec.run(TestBench.withBench, Property.Config.default);

@@ -10,7 +10,7 @@ export namespace PasswordSpec {
     describe("Passwords", () => {
       property(
         "Passwords are hashed with random salt",
-        Arbs.Passwords.Strong,
+        Arbs.Password.Strong,
         (password) =>
           Effect.gen(function* () {
             const hashes = yield* Effect.all(Array.from({ length: 5 }, () => password).map(hash));
@@ -21,7 +21,7 @@ export namespace PasswordSpec {
 
       property(
         "Passwords only validate against their hashes",
-        Arbs.Passwords.Strong,
+        Arbs.Password.Strong,
         (password) =>
           Effect.gen(function* () {
             const hashed = yield* hash(password);

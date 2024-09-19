@@ -6,7 +6,10 @@ import { Tokens } from "./Tokens";
 
 export class ReferenceTokens<A> implements Tokens<A> {
   static make = <A>(clock: Clock.Clock, eq: Equivalence.Equivalence<A>): Effect.Effect<Tokens<A>> =>
-    Ref.make(new State<A>(HashMap.empty(), eq)).pipe(Effect.map((s) => new ReferenceTokens<A>(clock, s)));
+    Effect.gen(function* () {
+      const state = yield* Ref.make(new State<A>(HashMap.empty(), eq));
+      return new ReferenceTokens(clock, state);
+    });
 
   private constructor(
     private readonly clock: Clock.Clock,

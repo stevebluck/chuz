@@ -1,12 +1,14 @@
 import { Credentials, Password, Session } from "@chuz/domain";
-import { Effect, TestClock, TestContext } from "@chuz/prelude";
-import { Capabilities, Passwords, Users } from "../src";
+import { Effect, Number, TestClock, TestContext } from "@chuz/prelude";
+import { Capabilities, Passwords, ReferenceTokens, Tokens, Users } from "../src";
 import { Emails } from "../src/emails/Emails";
 import { ReferenceUsers } from "../src/users/ReferenceUsers";
 
 export interface TestBench extends Omit<Capabilities, "clock"> {
   clock: TestClock.TestClock;
   registerUser: TestBench.RegisterUser;
+  tokens: Tokens<number>;
+  hash: Passwords.Hash;
   makePlainCredentials: TestBench.MakePlainCredentials;
 }
 
@@ -29,7 +31,7 @@ export namespace TestBench {
 
   export const withBench: WithBench = (test) =>
     Effect.gen(function* () {
-      const clock: TestClock.TestClock = yield* TestClock.testClock();
+      const clock = yield* TestClock.testClock();
 
       const registerUser: RegisterUser = (registration) =>
         Effect.gen(function* () {
@@ -61,14 +63,17 @@ export namespace TestBench {
       };
 
       const users = yield* ReferenceUsers.make(clock, match);
+      const tokens = yield* ReferenceTokens.make(clock, Number.Equivalence);
 
       return yield* test({
         users,
         clock,
+        tokens,
+        hash,
         registerUser,
         makePlainCredentials,
       });
-    });
+    }).pipe(Effect.provide(TestContext.TestContext));
 
   export interface Seeded extends TestBench {
     seed: {};
@@ -83,7 +88,7 @@ export namespace TestBench {
         withBench((bench) =>
           Effect.gen(function* () {
             return yield* test({ ...bench, seed: {} });
-          }).pipe(Effect.orDie, Effect.provide(TestContext.TestContext)),
+          }).pipe(Effect.orDie),
         );
   }
 

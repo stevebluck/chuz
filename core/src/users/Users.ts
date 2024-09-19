@@ -14,8 +14,6 @@ export interface Users {
 
   findByEmail: (email: Email) => Effect.Effect<Identified<User>, User.NotFound>;
 
-  findCredentials: (id: Id<User>) => Effect.Effect<Array<Credentials.EmailPassword.Display>>;
-
   update: (id: Id<User>, user: User.Patch) => Effect.Effect<Identified<User>, User.NotFound>;
 
   updateEmail: (id: Id<User>, email: Email) => Effect.Effect<Identified<User>, Users.UpdateEmailError>;
@@ -25,6 +23,8 @@ export interface Users {
   requestPasswordReset: (email: Email) => Effect.Effect<Password.Reset.Token, Credentials.NotRecognised>;
 
   resetPassword: (token: Password.Reset.Token, password: Password.Hashed) => Effect.Effect<Identified<User>, Token.NoSuchToken>;
+
+  findCredentials: (id: Id<User>) => Effect.Effect<Array<Credentials.Public>>;
 
   linkCredential: (token: Token<Id<User>>, credential: Credentials.Authentication) => Effect.Effect<void, Users.LinkCredentialError>;
 

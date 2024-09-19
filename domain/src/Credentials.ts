@@ -7,27 +7,32 @@ export namespace Credentials {
 
   export type OAuth = Data.TaggedEnum<{
     Google: { email: Email };
-    Apple: { email: Email };
   }>;
 
+  export namespace OAuth {
+    export const { Google } = Data.taggedEnum<OAuth>();
+  }
+
   export type EmailPassword = Data.TaggedEnum<{
-    EmailPasswordPlain: { email: Email; password: Password.Plaintext };
-    EmailPasswordStrong: { email: Email; password: Password.Strong };
-    EmailPasswordSecure: { email: Email; password: Password.Hashed };
-    EmailPasswordDisplay: { email: Email };
+    Plain: { email: Email; password: Password.Plaintext };
+    Strong: { email: Email; password: Password.Strong };
+    Secure: { email: Email; password: Password.Hashed };
+    Public: { email: Email };
   }>;
 
   export namespace EmailPassword {
-    export type Plain = Data.TaggedEnum.Value<EmailPassword, "EmailPasswordPlain">;
-    export type Strong = Data.TaggedEnum.Value<EmailPassword, "EmailPasswordStrong">;
-    export type Secure = Data.TaggedEnum.Value<EmailPassword, "EmailPasswordSecure">;
-    export type Display = Data.TaggedEnum.Value<EmailPassword, "EmailPasswordDisplay">;
-    export const { EmailPasswordPlain: Plain, EmailPasswordStrong: Strong, EmailPasswordSecure: Secure, EmailPasswordDisplay: Display, $is: is } = Data.taggedEnum<EmailPassword>();
+    export type Plain = Data.TaggedEnum.Value<EmailPassword, "Plain">;
+    export type Strong = Data.TaggedEnum.Value<EmailPassword, "Strong">;
+    export type Secure = Data.TaggedEnum.Value<EmailPassword, "Secure">;
+    export type Public = Data.TaggedEnum.Value<EmailPassword, "Public">;
+    export const { Plain, Strong, Secure, Public, $is: is } = Data.taggedEnum<EmailPassword>();
   }
 
   export type Authentication = OAuth | EmailPassword.Plain;
 
   export type Registration = OAuth | EmailPassword.Secure;
+
+  export type Public = OAuth | EmailPassword.Public;
 
   export namespace Authentication {
     export const { $is: is } = Data.taggedEnum<Authentication>();
