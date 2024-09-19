@@ -1,5 +1,5 @@
 import { Credentials, Email, Id, Identified, Password, Session, Token, User } from "@chuz/domain";
-import { Effect, Option } from "@chuz/prelude";
+import { Data, Effect, Option } from "@chuz/prelude";
 
 export interface Users {
   register: (registration: Users.Registration) => Effect.Effect<Session, Credentials.AlreadyInUse>;
@@ -26,9 +26,9 @@ export interface Users {
 
   findCredentials: (id: Id<User>) => Effect.Effect<Array<Credentials.Public>>;
 
-  linkCredential: (token: Token<Id<User>>, credential: Credentials.Authentication) => Effect.Effect<void, Users.LinkCredentialError>;
+  linkCredential: (token: Token<Id<User>>, credential: Credentials.Registration) => Effect.Effect<void, Users.LinkCredentialError>;
 
-  unlinkCredential: (token: Token<Id<User>>, type: Credentials.Name) => Effect.Effect<void, Users.UnlinkCredentialError>;
+  unlinkCredential: (token: Token<Id<User>>, type: Credentials.Registration.Name) => Effect.Effect<void, Users.UnlinkCredentialError>;
 }
 
 export namespace Users {
@@ -38,6 +38,10 @@ export namespace Users {
     lastName: Option.Option<User.LastName>;
     optInMarketing: User.OptInMarketing;
   };
+
+  export namespace Registration {
+    export const make = Data.case<Registration>();
+  }
 
   export type UpdateEmailError = Credentials.AlreadyInUse | Credentials.NotRecognised;
   export type UpdatePasswordError = Token.NoSuchToken | Credentials.NotRecognised;

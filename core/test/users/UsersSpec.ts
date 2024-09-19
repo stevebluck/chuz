@@ -1,6 +1,7 @@
 import { describe, expect } from "vitest";
 import { Credentials, Email, Password, Token, User } from "@chuz/domain";
 import { Effect, Either, FC } from "@chuz/prelude";
+import { Users } from "../../src";
 import { Emails } from "../../src/emails/Emails";
 import { Arbs } from "../Arbs";
 import { property, Property } from "../Property";
@@ -140,6 +141,209 @@ export namespace UsersSpec {
       config,
     );
 
+    describe("Linking credentials", () => {
+      property(
+        "users can link another set of credentials to their account",
+        FC.tuple(Arbs.Users.Registration.EmailPassword, Arbs.Credentials.OAuth.Google),
+        ([register, newCredentials]) =>
+          withBench(({ users, registerUser }) =>
+            Effect.gen(function* () {
+              const session = yield* registerUser(register);
+
+              const credentialsBefore = yield* users.findCredentials(session.user.id);
+
+              yield* users.linkCredential(session.token, newCredentials);
+
+              const credentialsAfter = yield* users.findCredentials(session.user.id);
+
+              expect(credentialsBefore).toEqual([Credentials.EmailPassword.Public({ email: register.credentials.email })]);
+              expect(credentialsAfter).toEqual([Credentials.EmailPassword.Public({ email: register.credentials.email }), newCredentials]);
+            }),
+          ),
+        config,
+      );
+
+      property(
+        "users can only have a single set of email/password credentials",
+        FC.tuple(Arbs.Users.Registration.EmailPassword, Arbs.Credentials.EmailPassword.Strong),
+        ([register0, credential]) =>
+          withBench(({ users, registerUser, hash }) =>
+            Effect.gen(function* () {
+              const session = yield* registerUser(register0);
+              const hashed = yield* hash(credential.password);
+
+              const newCredentials = Credentials.EmailPassword.Secure({ email: credential.email, password: hashed });
+
+              const error = yield* users.linkCredential(session.token, newCredentials).pipe(Effect.either);
+
+              expect(error).toEqual(Either.left(new Credentials.AlreadyInUse()));
+            }),
+          ),
+        config,
+      );
+
+      property(
+        "users cannot link credentials that are already linked to another account",
+        FC.tuple(Arbs.Users.Registration.Google, Arbs.Users.Registration.Google),
+        ([register0, register1]) =>
+          withBench(({ users }) =>
+            Effect.gen(function* () {
+              const session = yield* users.register(register0);
+
+              yield* users.register(register1);
+
+              const error = yield* users.linkCredential(session.token, register1.credentials).pipe(Effect.either);
+
+              const credentials0 = yield* users.findCredentials(session.user.id);
+
+              expect(error).toEqual(Either.left(new Credentials.AlreadyInUse()));
+              expect(credentials0).toEqual([register0.credentials]);
+            }),
+          ),
+        config,
+      );
+
+      property(
+        "users trying to link the same credentials will succeed but not do anything",
+        Arbs.Users.Registration.Google,
+        (register) =>
+          withBench(({ users }) =>
+            Effect.gen(function* () {
+              const session = yield* users.register(register);
+
+              yield* users.linkCredential(session.token, register.credentials);
+              yield* users.linkCredential(session.token, register.credentials);
+              yield* users.linkCredential(session.token, register.credentials);
+              yield* users.linkCredential(session.token, register.credentials);
+
+              const credentials = yield* users.findCredentials(session.user.id);
+
+              expect(credentials).toEqual([register.credentials]);
+            }),
+          ),
+        config,
+      );
+
+      property(
+        "users can only link a single set of credentials of each type",
+        FC.tuple(Arbs.Users.Registration.EmailPassword, Arbs.Credentials.OAuth.Google, Arbs.Credentials.OAuth.Google),
+        ([register, googleCred1, googleCred2]) =>
+          withBench(({ users, registerUser }) =>
+            Effect.gen(function* () {
+              const session = yield* registerUser(register);
+
+              yield* users.linkCredential(session.token, googleCred1);
+
+              const error = yield* users.linkCredential(session.token, googleCred2).pipe(Effect.either);
+
+              const credentials = yield* users.findCredentials(session.user.id);
+
+              expect(error).toEqual(Either.left(new Credentials.AlreadyInUse()));
+              expect(credentials).toEqual([Credentials.EmailPassword.Public({ email: register.credentials.email }), googleCred1]);
+            }),
+          ),
+        config,
+      );
+
+      property(
+        "users cannot link a set of credentials where that credential's email is already in use",
+        FC.tuple(Arbs.Users.Registration.Google, Arbs.Password.Strong),
+        ([register, password]) =>
+          withBench(({ users, hash }) =>
+            Effect.gen(function* () {
+              const session0 = yield* users.register(register);
+
+              const hashed = yield* hash(password);
+
+              const newRegister = Users.Registration.make({
+                ...register,
+                credentials: Credentials.EmailPassword.Secure({ email: register.credentials.email, password: hashed }),
+              });
+
+              const alreadyInUse = yield* users.register(newRegister).pipe(Effect.either);
+
+              expect(alreadyInUse).toEqual(Either.left(new Credentials.AlreadyInUse()));
+
+              const originalCredentials = yield* users.findCredentials(session0.user.id);
+
+              expect(originalCredentials).toEqual([register.credentials]);
+            }),
+          ),
+        config,
+      );
+    });
+
+    describe("Unlinking credentials", () => {
+      property(
+        "users can unlink credentials",
+        FC.tuple(Arbs.Users.Registration.EmailPassword, Arbs.Credentials.OAuth.Google),
+        ([register, googleCred]) =>
+          withBench(({ users, registerUser }) =>
+            Effect.gen(function* () {
+              const session = yield* registerUser(register);
+              yield* users.linkCredential(session.token, googleCred);
+
+              const credentialsBefore = yield* users.findCredentials(session.user.id);
+
+              expect(credentialsBefore).toHaveLength(2);
+
+              yield* users.unlinkCredential(session.token, "Secure");
+
+              const credentialsAfter = yield* users.findCredentials(session.user.id);
+
+              expect(credentialsAfter).toEqual([googleCred]);
+            }),
+          ),
+        config,
+      );
+
+      property(
+        "users cannot unlink their credentials if they only have one set",
+        FC.tuple(Arbs.Users.Registration.EmailPassword, Arbs.Credentials.OAuth.Google),
+        ([register, googleCred]) =>
+          withBench(({ users, registerUser }) =>
+            Effect.gen(function* () {
+              const session0 = yield* registerUser(register);
+              const session1 = yield* users.register({ ...register, credentials: googleCred });
+
+              const error0 = yield* users.unlinkCredential(session0.token, "Secure").pipe(Effect.either);
+              const error1 = yield* users.unlinkCredential(session1.token, "Google").pipe(Effect.either);
+
+              const credentials0 = yield* users.findCredentials(session0.user.id);
+              const credentials1 = yield* users.findCredentials(session1.user.id);
+
+              expect(error0).toEqual(Either.left(new Credentials.NoFallbackAvailable()));
+              expect(error1).toEqual(Either.left(new Credentials.NoFallbackAvailable()));
+
+              expect(credentials0).toHaveLength(1);
+              expect(credentials1).toHaveLength(1);
+            }),
+          ),
+        config,
+      );
+
+      property(
+        "a users email may be updated when unlinking a credential",
+        FC.tuple(Arbs.Users.Registration.EmailPassword, Arbs.Credentials.OAuth.Google),
+        ([register, googleCred]) =>
+          withBench(({ users, registerUser }) =>
+            Effect.gen(function* () {
+              const session = yield* registerUser(register);
+              yield* users.linkCredential(session.token, googleCred);
+
+              const userBefore = yield* users.findById(session.user.id);
+              expect(userBefore.value.email).toEqual(register.credentials.email);
+
+              yield* users.unlinkCredential(session.token, "Secure");
+
+              const userAfter = yield* users.findById(session.user.id);
+              expect(userAfter.value.email).toEqual(googleCred.email);
+            }),
+          ),
+        config,
+      );
+    });
+
     describe("Update", () => {
       property(
         "users can update their first name / last name, and opt-in marketing status",
@@ -223,6 +427,23 @@ export namespace UsersSpec {
               expect(error0).toEqual(Either.left(new Credentials.AlreadyInUse()));
               expect(error1).toEqual(Either.left(new Credentials.AlreadyInUse()));
               expect(error2).toEqual(Either.left(new Credentials.AlreadyInUse()));
+            }),
+          ),
+        config,
+      );
+
+      property(
+        "users cannot update their email to an exisitng email from another credential type",
+        FC.tuple(Arbs.Users.Registration.EmailPassword, Arbs.Users.Registration.Google),
+        ([register0, register1]) =>
+          withBench(({ users, registerUser }) =>
+            Effect.gen(function* () {
+              const session0 = yield* registerUser(register0);
+              const session1 = yield* users.register(register1);
+
+              const error0 = yield* users.updateEmail(session0.user.id, session1.user.value.email).pipe(Effect.either);
+
+              expect(error0).toEqual(Either.left(new Credentials.AlreadyInUse()));
             }),
           ),
         config,

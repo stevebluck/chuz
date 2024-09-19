@@ -18,6 +18,10 @@ export namespace Arbs {
       export const Plain = FC.record({ _tag: FC.constant("Plain" as const), email: Emails.Email, password: Password.Plaintext });
       export const Strong = FC.record({ _tag: FC.constant("Strong" as const), email: Emails.Email, password: Password.Strong });
     }
+
+    export namespace OAuth {
+      export const Google = FC.record({ _tag: FC.constant("Google" as const), email: Emails.Email });
+    }
   }
 
   export namespace Users {

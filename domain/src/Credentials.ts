@@ -3,8 +3,6 @@ import { Email } from "./Email";
 import { Password } from "./Password";
 
 export namespace Credentials {
-  export type Name = OAuth["_tag"] | "EmailPassword";
-
   export type OAuth = Data.TaggedEnum<{
     Google: { email: Email };
   }>;
@@ -39,7 +37,8 @@ export namespace Credentials {
   }
 
   export namespace Registration {
-    export const { $is: is } = Data.taggedEnum<Registration>();
+    export type Name = Registration["_tag"];
+    export const { $is: is, $match: match } = Data.taggedEnum<Registration>();
   }
 
   export const Type = "Credential";
