@@ -3,12 +3,16 @@ import { Email } from "./Email";
 import { Password } from "./Password";
 
 export namespace Credentials {
-  export type OAuth = Data.TaggedEnum<{
-    Google: { email: Email };
-  }>;
+  export type Name = "EmailPassword" | OAuth["_tag"];
+  export type Plain = OAuth | EmailPassword.Plain;
+  export type Secure = OAuth | EmailPassword.Secure;
+  export type Public = OAuth | EmailPassword.Public;
 
-  export namespace OAuth {
-    export const { Google } = Data.taggedEnum<OAuth>();
+  export type OAuth = Data.TaggedEnum<{ Google: { email: Email } }>;
+  export const OAuth = Data.taggedEnum<OAuth>();
+
+  export namespace Secure {
+    export const { $match: match, $is: is } = Data.taggedEnum<Secure>();
   }
 
   export type EmailPassword = Data.TaggedEnum<{
@@ -24,21 +28,6 @@ export namespace Credentials {
     export type Secure = Data.TaggedEnum.Value<EmailPassword, "Secure">;
     export type Public = Data.TaggedEnum.Value<EmailPassword, "Public">;
     export const { Plain, Strong, Secure, Public, $is: is } = Data.taggedEnum<EmailPassword>();
-  }
-
-  export type Authentication = OAuth | EmailPassword.Plain;
-
-  export type Registration = OAuth | EmailPassword.Secure;
-
-  export type Public = OAuth | EmailPassword.Public;
-
-  export namespace Authentication {
-    export const { $is: is } = Data.taggedEnum<Authentication>();
-  }
-
-  export namespace Registration {
-    export type Name = Registration["_tag"];
-    export const { $is: is, $match: match } = Data.taggedEnum<Registration>();
   }
 
   export const Type = "Credential";

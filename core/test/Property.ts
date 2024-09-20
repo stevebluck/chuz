@@ -44,6 +44,7 @@ export const property = <A, E>(
   it(
     title,
     async () =>
+      // @ts-ignore
       FC.assert(
         FC.asyncProperty(arbs, (a) => predicate(a).pipe(Effect.runPromise))
           .beforeEach(config.beforeEach)

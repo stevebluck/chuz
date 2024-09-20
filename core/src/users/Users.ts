@@ -4,7 +4,7 @@ import { Data, Effect, Option } from "@chuz/prelude";
 export interface Users {
   register: (registration: Users.Registration) => Effect.Effect<Session, Credentials.AlreadyInUse>;
 
-  authenticate: (credential: Credentials.Authentication) => Effect.Effect<Session, Credentials.NotRecognised>;
+  authenticate: (credential: Credentials.Plain) => Effect.Effect<Session, Credentials.NotRecognised>;
 
   identify: (token: Token<Id<User>>) => Effect.Effect<Session, Token.NoSuchToken>;
 
@@ -26,14 +26,14 @@ export interface Users {
 
   findCredentials: (id: Id<User>) => Effect.Effect<Array<Credentials.Public>>;
 
-  linkCredential: (token: Token<Id<User>>, credential: Credentials.Registration) => Effect.Effect<void, Users.LinkCredentialError>;
+  linkCredential: (token: Token<Id<User>>, credential: Credentials.Secure) => Effect.Effect<void, Users.LinkCredentialError>;
 
-  unlinkCredential: (token: Token<Id<User>>, type: Credentials.Registration.Name) => Effect.Effect<void, Users.UnlinkCredentialError>;
+  unlinkCredential: (token: Token<Id<User>>, name: Credentials.Name) => Effect.Effect<void, Users.UnlinkCredentialError>;
 }
 
 export namespace Users {
   export type Registration = {
-    credentials: Credentials.Registration;
+    credentials: Credentials.Secure;
     firstName: Option.Option<User.FirstName>;
     lastName: Option.Option<User.LastName>;
     optInMarketing: User.OptInMarketing;

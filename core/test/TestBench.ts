@@ -45,23 +45,6 @@ export namespace TestBench {
           });
         });
 
-      const makePlainCredentials = (credentials: Credentials.EmailPassword.Strong) => {
-        return {
-          credentials: Credentials.EmailPassword.Plain({
-            email: credentials.email,
-            password: Password.Plaintext.unsafeFrom(credentials.password),
-          }),
-          lowercase: Credentials.EmailPassword.Plain({
-            email: Emails.toLowerCase(credentials.email),
-            password: Password.Plaintext.unsafeFrom(credentials.password),
-          }),
-          uppercase: Credentials.EmailPassword.Plain({
-            email: Emails.toUpperCase(credentials.email),
-            password: Password.Plaintext.unsafeFrom(credentials.password),
-          }),
-        };
-      };
-
       const users = yield* ReferenceUsers.make(clock, match);
       const tokens = yield* ReferenceTokens.make(clock, Number.Equivalence);
 
@@ -94,3 +77,20 @@ export namespace TestBench {
 
   export const withSeed = Seeded.withSeed(withBench);
 }
+
+const makePlainCredentials = (credentials: Credentials.EmailPassword.Strong) => {
+  return {
+    credentials: Credentials.EmailPassword.Plain({
+      email: credentials.email,
+      password: Password.Plaintext.unsafeFrom(credentials.password),
+    }),
+    lowercase: Credentials.EmailPassword.Plain({
+      email: Emails.toLowerCase(credentials.email),
+      password: Password.Plaintext.unsafeFrom(credentials.password),
+    }),
+    uppercase: Credentials.EmailPassword.Plain({
+      email: Emails.toUpperCase(credentials.email),
+      password: Password.Plaintext.unsafeFrom(credentials.password),
+    }),
+  };
+};

@@ -287,7 +287,7 @@ export namespace UsersSpec {
 
               expect(credentialsBefore).toHaveLength(2);
 
-              yield* users.unlinkCredential(session.token, "Secure");
+              yield* users.unlinkCredential(session.token, "EmailPassword");
 
               const credentialsAfter = yield* users.findCredentials(session.user.id);
 
@@ -306,7 +306,7 @@ export namespace UsersSpec {
               const session0 = yield* registerUser(register);
               const session1 = yield* users.register({ ...register, credentials: googleCred });
 
-              const error0 = yield* users.unlinkCredential(session0.token, "Secure").pipe(Effect.either);
+              const error0 = yield* users.unlinkCredential(session0.token, "EmailPassword").pipe(Effect.either);
               const error1 = yield* users.unlinkCredential(session1.token, "Google").pipe(Effect.either);
 
               const credentials0 = yield* users.findCredentials(session0.user.id);
@@ -334,7 +334,7 @@ export namespace UsersSpec {
               const userBefore = yield* users.findById(session.user.id);
               expect(userBefore.value.email).toEqual(register.credentials.email);
 
-              yield* users.unlinkCredential(session.token, "Secure");
+              yield* users.unlinkCredential(session.token, "EmailPassword");
 
               const userAfter = yield* users.findById(session.user.id);
               expect(userAfter.value.email).toEqual(googleCred.email);
