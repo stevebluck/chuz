@@ -51,11 +51,7 @@ type CookieOpts = Omit<CookieOptions, "maxAge" | "secrets"> & {
   secrets: ReadonlyArray<Secret.Secret>;
 };
 
-const createCookie = <T>(
-  name: string,
-  schema: S.Schema<T, string>,
-  options: CookieOpts,
-): Effect.Effect<CookieImpl<T>, ConfigError.ConfigError> =>
+const createCookie = <T>(name: string, schema: S.Schema<T, string>, options: CookieOpts): Effect.Effect<CookieImpl<T>, ConfigError.ConfigError> =>
   Effect.gen(function* () {
     const cookie = remixCreateCookie(name, {
       ...options,

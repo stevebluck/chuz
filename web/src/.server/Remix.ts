@@ -6,33 +6,15 @@ import { unstable_data, ActionFunctionArgs, LoaderFunctionArgs } from "@remix-ru
 import { Params as RemixParams } from "@remix-run/react";
 import { Routes } from "src/Routes";
 import { Passwords, ReferenceUsers } from "@chuz/core";
-import {
-  Effect,
-  Layer,
-  ManagedRuntime,
-  Context,
-  Scope,
-  LogLevel,
-  Match,
-  Logger,
-  Exit,
-  Cause,
-  Option,
-  Ref,
-} from "@chuz/prelude";
+import { Effect, Layer, ManagedRuntime, Context, Scope, LogLevel, Match, Logger, Exit, Cause, Option, Ref } from "@chuz/prelude";
 import { Cookies } from "./Cookies";
 import { FormError, NotFound, Redirect, ServerResponse, Unauthorized, Unexpected } from "./ServerResponse";
 import { Session, setSessionCookie } from "./Session";
 import { OAuth } from "./oauth/OAuth";
 
-const AppLayer = Layer.mergeAll(
-  ReferenceUsers.layer,
-  Passwords.layer,
-  OAuth.layer,
-  Cookies.layer,
-  NodeFileSystem.layer,
-  Path.layer,
-).pipe(Layer.provide(Logger.minimumLogLevel(LogLevel.All)));
+const AppLayer = Layer.mergeAll(ReferenceUsers.layer, Passwords.layer, OAuth.layer, Cookies.layer, NodeFileSystem.layer, Path.layer).pipe(
+  Layer.provide(Logger.minimumLogLevel(LogLevel.All)),
+);
 
 const runtime = ManagedRuntime.make(AppLayer);
 
@@ -59,11 +41,7 @@ type LoaderError = Redirect | NotFound | Unauthorized | Unexpected;
 type RemixLoaderHandler<A, R> = Effect.Effect<A, LoaderError, R | AppEnv | RequestEnv>;
 
 const makeRequestContext = (args: LoaderFunctionArgs | ActionFunctionArgs) => {
-  const context = Context.empty().pipe(
-    Context.add(HttpServerRequest, fromWeb(args.request)),
-    Context.add(Params, args.params),
-    Layer.succeedContext,
-  );
+  const context = Context.empty().pipe(Context.add(HttpServerRequest, fromWeb(args.request)), Context.add(Params, args.params), Layer.succeedContext);
 
   return Layer.provideMerge(Session.layer, context);
 };
@@ -134,17 +112,13 @@ const handleFailedResponse = <E>(cause: Cause.Cause<E>) => {
   throw Cause.pretty(cause);
 };
 
-export const unwrapLoader = <A1, R1 extends AppEnv | RequestEnv, E, R2 extends AppEnv>(
-  effect: Effect.Effect<RemixLoaderHandler<A1, R1>, E, R2>,
-) => {
+export const unwrapLoader = <A1, R1 extends AppEnv | RequestEnv, E, R2 extends AppEnv>(effect: Effect.Effect<RemixLoaderHandler<A1, R1>, E, R2>) => {
   const awaitedHandler = runtime.runPromise(effect).then(loader);
 
   return (args: LoaderFunctionArgs): Promise<A1> => awaitedHandler.then((handler) => handler(args));
 };
 
-export const unwrapAction = <R1 extends AppEnv | RequestEnv, E, R2 extends AppEnv>(
-  effect: Effect.Effect<RemixActionHandler<R1>, E, R2>,
-) => {
+export const unwrapAction = <R1 extends AppEnv | RequestEnv, E, R2 extends AppEnv>(effect: Effect.Effect<RemixActionHandler<R1>, E, R2>) => {
   const awaitedHandler = runtime.runPromise(effect).then(action);
 
   return (args: ActionFunctionArgs): Promise<FormError> => awaitedHandler.then((handler) => handler(args));

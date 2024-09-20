@@ -17,15 +17,9 @@ interface UserCredential {
 }
 
 interface OAuthImpl {
-  redirectToProvider: (
-    provider: oauth.Provider,
-    intent: oauth.Intent,
-  ) => Effect.Effect<never, Redirect | oauth.GenerateUrlFailure | oauth.InvalidState, HttpServerRequest>;
+  redirectToProvider: (provider: oauth.Provider, intent: oauth.Intent) => Effect.Effect<never, Redirect | oauth.GenerateUrlFailure | oauth.InvalidState, HttpServerRequest>;
 
-  getCredential: (
-    state: string,
-    code: oauth.Code,
-  ) => Effect.Effect<UserCredential, oauth.InvalidCode | oauth.InvalidState, HttpServerRequest>;
+  getCredential: (state: string, code: oauth.Code) => Effect.Effect<UserCredential, oauth.InvalidCode | oauth.InvalidState, HttpServerRequest>;
 }
 
 const make = Effect.gen(function* () {
