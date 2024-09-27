@@ -1,8 +1,5 @@
 import { LinksFunction } from "@remix-run/node";
 import { Links, Meta, Outlet, Scripts, ScrollRestoration } from "@remix-run/react";
-import { Effect, Option } from "@chuz/prelude";
-import { Remix } from "./.server/Remix";
-import { Session } from "./.server/Session";
 import { Toaster } from "./components/ui/sonner";
 import { cn } from "./styles/classnames";
 import "./styles/style.css";
@@ -25,13 +22,6 @@ export const links: LinksFunction = () => {
     },
   ];
 };
-
-export const loader = Remix.loader(
-  Session.authenticated.pipe(
-    Effect.map((session) => ({ name: Option.getOrElse(session.user.value.firstName, () => "Mr NoName") })),
-    Effect.orElseSucceed(() => ({ name: "Guest" })),
-  ),
-);
 
 export default () => {
   return (

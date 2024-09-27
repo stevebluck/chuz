@@ -5,8 +5,8 @@ import { Route } from "src/Routes";
 import { S } from "@chuz/prelude";
 
 interface Options<T> {
-  method: "post" | "get" | "put" | "delete";
   action: Route;
+  method: "post" | "get" | "put" | "delete";
   preventScrollReset: boolean;
   defaultValues: DefaultValues<T>;
 }
